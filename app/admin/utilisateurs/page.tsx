@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { EnvelopeIcon, BellIcon, EllipsisHorizontalIcon, ArrowDownTrayIcon, MagnifyingGlassIcon, UserGroupIcon, UserPlusIcon } from '@heroicons/react/24/outline'
+import styles from '@/app/ui/utilisateurs.module.css';
 
 const users = [
   { id: 1, name: 'Darlene Robertson', role: 'Client', email: 'darlenerobertson@gmail.com', number: '+237 691 234 567', date: '01/02/2024', status: 'Inactif' },
@@ -63,7 +64,7 @@ export default function UserManagement() {
           <ArrowDownTrayIcon className="mr-2 h-4 w-4" />
           Exporter
         </Button>
-        <Button>
+        <Button className={styles.add}>
           <UserPlusIcon className="mr-2 h-4 w-4" />
           Ajouter des utilisateurs
         </Button>
