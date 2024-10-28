@@ -9,6 +9,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { EnvelopeIcon, BellIcon, EllipsisHorizontalIcon, ArrowDownTrayIcon, MagnifyingGlassIcon, UserGroupIcon, UserPlusIcon } from '@heroicons/react/24/outline'
 import styles from '@/app/ui/utilisateurs.module.css';
+import {
+  ArrowLongRightIcon,
+  ArrowUpCircleIcon
+} from '@heroicons/react/24/solid';
 
 const users = [
   { id: 1, name: 'Darlene Robertson', role: 'Client', email: 'darlenerobertson@gmail.com', number: '+237 691 234 567', date: '01/02/2024', status: 'Inactif' },
@@ -71,19 +75,24 @@ export default function UserManagement() {
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total d&apos;utilisateurs</CardTitle>
-            <UserGroupIcon className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">1,822</div>
-            <p className="text-xs text-muted-foreground">
-              <span className="text-green-500">+5.2%</span> ce dernier mois
-            </p>
-            <div className="text-sm text-muted-foreground mt-2">+140 Ce dernier mois</div>
-          </CardContent>
-        </Card>
+      <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Nouveaux utilisateurs</CardTitle>
+            <UserPlusIcon className="h-4 w-4 text-muted-foreground" />
+         </CardHeader>
+      <CardContent>
+        <div className="flex items-baseline space-x-8">
+          <div className="text-2xl font-bold">1,822</div>
+          <span className="rounded-full bg-green-500/10 px-2 py-0.5 text-xs font-medium text-green-500">
+          <ArrowUpCircleIcon /> 5.2%
+          </span>
+        </div>
+        <div className="mt-2 flex items-center justify-between text-sm text-muted-foreground w-70">
+          <span><b>+140</b> Ce dernier mois</span>
+          <ArrowLongRightIcon className="h-4 w-4" />
+        </div>
+      </CardContent>
+      </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Nouveaux utilisateurs</CardTitle>
@@ -154,9 +163,14 @@ export default function UserManagement() {
                 </div>
               </TableCell>
               <TableCell>{user.role}</TableCell>
-              <TableCell>{user.email}</TableCell>
-              <TableCell>{user.number}</TableCell>
-              <TableCell>{user.date}</TableCell>
+              <TableCell className='font-medium'>
+              <span className='
+                  text-[#E55210] '>
+                  {user.email}
+                </span>
+              </TableCell>
+              <TableCell className='font-medium'>{user.number}</TableCell>
+              <TableCell className='font-medium'>{user.date}</TableCell>
               <TableCell>
                 <span className={`px-2 py-1 rounded-full text-xs ${
                   user.status === 'Actif' ? 'bg-green-100 text-green-800' :
