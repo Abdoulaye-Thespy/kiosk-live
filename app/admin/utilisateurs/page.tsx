@@ -42,7 +42,7 @@ export default function UserManagement() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="container mx-auto space-y-6">
       <header className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Utilisateurs</h1>
         <div className="flex space-x-2">
@@ -63,29 +63,33 @@ export default function UserManagement() {
       </header>
       <hr />
 
-      <div className="flex justify-between items-center">
+      <div className="flex justify-end items-center">
         <Button variant="ghost">
           <ArrowDownTrayIcon className="mr-2 h-4 w-4" />
-          Exporter
         </Button>
         <Button className={styles.add}>
           <UserPlusIcon className="mr-2 h-4 w-4" />
           Ajouter des utilisateurs
         </Button>
       </div>
+      <hr />
 
       <div className="grid grid-cols-2 gap-4">
       <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Nouveaux utilisateurs</CardTitle>
-            <UserPlusIcon className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Total d'utilisateurs</CardTitle>
+            <UserPlusIcon className="h-4 w-4 text-muted-foreground text-" />
          </CardHeader>
       <CardContent>
         <div className="flex items-baseline space-x-8">
           <div className="text-2xl font-bold">1,822</div>
-          <span className="rounded-full bg-green-500/10 px-2 py-0.5 text-xs font-medium text-green-500">
-          <ArrowUpCircleIcon /> 5.2%
-          </span>
+          <div className="flex items-center bg-green-500 rounded-full bg-opacity-15 px-2 py-0.5">
+        <div className="inline-block  text-xs font-medium text-green-500 flex items-center">
+        <ArrowUpCircleIcon className='inline-block h-5 w-5' />
+        
+    </div>
+    <div className="ml-2 text-medium text-gray-500">5.2%</div>
+</div>
         </div>
         <div className="mt-2 flex items-center justify-between text-sm text-muted-foreground w-70">
           <span><b>+140</b> Ce dernier mois</span>
@@ -93,19 +97,28 @@ export default function UserManagement() {
         </div>
       </CardContent>
       </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+      <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Nouveaux utilisateurs</CardTitle>
-            <UserPlusIcon className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">341</div>
-            <p className="text-xs text-muted-foreground">
-              <span className="text-green-500">+8.5%</span> ce dernier mois
-            </p>
-            <div className="text-sm text-muted-foreground mt-2">+76 Ce dernier mois</div>
-          </CardContent>
-        </Card>
+            <UserPlusIcon className="h-4 w-4 text-muted-foreground text-" />
+         </CardHeader>
+      <CardContent>
+        <div className="flex items-baseline space-x-8">
+          <div className="text-2xl font-bold">1,822</div>
+          <div className="flex items-center bg-green-500 rounded-full bg-opacity-15 px-2 py-0.5">
+        <div className="inline-block  text-xs font-medium text-green-500 flex items-center">
+        <ArrowUpCircleIcon className='inline-block h-5 w-5' />
+        
+    </div>
+    <div className="ml-2 text-medium text-gray-500">5.2%</div>
+</div>
+        </div>
+        <div className="mt-2 flex items-center justify-between text-sm text-muted-foreground w-70">
+          <span><b>+140</b> Ce dernier mois</span>
+          <ArrowLongRightIcon className="h-4 w-4" />
+        </div>
+      </CardContent>
+      </Card>
       </div>
 
       <div className="flex justify-between items-center">

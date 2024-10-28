@@ -7,7 +7,7 @@ import { Switch } from "@/components/ui/switch"
 
 export default function SideNav() {
   return (
-    <div className="flex h-full flex-col px-3 py-4 md:px-2">
+    <div className="flex h-full flex-col px-2 py-4 md:px-2 border-r border-gray-10">
       <Link
         className="mb-2 flex h-20 items-end justify-start rounded-md p-4"
         href="/"

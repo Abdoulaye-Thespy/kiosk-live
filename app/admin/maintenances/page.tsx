@@ -5,7 +5,7 @@ import Link from 'next/link';
 export default function Page() {
   return (
     <main className="flex flex-col p-6">
-        <p>Maintenances</p>
+        <p>Maintenance hehehehs</p>
     </main>
   );
 }
