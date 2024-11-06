@@ -1,0 +1,9 @@
+.carteEntete {
+    width: 98%;
+    border-radius: 5px;
+    margin: 5px auto 5px auto;
+    background-color: white;
+   }
+.carte {
+    background-color: #F9F9FB;
+   }
