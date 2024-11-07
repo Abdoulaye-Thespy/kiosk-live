@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useRef, useEffect } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import Link from 'next/link'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -302,7 +303,7 @@ export default function UserManagement() {
         </Button>
         )}
 
-        { ! selectedUsers.length > 0 && (
+        { !selectedUsers.length > 0 && (
          <div>
          <button className="p-2 hover:bg-gray-100 rounded-md">
             <ArrowsUpDownIcon className="h-6 w-6 text-gray-600" />
@@ -412,13 +413,19 @@ export default function UserManagement() {
                 />
               </TableCell>
               <TableCell className="font-medium">
-                <div className="flex items-center">
+                <Link
+                  href={{
+                    pathname: '/admin/utilisateurs/details',
+                    query: { userId: user.id },
+                  }}
+                  className="flex items-center hover:bg-gray-100 rounded-md p-1 transition-colors"
+                >
                   <Avatar className="h-8 w-8 mr-2">
                     <AvatarImage src="/placeholder.svg?height=32&width=32" alt={user.name} />
                     <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                   </Avatar>
-                  {user.name}
-                </div>
+                  <span className="text-blue-600 hover:underline">{user.name}</span>
+                </Link>
               </TableCell>
               <TableCell>{user.role}</TableCell>
               <TableCell className='font-medium'>
