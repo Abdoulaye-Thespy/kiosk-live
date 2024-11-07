@@ -21,7 +21,9 @@ import {
   ArrowUpCircleIcon,
   XMarkIcon,
   FunnelIcon,
-  ArrowsUpDownIcon
+  ArrowsUpDownIcon,
+  TrashIcon, 
+  PencilIcon
 } from '@heroicons/react/24/solid';
 
 import { format } from "date-fns"
@@ -46,12 +48,19 @@ export default function UserManagement() {
     }
   }
 
+  const handleDelete = () => {
+    // Implement delete functionality here
+    console.log('Deleting users:', selectedUsers)
+  }
+
   const handleSelectUser = (userId: number, checked: boolean) => {
     if (checked) {
       setSelectedUsers([...selectedUsers, userId])
     } else {
       setSelectedUsers(selectedUsers.filter(id => id !== userId))
     }
+
+
   }
 
   const [isModalOpen, setIsModalOpen] = React.useState(false)
@@ -270,8 +279,32 @@ export default function UserManagement() {
           </Select>
         </div>
         <div>
+        {selectedUsers.length > 0 && (
+          <Button 
+              onClick={handleDelete}
+              className='bg-white border border-gray-500 text-black-500 font-medium py-2 px-4 rounded inline-flex items-center'
 
-          <button className="p-2 hover:bg-gray-100 rounded-md">
+            >
+              <TrashIcon className="h-4 w-4" />
+              Supprimer
+            </Button>
+
+         )}
+
+      { selectedUsers.length == 1 && (
+        <Button 
+
+        className='bg-white border border-gray-500 text-black-500 font-medium py-2 px-4 rounded inline-flex items-center ml-4'
+
+        >
+        <PencilIcon className="h-4 w-4" />
+          Modifier
+        </Button>
+        )}
+
+        { ! selectedUsers.length > 0 && (
+         <div>
+         <button className="p-2 hover:bg-gray-100 rounded-md">
             <ArrowsUpDownIcon className="h-6 w-6 text-gray-600" />
           </button>
 
@@ -343,6 +376,11 @@ export default function UserManagement() {
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
+
+         </div>
+        )}
+
+
         </div>
       </div>
 
