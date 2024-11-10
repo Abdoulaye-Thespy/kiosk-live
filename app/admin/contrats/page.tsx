@@ -30,6 +30,8 @@ import {
 import { format } from "date-fns"
 import { fr } from "date-fns/locale"
 
+import ContractDetails from '@/app/ui/contrat/details';
+
 const contracts = [
   {
     id: 1,
@@ -352,9 +354,7 @@ export default function ContractManagement() {
                 </span>
               </TableCell>
               <TableCell className="text-right">
-                <Button variant="ghost" size="icon">
-                  <EllipsisHorizontalIcon className="h-4 w-4" />
-                </Button>
+               <ContractDetails />
               </TableCell>
             </TableRow>
           ))}
