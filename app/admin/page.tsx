@@ -3,12 +3,9 @@ import React, { useState, useRef, useEffect } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-import { EnvelopeIcon, BellIcon, EllipsisHorizontalIcon, ArrowDownTrayIcon, MagnifyingGlassIcon, UserGroupIcon, UserPlusIcon } from '@heroicons/react/24/outline'
 
 import {
   ArrowLongRightIcon,
@@ -20,6 +17,8 @@ import {
 import { Search, RefreshCw, TrendingUp, Users, Store, FileText, Building2, ArrowUpRight, ArrowRight } from "lucide-react"
 
 import styles from '@/app/ui/dashboard.module.css';
+import Header from '../ui/header';
+
 
 const data = [
   { name: 'Jan', value: 2000 },
@@ -53,25 +52,7 @@ export default function UserManagement() {
 
   return (
     <div className="container mx-auto space-y-6">
-      <header className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Tableau de Bord</h1>
-        <div className="flex space-x-2">
-          <Button variant="ghost" size="icon">
-            <EnvelopeIcon className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon">
-            <BellIcon className="h-4 w-4" />
-          </Button>
-          <Avatar>
-            <AvatarImage src="/placeholder.svg?height=32&width=32" alt="User" />
-            <AvatarFallback>U</AvatarFallback>
-          </Avatar>
-          <Button variant="ghost" size="icon">
-            <EllipsisHorizontalIcon className="h-4 w-4" />
-          </Button>
-        </div>
-      </header>
-      <hr />
+      <Header title ="Tableau de Bord"/>
       <div className="p-6">
         {/* Stats Grid */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

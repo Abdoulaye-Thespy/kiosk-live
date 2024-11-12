@@ -25,11 +25,7 @@ export default function ContractDetailsModal() {
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle>Details du contrat</DialogTitle>
-            <DialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full">
-                <XMarkIcon className="h-4 w-4" />
-              </Button>
-            </DialogTrigger>
+
           </div>
         </DialogHeader>
         <ScrollArea className="max-h-[80vh] pr-4">

@@ -26,6 +26,7 @@ import {
 
 import { format } from "date-fns"
 import { fr } from "date-fns/locale"
+import Header from '@/app/ui/header';
 
 const users = [
   { id: 1, name: 'Darlene Robertson', role: 'Client', email: 'darlenerobertson@gmail.com', number: '+237 691 234 567', date: '01/02/2024', status: 'Inactif' },
@@ -97,25 +98,7 @@ export default function UserManagement() {
 
   return (
     <div className="container mx-auto space-y-6">
-      <header className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Utilisateurs</h1>
-        <div className="flex space-x-2">
-          <Button variant="ghost" size="icon">
-            <EnvelopeIcon className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon">
-            <BellIcon className="h-4 w-4" />
-          </Button>
-          <Avatar>
-            <AvatarImage src="/placeholder.svg?height=32&width=32" alt="User" />
-            <AvatarFallback>U</AvatarFallback>
-          </Avatar>
-          <Button variant="ghost" size="icon">
-            <EllipsisHorizontalIcon className="h-4 w-4" />
-          </Button>
-        </div>
-      </header>
-      <hr />
+     <Header title ="Utilisateurs"/>
 
       <div className="flex justify-end items-center">
         <Button variant="ghost">
