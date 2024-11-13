@@ -101,17 +101,17 @@ export default function UserManagement() {
 
           <Card className={`shadow-md ${styles.carte}`}>
             <CardHeader className={`flex flex-column space-y-0 pb-2 shadow-md ${styles.carteEntete}`}>
-              <CardTitle className="text-sm font-medium">Contrats actif et exprirés</CardTitle>
+              <CardTitle className="text-xs font-medium">Contrats actif et exprirés</CardTitle>
               <div className="flex items-baseline space-x-3 ">
-                <div className="text-2xl font-bold mt-2">14</div>
+                <div className="text-xl font-bold mt-2">14</div>
                 <div className="flex items-center bg-green-500 rounded-full bg-opacity-15 px-2 py-0.5">
-                  <div className="ml-2 text-medium text-gray-500">Actifs</div>
+                  <div className="ml-2 text-xm text-black-500 font-bold">Actifs</div>
                 </div>
               </div>
               <div className="flex items-baseline space-x-3 ">
-                <div className="text-2xl font-bold mt-2">1,822</div>
-                <div className="flex items-center bg-green-500 rounded-full bg-opacity-15 px-2 py-0.5">
-                  <div className="ml-2 text-medium text-gray-500">Expirés</div>
+                <div className="text-xl font-bold mt-2">1,822</div>
+                <div className="flex items-center bg-red-500 rounded-full bg-opacity-15 px-2 py-0.5">
+                  <div className="ml-2 text-xm font-bold text-black-500">Expirés</div>
                 </div>
               </div>
             </CardHeader>
@@ -123,22 +123,15 @@ export default function UserManagement() {
               <CardTitle className="text-sm font-medium">Factures en attentes</CardTitle>
               <div className="flex items-baseline space-x-3 ">
                 <div className="text-2xl font-bold mt-2">14</div>
-                <div className="flex items-center bg-green-500 rounded-full bg-opacity-15 px-2 py-0.5">
-                  <div className="inline-block  text-xs font-medium text-green-500 flex items-center">
-                    <ArrowUpCircleIcon className='inline-block h-5 w-5' />
-
-                  </div>
-                  <div className="ml-2 text-medium text-gray-500">5.2%</div>
+                <div className="flex items-center bg-red-500 rounded-full bg-opacity-15 px-2 py-0.5">
+       
+                  <div className="ml-2 text-xm font-bold text-black-500">En attente</div>
                 </div>
               </div>
               <div className="flex items-baseline space-x-3 ">
                 <div className="text-2xl font-bold mt-2">1,822</div>
-                <div className="flex items-center bg-green-500 rounded-full bg-opacity-15 px-2 py-0.5">
-                  <div className="inline-block  text-xs font-medium text-green-500 flex items-center">
-                    <ArrowUpCircleIcon className='inline-block h-5 w-5' />
-
-                  </div>
-                  <div className="ml-2 text-medium text-gray-500">5.2%</div>
+                <div className="flex items-center bg-red-500 rounded-full bg-opacity-15 px-2 py-0.5">
+                  <div className="ml-2 text-xm font-bold text-black-500">En attente</div>
                 </div>
               </div>
             </CardHeader>

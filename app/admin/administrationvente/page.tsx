@@ -132,9 +132,7 @@ export default function AdminDashboard() {
         </TabsContent>
 
         <TabsContent value="compartments">
-          <div className=" flex items-center justify-center border rounded-lg">
           <TabFour />
-          </div>
         </TabsContent>
 
         <TabsContent value="dashboard">
