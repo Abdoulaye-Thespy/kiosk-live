@@ -330,15 +330,9 @@ export default function ContractManagement() {
                 />
               </TableCell>
               <TableCell className="font-medium">
-                <Link
-                  href={{
-                    pathname: '/admin/contrats/details',
-                    query: { contractId: contract.id },
-                  }}
-                  className="flex items-center hover:bg-gray-100 rounded-md p-1 transition-colors"
-                >
-                  <span className="text-blue-600 hover:underline">{contract.contractorName}</span>
-                </Link>
+  
+                  <span className="text-blue-600">{contract.contractorName}</span>
+
               </TableCell>
               <TableCell>{contract.contractNumber}</TableCell>
               <TableCell>{contract.startDate}</TableCell>
