@@ -41,7 +41,7 @@ const tickets = [
   { id: "1332", kiosk: "Kiosk_1358", creationDate: "01/02/2024", resolutionDate: "01/02/2024", technician: "Alain NGONO", status: "Bas", priority: "En cours" },
 ]
 
-export default function MaintenanceDashboard() {
+export default function TabTwoMaintenance() {
   const [selectedTickets, setSelectedTickets] = useState<string[]>([])
   const [selectedStatus, setSelectedStatus] = useState<string>("")
   const [searchTerm, setSearchTerm] = useState('')
@@ -94,37 +94,6 @@ export default function MaintenanceDashboard() {
 
   return (
     <div className="container mx-auto p-4 space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {metrics.map((metric, index) => (
-          <Card key={index}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{metric.title}</CardTitle>
-              <ArrowDownTrayIcon className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{metric.value}</div>
-              {metric.subValue && (
-                <p className="text-xs text-muted-foreground">
-                  {metric.subValue} {metric.subLabel}
-                </p>
-              )}
-              {metric.trend && (
-                <div className={`flex items-center text-xs ${metric.color}`}>
-                  <ArrowUpIcon className="h-4 w-4 mr-1" />
-                  {metric.trendValue}
-                </div>
-              )}
-              {!metric.trend && metric.subLabel && (
-                <p className="text-xs text-muted-foreground flex items-center">
-                  {metric.subLabel}
-                  <ArrowRightIcon className="h-4 w-4 ml-1" />
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
       <div className="flex justify-between items-center space-x-4 p-4 bg-white shadow rounded-lg">
         <div className="flex items-center space-x-4">
           <div className="relative">

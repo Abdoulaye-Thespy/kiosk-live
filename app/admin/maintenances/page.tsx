@@ -3,6 +3,9 @@
 import React, { useState } from 'react'
 import { cn } from "@/lib/utils"
 import Header from '@/app/ui/header'
+import TabOneMaintenance from '@/app/ui/maintenance/tab1'
+import TabTwoMaintenance from '@/app/ui/maintenance/tab2'
+import TabThreeMaintenance from '@/app/ui/maintenance/tab3'
 
 const tabs = [
   { id: 'overview', label: "Vue d'ensemble" },
@@ -43,19 +46,19 @@ export default function MaintenanceManagement() {
         {activeTab === 'overview' && (
           <div>
             <h2 className="text-2xl font-bold mb-4">Vue d'ensemble</h2>
-            {/* Insert Overview component here */}
+            <TabOneMaintenance />
           </div>
         )}
         {activeTab === 'maintenance' && (
           <div>
             <h2 className="text-2xl font-bold mb-4">Tickets de maintenance</h2>
-            {/* Insert Maintenance Tickets component here */}
+            <TabTwoMaintenance />
           </div>
         )}
         {activeTab === 'planning' && (
           <div>
             <h2 className="text-2xl font-bold mb-4">Planification et suivi</h2>
-            {/* Insert Planning and Monitoring component here */}
+            <TabThreeMaintenance />
           </div>
         )}
         {activeTab === 'technicians' && (

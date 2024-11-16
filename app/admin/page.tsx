@@ -8,11 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
 import {
-  ArrowLongRightIcon,
+  ArrowDownTrayIcon,
+  UserPlusIcon,
   ArrowUpCircleIcon,
-  XMarkIcon,
-  FunnelIcon,
-  ArrowsUpDownIcon
 } from '@heroicons/react/24/solid';
 import { Search, RefreshCw, TrendingUp, Users, Store, FileText, Building2, ArrowUpRight, ArrowRight } from "lucide-react"
 
@@ -53,6 +51,18 @@ export default function UserManagement() {
   return (
     <div className="container mx-auto space-y-6">
       <Header title ="Tableau de Bord"/>
+      
+      <div className="flex justify-end items-center">
+        <Button variant="ghost">
+          <ArrowDownTrayIcon className="mr-2 h-4 w-4" />
+        </Button>
+        <Button className={styles.add}>
+          <UserPlusIcon className="mr-2 h-4 w-4" />
+          Download
+        </Button>
+      </div>
+      <hr />
+
       <div className="p-6">
         {/* Stats Grid */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

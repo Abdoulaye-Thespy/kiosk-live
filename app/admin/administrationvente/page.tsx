@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
@@ -12,7 +12,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   MagnifyingGlassIcon,
   AdjustmentsHorizontalIcon,
@@ -23,11 +22,19 @@ import {
 } from "@heroicons/react/24/outline"
 import { CheckCircleIcon, XCircleIcon, ClockIcon } from "@heroicons/react/24/solid"
 
-import TabTwo from '@/app/ui/administrationvente/tab2';
-import TabOne from '@/app/ui/administrationvente/tab1';
-import TabThree from '@/app/ui/administrationvente/tab3';
-import TabFour from '@/app/ui/administrationvente/tab4';
-import Header from '@/app/ui/header';
+import TabTwo from '@/app/ui/administrationvente/tab2'
+import TabOne from '@/app/ui/administrationvente/tab1'
+import TabThree from '@/app/ui/administrationvente/tab3'
+import TabFour from '@/app/ui/administrationvente/tab4'
+import Header from '@/app/ui/header'
+
+const tabs = [
+  { id: 'validation', label: "Validation des proformas", icon: ClipboardDocumentCheckIcon },
+  { id: 'activity', label: "Suivi de l'activité", icon: CalendarIcon },
+  { id: 'stats', label: "Chiffres sur l'activité", icon: ChartBarIcon },
+  { id: 'compartments', label: "Suivi des compartiments", icon: TableCellsIcon },
+  { id: 'dashboard', label: "Tableau de bord", icon: ChartBarIcon },
+]
 
 const proformas = [
   {
@@ -67,80 +74,72 @@ const proformas = [
   }
 ]
 
+const TabNavigation = ({ activeTab, onTabChange }) => {
+  return (
+    <nav className="flex space-x-1 border-b border-gray-200">
+      {tabs.map((tab) => (
+        <button
+          key={tab.id}
+          onClick={() => onTabChange(tab.id)}
+          className={`px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 focus:outline-none ${
+            activeTab === tab.id ? "border-b-2 border-orange-500 text-orange-600" : ""
+          }`}
+        >
+          <tab.icon className="h-4 w-4 mr-2 inline-block" />
+          {tab.label}
+        </button>
+      ))}
+    </nav>
+  )
+}
+
 export default function AdminDashboard() {
   const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [activeTab, setActiveTab] = useState('validation')
 
   return (
-    <div className="container mx-auto space-y-6">
-      <Header title ="Administration de Vente"/>
-
-      <Tabs defaultValue="validation" className="space-y-6">
-        <TabsList className="border-b w-full rounded-none p-0 h-auto">
-          <div className="flex gap-6 text-muted-foreground">
-            <TabsTrigger
-              value="validation"
-              className="relative h-10 rounded-none border-b-2 border-transparent px-4 pb-3 pt-2 font-semibold data-[state=active]:border-primary data-[state=active]:text-primary"
-            >
-              <ClipboardDocumentCheckIcon className="h-4 w-4 mr-2" />
-              Validation des proformas
-            </TabsTrigger>
-            <TabsTrigger
-              value="activity"
-              className="relative h-10 rounded-none border-b-2 border-transparent px-4 pb-3 pt-2 font-semibold data-[state=active]:border-primary data-[state=active]:text-primary"
-            >
-              <CalendarIcon className="h-4 w-4 mr-2" />
-              Suivi de l&apos;activité
-            </TabsTrigger>
-            <TabsTrigger
-              value="stats"
-              className="relative h-10 rounded-none border-b-2 border-transparent px-4 pb-3 pt-2 font-semibold data-[state=active]:border-primary data-[state=active]:text-primary"
-            >
-              <ChartBarIcon className="h-4 w-4 mr-2" />
-              Chiffres sur l&apos;activité
-            </TabsTrigger>
-            <TabsTrigger
-              value="compartments"
-              className="relative h-10 rounded-none border-b-2 border-transparent px-4 pb-3 pt-2 font-semibold data-[state=active]:border-primary data-[state=active]:text-primary"
-            >
-              <TableCellsIcon className="h-4 w-4 mr-2" />
-              Suivi des compartiments
-            </TabsTrigger>
-            <TabsTrigger
-              value="dashboard"
-              className="relative h-10 rounded-none border-b-2 border-transparent px-4 pb-3 pt-2 font-semibold data-[state=active]:border-primary data-[state=active]:text-primary"
-            >
-              <ChartBarIcon className="h-4 w-4 mr-2" />
-              Tableau de bord
-            </TabsTrigger>
+    <div className="container mx-auto p-4">
+      <Header title="Administration de Vente" />
+      <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+      
+      <div className="mt-4">
+        {activeTab === 'validation' && (
+          <div>
+            <h2 className="text-2xl font-bold mb-4">Validation des proformas</h2>
+            <TabOne />
           </div>
-        </TabsList>
-
-        <TabsContent value="validation" className="space-y-4">
-        <TabOne />
-        </TabsContent>
-
-        <TabsContent value="activity">
-          <div className=" flex items-center justify-center border rounded-lg">
-            <TabTwo />
+        )}
+        {activeTab === 'activity' && (
+          <div>
+            <h2 className="text-2xl font-bold mb-4">Suivi de l'activité</h2>
+            <div className="flex items-center justify-center border rounded-lg">
+              <TabTwo />
+            </div>
           </div>
-        </TabsContent>
-
-        <TabsContent value="stats">
-          <div className=" flex items-center justify-center border rounded-lg">
-          <TabThree />
+        )}
+        {activeTab === 'stats' && (
+          <div>
+            <h2 className="text-2xl font-bold mb-4">Chiffres sur l'activité</h2>
+            <div className="flex items-center justify-center border rounded-lg">
+              <TabThree />
+            </div>
           </div>
-        </TabsContent>
-
-        <TabsContent value="compartments">
-          <TabFour />
-        </TabsContent>
-
-        <TabsContent value="dashboard">
-          <div className="h-[400px] flex items-center justify-center border rounded-lg">
-            <p className="text-muted-foreground">Tableau de bord content</p>
+        )}
+        {activeTab === 'compartments' && (
+          <div>
+            <h2 className="text-2xl font-bold mb-4">Suivi des compartiments</h2>
+            <TabFour />
           </div>
-        </TabsContent>
-      </Tabs>
+        )}
+        {activeTab === 'dashboard' && (
+          <div>
+            <h2 className="text-2xl font-bold mb-4">Tableau de bord</h2>
+            <div className="h-[400px] flex items-center justify-center border rounded-lg">
+              <p className="text-muted-foreground">Contenu du tableau de bord à implémenter</p>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
