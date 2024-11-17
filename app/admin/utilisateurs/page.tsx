@@ -15,6 +15,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { EnvelopeIcon, BellIcon, EllipsisHorizontalIcon, ArrowDownTrayIcon, MagnifyingGlassIcon, UserGroupIcon, UserPlusIcon } from '@heroicons/react/24/outline'
 import styles from '@/app/ui/utilisateurs.module.css';
 import {
@@ -61,8 +62,6 @@ export default function UserManagement() {
     } else {
       setSelectedUsers(selectedUsers.filter(id => id !== userId))
     }
-
-
   }
 
   const [isModalOpen, setIsModalOpen] = React.useState(false)
@@ -105,11 +104,9 @@ export default function UserManagement() {
     // setIsFilterOpen(false)
   }
 
-
   return (
     <div className="container mx-auto space-y-6">
       <Header title ="Utilisateurs"/>
-
 
       <div className="flex justify-end items-center">
         <Button variant="ghost">
@@ -119,8 +116,8 @@ export default function UserManagement() {
           <UserPlusIcon className="mr-2 h-4 w-4" />
           Ajouter des utilisateurs
         </Button>
+        
         <div>
-
           {isModalOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center">
               <div className="fixed inset-0 bg-black bg-opacity-25 backdrop-blur-sm" onClick={closeModal}></div>
@@ -204,7 +201,6 @@ export default function UserManagement() {
               <div className="flex items-center bg-green-500 rounded-full bg-opacity-15 px-2 py-0.5">
                 <div className="inline-block  text-xs font-medium text-green-500 flex items-center">
                   <ArrowUpCircleIcon className='inline-block h-5 w-5' />
-
                 </div>
                 <div className="ml-2 text-medium text-gray-500">5.2%</div>
               </div>
@@ -226,7 +222,6 @@ export default function UserManagement() {
               <div className="flex items-center bg-green-500 rounded-full bg-opacity-15 px-2 py-0.5">
                 <div className="inline-block  text-xs font-medium text-green-500 flex items-center">
                   <ArrowUpCircleIcon className='inline-block h-5 w-5' />
-
                 </div>
                 <div className="ml-2 text-medium text-gray-500">5.2%</div>
               </div>
@@ -240,7 +235,6 @@ export default function UserManagement() {
       </div>
 
       <div className="flex items-center justify-between space-x-4 p-4 bg-white shadow rounded-lg">
-
         <div className='flex'>
           <div className="relative mr-5">
             <Input
@@ -268,19 +262,15 @@ export default function UserManagement() {
           <Button 
               onClick={handleDelete}
               className='bg-white border border-gray-500 text-black-500 font-medium py-2 px-4 rounded inline-flex items-center'
-
             >
               <TrashIcon className="h-4 w-4" />
               Supprimer
             </Button>
-
          )}
 
       { selectedUsers.length == 1 && (
         <Button 
-
         className='bg-white border border-gray-500 text-black-500 font-medium py-2 px-4 rounded inline-flex items-center ml-4'
-
         >
         <PencilIcon className="h-4 w-4" />
           Modifier
@@ -306,8 +296,7 @@ export default function UserManagement() {
                 className="w-80 p-0 bg-white border border-gray-200 shadow-lg text-black"
                 ref={filterRef}
               >
-                <div className="p-4 space-y-4 text-black" 
-                >
+                <div className="p-4 space-y-4 text-black">
                   <h3 className="font-semibold text-lg text-black">Filtre</h3>
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-black">Rôle</label>
@@ -323,24 +312,27 @@ export default function UserManagement() {
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-black">Date</label>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button variant="outline" className="w-full justify-start text-left font-normal text-black">
-                          {filterDate ? format(filterDate, "P", { locale: fr }) : "Sélectionner la date"}
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button 
+                          variant="outline" 
+                          className="w-full justify-start text-left font-normal"
+                        >
+                          {filterDate 
+                            ? format(filterDate, "P", { locale: fr }) 
+                            : "Sélectionner la date"
+                          }
                         </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="right" align="start" className="w-auto p-0 bg-white">
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
                         <Calendar
                           mode="single"
                           selected={filterDate}
-                          onSelect={(date) => {
-                            setFilterDate(date)
-                          }}
+                          onSelect={setFilterDate}
                           initialFocus
-                          className="text-black"
                         />
-                      </TooltipContent>
-                    </Tooltip>
+                      </PopoverContent>
+                    </Popover>
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-black">Statut</label>
@@ -362,11 +354,8 @@ export default function UserManagement() {
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
-
          </div>
         )}
-
-
         </div>
       </div>
 

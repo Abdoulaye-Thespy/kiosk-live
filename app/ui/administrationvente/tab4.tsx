@@ -11,8 +11,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { MagnifyingGlassIcon, AdjustmentsHorizontalIcon } from "@heroicons/react/24/outline"
+import { MagnifyingGlassIcon, FunnelIcon, ArrowsUpDownIcon } from "@heroicons/react/24/outline"
 import { BuildingOffice2Icon } from "@heroicons/react/24/solid"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface KioskData {
   id: string
@@ -130,7 +132,21 @@ const kioskData: KioskData[] = [
 
 export default function KioskTable() {
   const [currentPage, setCurrentPage] = useState(1)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const [filterVille, setFilterVille] = useState('')
+  const [filterZone, setFilterZone] = useState('')
   const totalPages = 34
+
+  const resetFilters = () => {
+    setFilterVille('')
+    setFilterZone('')
+  }
+
+  const applyFilters = () => {
+    console.log('Filters applied:', { filterVille, filterZone })
+    setIsFilterOpen(false)
+  }
 
   return (
     <div className="space-y-4">
@@ -142,11 +158,62 @@ export default function KioskTable() {
               type="search"
               placeholder="Rechercher"
               className="pl-8 w-[250px]"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
+        </div>
+        <div className="flex items-center space-x-2">
           <Button variant="outline" size="icon">
-            <AdjustmentsHorizontalIcon className="h-4 w-4" />
+            <ArrowsUpDownIcon className="h-4 w-4" />
           </Button>
+          <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="icon">
+                <FunnelIcon className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80">
+              <div className="space-y-4">
+                <h3 className="font-medium text-lg">Filtres</h3>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Ville</label>
+                  <Select value={filterVille} onValueChange={setFilterVille}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner une ville" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Douala">Douala</SelectItem>
+                      <SelectItem value="Yaoundé">Yaoundé</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Zone</label>
+                  <Select value={filterZone} onValueChange={setFilterZone}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner une zone" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Zone 01">Zone 01</SelectItem>
+                      <SelectItem value="Zone 02">Zone 02</SelectItem>
+                      <SelectItem value="Zone 03">Zone 03</SelectItem>
+                      <SelectItem value="Zone 04">Zone 04</SelectItem>
+                      <SelectItem value="Zone 05">Zone 05</SelectItem>
+                      <SelectItem value="Zone Y1">Zone Y1</SelectItem>
+                      <SelectItem value="Zone Y2">Zone Y2</SelectItem>
+                      <SelectItem value="Zone Y3">Zone Y3</SelectItem>
+                      <SelectItem value="Zone Y4">Zone Y4</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex justify-between">
+                  <Button variant="outline" onClick={resetFilters}>Réinitialiser</Button>
+                  <Button onClick={applyFilters}>Appliquer</Button>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
 

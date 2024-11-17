@@ -15,6 +15,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { EnvelopeIcon, BellIcon, EllipsisHorizontalIcon, ArrowDownTrayIcon, MagnifyingGlassIcon, DocumentPlusIcon, EyeIcon } from '@heroicons/react/24/outline'
 import {
   ArrowsUpDownIcon,
@@ -197,22 +198,27 @@ export default function RapportManagement() {
                       </div>
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-black">Date</label>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button variant="outline" className="w-full justify-start text-left font-normal text-black">
-                              {filterDate ? format(filterDate, "P", { locale: fr }) : "Sélectionner la date"}
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button 
+                              variant="outline" 
+                              className="w-full justify-start text-left font-normal"
+                            >
+                              {filterDate 
+                                ? format(filterDate, "P", { locale: fr }) 
+                                : "Sélectionner la date"
+                              }
                             </Button>
-                          </TooltipTrigger>
-                          <TooltipContent side="right" align="start" className="w-auto p-0 bg-white">
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
                             <Calendar
                               mode="single"
                               selected={filterDate}
-                              onSelect={(date) => setFilterDate(date)}
+                              onSelect={setFilterDate}
                               initialFocus
-                              className="text-black"
                             />
-                          </TooltipContent>
-                        </Tooltip>
+                          </PopoverContent>
+                        </Popover>
                       </div>
                       <div className="flex justify-between">
                         <Button variant="outline" onClick={resetFilters} className="text-black">Réinitialiser</Button>
