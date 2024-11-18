@@ -195,7 +195,7 @@ export default function UserManagement() {
                   <ArrowUpCircleIcon className='inline-block h-5 w-5' />
 
                 </div>
-                <div className="ml-2 text-medium text-gray-500">5.2%</div>
+                <div className="ml-2 text-medium text-gray-500">5ddd.2%</div>
               </div>
             </div>
             <div className="mt-2 flex items-center justify-between text-sm text-muted-foreground w-70">

@@ -190,45 +190,47 @@ export default function UserManagement() {
       <hr />
 
       <div className="grid grid-cols-2 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total d'utilisateurs</CardTitle>
-            <UserPlusIcon className="h-4 w-4 text-muted-foreground text-" />
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-baseline space-x-8">
-              <div className="text-2xl font-bold">1,822</div>
+        <Card className={`shadow-md ${styles.carte}`}>
+          <CardHeader className={`flex flex-column space-y-0 pb-2 shadow-md ${styles.carteEntete}`}>
+            <CardTitle className="text-sm font-medium">Total d’utilisateurs</CardTitle>
+            <div className="flex items-baseline space-x-3 ">
+              <div className="text-2xl font-bold mt-2">1,822</div>
               <div className="flex items-center bg-green-500 rounded-full bg-opacity-15 px-2 py-0.5">
                 <div className="inline-block  text-xs font-medium text-green-500 flex items-center">
                   <ArrowUpCircleIcon className='inline-block h-5 w-5' />
+
                 </div>
                 <div className="ml-2 text-medium text-gray-500">5.2%</div>
               </div>
             </div>
-            <div className="mt-2 flex items-center justify-between text-sm text-muted-foreground w-70">
-              <span><b>+140</b> Ce dernier mois</span>
-              <ArrowLongRightIcon className="h-4 w-4" />
+          </CardHeader>
+          <CardContent>
+
+            <div className="flex items-center text-medium">
+              <p> <span className='font-bold'>+22</span> le dernier mois</p>
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+
+
+        <Card className={`shadow-md ${styles.carte}`}>
+          <CardHeader className={`flex flex-column space-y-0 pb-2 shadow-md ${styles.carteEntete}`}>
             <CardTitle className="text-sm font-medium">Nouveaux utilisateurs</CardTitle>
-            <UserPlusIcon className="h-4 w-4 text-muted-foreground text-" />
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-baseline space-x-8">
-              <div className="text-2xl font-bold">1,822</div>
+            <div className="flex items-baseline space-x-3 ">
+              <div className="text-2xl font-bold mt-2">1,822</div>
               <div className="flex items-center bg-green-500 rounded-full bg-opacity-15 px-2 py-0.5">
                 <div className="inline-block  text-xs font-medium text-green-500 flex items-center">
                   <ArrowUpCircleIcon className='inline-block h-5 w-5' />
+
                 </div>
                 <div className="ml-2 text-medium text-gray-500">5.2%</div>
               </div>
             </div>
-            <div className="mt-2 flex items-center justify-between text-sm text-muted-foreground w-70">
-              <span><b>+140</b> Ce dernier mois</span>
-              <ArrowLongRightIcon className="h-4 w-4" />
+          </CardHeader>
+          <CardContent>
+
+            <div className="flex items-center text-medium">
+              <p> <span className='font-bold'>+22</span> le dernier mois</p>
             </div>
           </CardContent>
         </Card>
@@ -277,7 +279,7 @@ export default function UserManagement() {
         </Button>
         )}
 
-        { !selectedUsers.length > 0 && (
+        { selectedUsers.length == 0 && (
          <div>
          <button className="p-2 hover:bg-gray-100 rounded-md">
             <ArrowsUpDownIcon className="h-6 w-6 text-gray-600" />

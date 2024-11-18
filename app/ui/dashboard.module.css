@@ -11,3 +11,12 @@
    .add {
     background-color: #E5520F;
    }
+
+   .refresh {
+    background-color: #DFE1E6;
+    margin-right: 10px;
+   }
+
+   .select {
+    background-color: red;
+   }
