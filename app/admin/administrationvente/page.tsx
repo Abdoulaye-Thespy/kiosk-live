@@ -74,7 +74,7 @@ const proformas = [
   }
 ]
 
-const TabNavigation = ({ activeTab, onTabChange }) => {
+const TabNavigation = ({ activeTab, onTabChange }: { activeTab: string; onTabChange: Function }) => {
   return (
     <nav className="flex space-x-1 border-b border-gray-200">
       {tabs.map((tab) => (
