@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { MoreHorizontal, Download } from 'lucide-react'
+import ContractDetails from '../contrat/details'
 
 const metrics = [
   { 
@@ -275,6 +276,9 @@ export default function TabTwoFacturePaiment() {
                     {getStatusLabel(invoice.status)}
                   </span>
                 </TableCell>
+            <TableCell className="text-right">
+               <ContractDetails />
+            </TableCell>
                 <TableCell>
                   <Button variant="ghost" size="icon">
                     <MoreHorizontal className="h-4 w-4" />
