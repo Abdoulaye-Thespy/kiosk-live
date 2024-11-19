@@ -84,7 +84,7 @@ const contracts = [
 export default function ContractManagement() {
   const [selectedContracts, setSelectedContracts] = React.useState<number[]>([])
 
-  const handleSelectAll = (checked: boolean) => {
+  const handleSelectAll = (checked: string) => {
     if (checked) {
       setSelectedContracts(contracts.map(contract => contract.id))
     } else {
@@ -96,7 +96,7 @@ export default function ContractManagement() {
     console.log('Deleting contracts:', selectedContracts)
   }
 
-  const handleSelectContract = (contractId: number, checked: boolean) => {
+  const handleSelectContract = (contractId: number, checked: string) => {
     if (checked) {
       setSelectedContracts([...selectedContracts, contractId])
     } else {

@@ -39,7 +39,7 @@ const users = [
 export default function UserManagement() {
   const [selectedUsers, setSelectedUsers] = React.useState<number[]>([])
 
-  const handleSelectAll = (checked: boolean) => {
+  const handleSelectAll = (checked: string) => {
     if (checked) {
       setSelectedUsers(users.map(user => user.id))
     } else {
@@ -47,7 +47,7 @@ export default function UserManagement() {
     }
   }
 
-  const handleSelectUser = (userId: number, checked: boolean) => {
+  const handleSelectUser = (userId: number, checked: string) => {
     if (checked) {
       setSelectedUsers([...selectedUsers, userId])
     } else {

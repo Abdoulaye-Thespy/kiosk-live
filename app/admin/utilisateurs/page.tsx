@@ -385,7 +385,7 @@ export default function UserManagement() {
               <TableCell>
                 <Checkbox
                   checked={selectedUsers.includes(user.id)}
-                  onCheckedChange={(checked) => handleSelectUser(user.id, checked)}
+                  onCheckedChange={(checked) => handleSelectUser(user.id, !checked)}
                 />
               </TableCell>
               <TableCell className="font-medium">
