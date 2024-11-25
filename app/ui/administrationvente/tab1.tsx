@@ -35,6 +35,7 @@ export default function AdminSalesTable() {
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const [filterStatus, setFilterStatus] = useState('')
   const [filterDate, setFilterDate] = useState<Date | undefined>(undefined)
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false)
 
   const proformas: Proforma[] = [
     { id: '1', client: 'Client A', amount: '1000€', date: '2023-06-01', status: 'Validée' },
@@ -60,6 +61,11 @@ export default function AdminSalesTable() {
   const applyFilters = () => {
     console.log('Filters applied:', { filterStatus, filterDate })
     setIsFilterOpen(false)
+  }
+
+  const handleDateSelect = (date: Date | undefined) => {
+    setFilterDate(date)
+    setIsCalendarOpen(false)
   }
 
   return (
@@ -105,7 +111,7 @@ export default function AdminSalesTable() {
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Date</label>
-                  <Popover>
+                  <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
@@ -118,7 +124,7 @@ export default function AdminSalesTable() {
                       <Calendar
                         mode="single"
                         selected={filterDate}
-                        onSelect={setFilterDate}
+                        onSelect={handleDateSelect}
                         initialFocus
                       />
                     </PopoverContent>

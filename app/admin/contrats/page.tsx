@@ -1,5 +1,6 @@
 'use client';
-import React, { useState, useRef, useEffect } from 'react'
+
+import React, { useState } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
@@ -9,12 +10,6 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Calendar } from "@/components/ui/calendar"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { EnvelopeIcon, BellIcon, EllipsisHorizontalIcon, ArrowDownTrayIcon, MagnifyingGlassIcon, DocumentPlusIcon } from '@heroicons/react/24/outline'
 import styles from '@/app/ui/contrats.module.css';
@@ -82,9 +77,17 @@ const contracts = [
 ]
 
 export default function ContractManagement() {
-  const [selectedContracts, setSelectedContracts] = React.useState<number[]>([])
+  const [selectedContracts, setSelectedContracts] = useState<number[]>([])
+  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedContractType, setSelectedContractType] = useState('all')
+  const [filterStatus, setFilterStatus] = useState('')
+  const [filterStartDate, setFilterStartDate] = useState<Date | undefined>(undefined)
+  const [filterEndDate, setFilterEndDate] = useState<Date | undefined>(undefined)
+  const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const [isStartDateOpen, setIsStartDateOpen] = useState(false)
+  const [isEndDateOpen, setIsEndDateOpen] = useState(false)
 
-  const handleSelectAll = (checked: string) => {
+  const handleSelectAll = (checked: boolean) => {
     if (checked) {
       setSelectedContracts(contracts.map(contract => contract.id))
     } else {
@@ -96,35 +99,13 @@ export default function ContractManagement() {
     console.log('Deleting contracts:', selectedContracts)
   }
 
-  const handleSelectContract = (contractId: number, checked: string) => {
+  const handleSelectContract = (contractId: number, checked: boolean) => {
     if (checked) {
       setSelectedContracts([...selectedContracts, contractId])
     } else {
       setSelectedContracts(selectedContracts.filter(id => id !== contractId))
     }
   }
-
-  const [searchTerm, setSearchTerm] = useState('')
-  const [selectedContractType, setSelectedContractType] = useState('all')
-  const [filterStatus, setFilterStatus] = useState('')
-  const [filterStartDate, setFilterStartDate] = useState<Date | undefined>(undefined)
-  const [filterEndDate, setFilterEndDate] = useState<Date | undefined>(undefined)
-  const [isFilterOpen, setIsFilterOpen] = useState(false)
-
-  const filterRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (filterRef.current && !filterRef.current.contains(event.target as Node) && event.target !== filterRef.current) {
-        setIsFilterOpen(false)
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [])
 
   const resetFilters = () => {
     setFilterStatus('')
@@ -134,6 +115,17 @@ export default function ContractManagement() {
 
   const applyFilters = () => {
     console.log('Filters applied:', { filterStatus, filterStartDate, filterEndDate })
+    setIsFilterOpen(false)
+  }
+
+  const handleStartDateSelect = (date: Date | undefined) => {
+    setFilterStartDate(date)
+    setIsStartDateOpen(false)
+  }
+
+  const handleEndDateSelect = (date: Date | undefined) => {
+    setFilterEndDate(date)
+    setIsEndDateOpen(false)
   }
 
   return (
@@ -163,10 +155,10 @@ export default function ContractManagement() {
           <ArrowDownTrayIcon className="mr-2 h-4 w-4" />
         </Button>
         <Link href="/admin/contrats/nouveau">
-        <Button className={styles.add}>
-          <DocumentPlusIcon className="mr-2 h-4 w-4" />
-          Créer un nouveau contrat
-        </Button>
+          <Button className={styles.add}>
+            <DocumentPlusIcon className="mr-2 h-4 w-4" />
+            Créer un nouveau contrat
+          </Button>
         </Link>
       </div>
       <hr />
@@ -220,90 +212,83 @@ export default function ContractManagement() {
                 <ArrowsUpDownIcon className="h-6 w-6 text-gray-600" />
               </button>
 
-              <TooltipProvider>
-                <Tooltip open={isFilterOpen}>
-                  <TooltipTrigger asChild>
-                    <button className="p-2 hover:bg-gray-100 rounded-md" onClick={() => setIsFilterOpen(!isFilterOpen)}>
-                      <FunnelIcon className="h-6 w-6 text-gray-600" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent
-                    side="bottom"
-                    align="end"
-                    className="w-80 p-0 bg-white border border-gray-200 shadow-lg text-black"
-                    ref={filterRef}
-                  >
-                    <div className="p-4 space-y-4 text-black" >
-                      <h3 className="font-semibold text-lg text-black">Filtre</h3>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-black">Statut</label>
-                        <Select value={filterStatus} onValueChange={setFilterStatus}>
-                          <SelectTrigger className="text-black">
-                            <SelectValue placeholder="Sélectionner le statut" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="en_cours" className="text-black">En cours</SelectItem>
-                            <SelectItem value="termine" className="text-black">Terminé</SelectItem>
-                            <SelectItem value="en_attente" className="text-black">En attente</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-black">Date de début</label>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button 
-                              variant="outline" 
-                              className="w-full justify-start text-left font-normal"
-                            >
-                              {filterStartDate 
-                                ? format(filterStartDate, "P", { locale: fr }) 
-                                : "Sélectionner la date"
-                              }
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={filterStartDate}
-                              onSelect={setFilterStartDate}
-                              initialFocus
-                            />
-                          </PopoverContent>
-                        </Popover>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-black">Date de fin</label>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button 
-                              variant="outline" 
-                              className="w-full justify-start text-left font-normal"
-                            >
-                              {filterEndDate 
-                                ? format(filterEndDate, "P", { locale: fr }) 
-                                : "Sélectionner la date"
-                              }
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={filterEndDate}
-                              onSelect={setFilterEndDate}
-                              initialFocus
-                            />
-                          </PopoverContent>
-                        </Popover>
-                      </div>
-                      <div className="flex justify-between">
-                        <Button variant="outline" onClick={resetFilters} className="text-black">Réinitialiser</Button>
-                        <Button onClick={applyFilters} className="bg-orange-500 hover:bg-orange-600 text-white">Appliquer</Button>
-                      </div>
+              <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+                <PopoverTrigger asChild>
+                  <button className="p-2 hover:bg-gray-100 rounded-md">
+                    <FunnelIcon className="h-6 w-6 text-gray-600" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 p-0">
+                  <div className="p-4 space-y-4">
+                    <h3 className="font-semibold text-lg">Filtre</h3>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Statut</label>
+                      <Select value={filterStatus} onValueChange={setFilterStatus}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sélectionner le statut" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="en_cours">En cours</SelectItem>
+                          <SelectItem value="termine">Terminé</SelectItem>
+                          <SelectItem value="en_attente">En attente</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Date de début</label>
+                      <Popover open={isStartDateOpen} onOpenChange={setIsStartDateOpen}>
+                        <PopoverTrigger asChild>
+                          <Button 
+                            variant="outline" 
+                            className="w-full justify-start text-left font-normal"
+                          >
+                            {filterStartDate 
+                              ? format(filterStartDate, "P", { locale: fr }) 
+                              : "Sélectionner la date"
+                            }
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={filterStartDate}
+                            onSelect={handleStartDateSelect}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Date de fin</label>
+                      <Popover open={isEndDateOpen} onOpenChange={setIsEndDateOpen}>
+                        <PopoverTrigger asChild>
+                          <Button 
+                            variant="outline" 
+                            className="w-full justify-start text-left font-normal"
+                          >
+                            {filterEndDate 
+                              ? format(filterEndDate, "P", { locale: fr }) 
+                              : "Sélectionner la date"
+                            }
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={filterEndDate}
+                            onSelect={handleEndDateSelect}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    <div className="flex justify-between">
+                      <Button variant="outline" onClick={resetFilters}>Réinitialiser</Button>
+                      <Button onClick={applyFilters} className="bg-orange-500 hover:bg-orange-600 text-white">Appliquer</Button>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
           )}
         </div>
@@ -333,7 +318,7 @@ export default function ContractManagement() {
               <TableCell>
                 <Checkbox
                   checked={selectedContracts.includes(contract.id)}
-                  onCheckedChange={(checked) => handleSelectContract(contract.id, checked)}
+                  onCheckedChange={(checked) => handleSelectContract(contract.id, checked as boolean)}
                 />
               </TableCell>
               <TableCell className="font-medium">

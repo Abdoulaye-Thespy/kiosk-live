@@ -1,6 +1,14 @@
-import React from 'react'
+'use client'
+
+import React, { useState } from 'react'
 import { Card, CardContent } from "@/components/ui/card"
-import { Line, LineChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts"
+import { Button } from "@/components/ui/button"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar } from "@/components/ui/calendar"
+import { Line, LineChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Legend } from "recharts"
+import { FunnelIcon } from '@heroicons/react/24/outline'
+import { format } from "date-fns"
+import { fr } from "date-fns/locale"
 
 const metrics = [
     {
@@ -75,20 +83,15 @@ const chartData = [
     { date: '2024-02-28', facture: 400000, encaisse: 145000 },
 ]
 
-const CustomTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
-        return (
-            <div className="bg-white p-4 border rounded shadow">
-                <p className="text-sm text-gray-600">{`Date: ${label}`}</p>
-                <p className="text-sm text-blue-600">{`Facturé: ${payload[0].value} Fcfa`}</p>
-                <p className="text-sm text-green-600">{`Encaissé: ${payload[1].value} Fcfa`}</p>
-            </div>
-        );
-    }
-    return null;
-};
-
 export default function TabOneFacturePaiement() {
+    const [filterDate, setFilterDate] = useState<Date | undefined>(undefined)
+    const [isCalendarOpen, setIsCalendarOpen] = useState(false)
+
+    const handleDateSelect = (date: Date | undefined) => {
+        setFilterDate(date)
+        setIsCalendarOpen(false)
+    }
+
     return (
         <div className="space-y-8">
             <div className="grid grid-cols-4 gap-4">
@@ -107,7 +110,6 @@ export default function TabOneFacturePaiement() {
                                         </span>
                                     </div>
                                     <p className="text-lg font-semibold text-black-500">{metric.value}</p>
-
                                 </div>
                             </div>
                         </CardContent>
@@ -142,6 +144,21 @@ export default function TabOneFacturePaiement() {
                             </div>
                             <div className="flex items-center gap-2">
                                 <span className="text-2xl font-bold">$23,569.00</span>
+                                <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="outline" size="icon">
+                                            <FunnelIcon className="h-4 w-4" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0">
+                                        <Calendar
+                                            mode="single"
+                                            selected={filterDate}
+                                            onSelect={handleDateSelect}
+                                            initialFocus
+                                        />
+                                    </PopoverContent>
+                                </Popover>
                             </div>
                         </div>
                         <ResponsiveContainer width="100%" height={300}>
@@ -149,7 +166,6 @@ export default function TabOneFacturePaiement() {
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis dataKey="date" />
                                 <YAxis />
-                                <Tooltip content={<CustomTooltip />} />
                                 <Legend />
                                 <Line type="monotone" dataKey="facture" stroke="#8884d8" activeDot={{ r: 8 }} />
                                 <Line type="monotone" dataKey="encaisse" stroke="#82ca9d" />
@@ -169,6 +185,21 @@ export default function TabOneFacturePaiement() {
                             </div>
                             <div className="flex items-center gap-2">
                                 <span className="text-2xl font-bold">$23,569.00</span>
+                                <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="outline" size="icon">
+                                            <FunnelIcon className="h-4 w-4" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0">
+                                        <Calendar
+                                            mode="single"
+                                            selected={filterDate}
+                                            onSelect={handleDateSelect}
+                                            initialFocus
+                                        />
+                                    </PopoverContent>
+                                </Popover>
                             </div>
                         </div>
                         <ResponsiveContainer width="100%" height={300}>
@@ -176,7 +207,6 @@ export default function TabOneFacturePaiement() {
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis dataKey="date" />
                                 <YAxis />
-                                <Tooltip content={<CustomTooltip />} />
                                 <Legend />
                                 <Line type="monotone" dataKey="facture" stroke="#8884d8" activeDot={{ r: 8 }} />
                                 <Line type="monotone" dataKey="encaisse" stroke="#82ca9d" />

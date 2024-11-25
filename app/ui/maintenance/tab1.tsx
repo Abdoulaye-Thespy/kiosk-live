@@ -10,11 +10,11 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { ArrowUpIcon, ArrowRightIcon, ArrowDownTrayIcon, AdjustmentsHorizontalIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline"
+import { ArrowUpIcon, ArrowRightIcon, ArrowDownTrayIcon, AdjustmentsHorizontalIcon, ArrowUpCircleIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline"
 import { FunnelIcon, ArrowsUpDownIcon } from "@heroicons/react/24/solid"
 import { format } from "date-fns"
 import { fr } from "date-fns/locale"
+import styles from '@/app/ui/dashboard.module.css';
 
 const metrics = [
   { title: "Kiosques en maintenance", value: "366", subValue: "24", subLabel: "à planifier", trend: "up", color: "text-emerald-500" },
@@ -24,16 +24,6 @@ const metrics = [
 ]
 
 const tickets = [
-  { id: "1345", kiosk: "Kiosk_1345", creationDate: "01/02/2024", resolutionDate: "01/02/2024", technician: "Alain NGONO", status: "Bas", priority: "Annulé" },
-  { id: "1339", kiosk: "Kiosk_1368", creationDate: "01/02/2024", resolutionDate: "01/02/2024", technician: "Thierry NTAMACK", status: "Urgent", priority: "Done" },
-  { id: "1340", kiosk: "Kiosk_1368", creationDate: "01/02/2024", resolutionDate: "01/02/2024", technician: "Boris ADIOGO", status: "Normal", priority: "En cours" },
-  { id: "1346", kiosk: "Kiosk_1358", creationDate: "01/02/2024", resolutionDate: "01/02/2024", technician: "Bruno AYOLO", status: "Bas", priority: "Effectué" },
-  { id: "1332", kiosk: "Kiosk_1358", creationDate: "01/02/2024", resolutionDate: "01/02/2024", technician: "Alain NGONO", status: "Bas", priority: "En cours" },
-  { id: "1345", kiosk: "Kiosk_1345", creationDate: "01/02/2024", resolutionDate: "01/02/2024", technician: "Alain NGONO", status: "Bas", priority: "Annulé" },
-  { id: "1339", kiosk: "Kiosk_1368", creationDate: "01/02/2024", resolutionDate: "01/02/2024", technician: "Thierry NTAMACK", status: "Urgent", priority: "Done" },
-  { id: "1340", kiosk: "Kiosk_1368", creationDate: "01/02/2024", resolutionDate: "01/02/2024", technician: "Boris ADIOGO", status: "Normal", priority: "En cours" },
-  { id: "1346", kiosk: "Kiosk_1358", creationDate: "01/02/2024", resolutionDate: "01/02/2024", technician: "Bruno AYOLO", status: "Bas", priority: "Effectué" },
-  { id: "1332", kiosk: "Kiosk_1358", creationDate: "01/02/2024", resolutionDate: "01/02/2024", technician: "Alain NGONO", status: "Bas", priority: "En cours" },
   { id: "1345", kiosk: "Kiosk_1345", creationDate: "01/02/2024", resolutionDate: "01/02/2024", technician: "Alain NGONO", status: "Bas", priority: "Annulé" },
   { id: "1339", kiosk: "Kiosk_1368", creationDate: "01/02/2024", resolutionDate: "01/02/2024", technician: "Thierry NTAMACK", status: "Urgent", priority: "Done" },
   { id: "1340", kiosk: "Kiosk_1368", creationDate: "01/02/2024", resolutionDate: "01/02/2024", technician: "Boris ADIOGO", status: "Normal", priority: "En cours" },
@@ -49,21 +39,8 @@ export default function MaintenanceDashboard() {
   const [filterStartDate, setFilterStartDate] = useState<Date | undefined>(undefined)
   const [filterEndDate, setFilterEndDate] = useState<Date | undefined>(undefined)
   const [isFilterOpen, setIsFilterOpen] = useState(false)
-
-  const filterRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (filterRef.current && !filterRef.current.contains(event.target as Node) && event.target !== filterRef.current) {
-        setIsFilterOpen(false)
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [])
+  const [isStartDateOpen, setIsStartDateOpen] = useState(false)
+  const [isEndDateOpen, setIsEndDateOpen] = useState(false)
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -92,33 +69,38 @@ export default function MaintenanceDashboard() {
     setIsFilterOpen(false)
   }
 
+  const handleStartDateSelect = (date: Date | undefined) => {
+    setFilterStartDate(date)
+    setIsStartDateOpen(false)
+  }
+
+  const handleEndDateSelect = (date: Date | undefined) => {
+    setFilterEndDate(date)
+    setIsEndDateOpen(false)
+  }
+
   return (
     <div className="container mx-auto p-4 space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {metrics.map((metric, index) => (
-          <Card key={index}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <Card key={index} className={`shadow-md ${styles.carte}`}>
+            <CardHeader className={`flex flex-column space-y-0 pb-2 shadow-md ${styles.carteEntete}`}>
               <CardTitle className="text-sm font-medium">{metric.title}</CardTitle>
-              <ArrowDownTrayIcon className="h-4 w-4 text-muted-foreground" />
+              <div className="flex items-baseline space-x-3">
+                <div className="text-2xl font-bold mt-2">{metric.value}</div>
+                {metric.trend && (
+                  <div className="flex items-center bg-green-500 rounded-full bg-opacity-15 px-2 py-0.5">
+                    <ArrowUpCircleIcon className='inline-block h-5 w-5 text-green-500' />
+                    <div className="ml-2 text-medium text-gray-500">{metric.trendValue}</div>
+                  </div>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{metric.value}</div>
-              {metric.subValue && (
-                <p className="text-xs text-muted-foreground">
-                  {metric.subValue} {metric.subLabel}
-                </p>
-              )}
-              {metric.trend && (
-                <div className={`flex items-center text-xs ${metric.color}`}>
-                  <ArrowUpIcon className="h-4 w-4 mr-1" />
-                  {metric.trendValue}
+              {metric.subLabel && (
+                <div className="flex items-center text-medium">
+                  <p><span className='font-bold'>{metric.subValue}</span> {metric.subLabel}</p>
                 </div>
-              )}
-              {!metric.trend && metric.subLabel && (
-                <p className="text-xs text-muted-foreground flex items-center">
-                  {metric.subLabel}
-                  <ArrowRightIcon className="h-4 w-4 ml-1" />
-                </p>
               )}
             </CardContent>
           </Card>
@@ -166,78 +148,77 @@ export default function MaintenanceDashboard() {
               <Button variant="outline" size="icon">
                 <ArrowsUpDownIcon className="h-4 w-4" />
               </Button>
-              <TooltipProvider>
-                <Tooltip open={isFilterOpen}>
-                  <TooltipTrigger asChild>
-                    <Button variant="outline" size="icon" onClick={() => setIsFilterOpen(!isFilterOpen)}>
-                      <FunnelIcon className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent
-                    side="bottom"
-                    align="end"
-                    className="w-80 p-0 bg-white border border-gray-200 shadow-lg text-black"
-                    ref={filterRef}
-                  >
-                    <div className="p-4 space-y-4 text-black">
-                      <h3 className="font-semibold text-lg text-black">Filtre</h3>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-black">Statut</label>
-                        <Select value={filterStatus} onValueChange={setFilterStatus}>
-                          <SelectTrigger className="text-black">
-                            <SelectValue placeholder="Sélectionner le statut" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="en_cours" className="text-black">En cours</SelectItem>
-                            <SelectItem value="termine" className="text-black">Terminé</SelectItem>
-                            <SelectItem value="en_attente" className="text-black">En attente</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-black">Date de début</label>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button variant="outline" className="w-full justify-start text-left font-normal">
-                              {filterStartDate ? format(filterStartDate, "P", { locale: fr }) : "Sélectionner la date"}
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={filterStartDate}
-                              onSelect={setFilterStartDate}
-                              initialFocus
-                            />
-                          </PopoverContent>
-                        </Popover>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-black">Date de fin</label>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button variant="outline" className="w-full justify-start text-left font-normal">
-                              {filterEndDate ? format(filterEndDate, "P", { locale: fr }) : "Sélectionner la date"}
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={filterEndDate}
-                              onSelect={setFilterEndDate}
-                              initialFocus
-                            />
-                          </PopoverContent>
-                        </Popover>
-                      </div>
-                      <div className="flex justify-between">
-                        <Button variant="outline" onClick={resetFilters}>Réinitialiser</Button>
-                        <Button onClick={applyFilters} className="bg-orange-500 hover:bg-orange-600 text-white">Appliquer</Button>
-                      </div>
+              <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="icon">
+                    <FunnelIcon className="h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 p-0">
+                  <div className="p-4 space-y-4">
+                    <h3 className="font-semibold text-lg">Filtre</h3>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Statut</label>
+                      <Select value={filterStatus} onValueChange={setFilterStatus}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sélectionner le statut" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="en_cours">En cours</SelectItem>
+                          <SelectItem value="termine">Terminé</SelectItem>
+                          <SelectItem value="en_attente">En attente</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Date de début</label>
+                      <Popover open={isStartDateOpen} onOpenChange={setIsStartDateOpen}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className="w-full justify-start text-left font-normal"
+                          >
+                            {filterStartDate ? format(filterStartDate, "P", { locale: fr }) : "Sélectionner la date"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={filterStartDate}
+                            onSelect={handleStartDateSelect}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Date de fin</label>
+                      <Popover open={isEndDateOpen} onOpenChange={setIsEndDateOpen}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className="w-full justify-start text-left font-normal"
+                          >
+                            {filterEndDate ? format(filterEndDate, "P", { locale: fr }) : "Sélectionner la date"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={filterEndDate}
+                            onSelect={handleEndDateSelect}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    <div className="flex justify-between">
+                      <Button variant="outline" onClick={resetFilters}>Réinitialiser</Button>
+                      <Button onClick={applyFilters} className="bg-orange-500 hover:bg-orange-600 text-white">Appliquer</Button>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
             </>
           )}
         </div>
@@ -268,7 +249,7 @@ export default function MaintenanceDashboard() {
               <TableCell>
                 <Checkbox
                   checked={selectedTickets.includes(ticket.id)}
-                  onCheckedChange={(checked) => handleSelectTicket(ticket.id, checked)}
+                  onCheckedChange={(checked) => handleSelectTicket(ticket.id, checked as boolean)}
                 />
               </TableCell>
               <TableCell className="font-medium">{ticket.id}</TableCell>

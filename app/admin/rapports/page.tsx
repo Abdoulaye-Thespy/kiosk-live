@@ -9,12 +9,6 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Calendar } from "@/components/ui/calendar"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { EnvelopeIcon, BellIcon, EllipsisHorizontalIcon, ArrowDownTrayIcon, MagnifyingGlassIcon, DocumentPlusIcon, EyeIcon } from '@heroicons/react/24/outline'
 import {
@@ -80,21 +74,7 @@ export default function RapportManagement() {
   const [filterStatus, setFilterStatus] = useState('')
   const [filterDate, setFilterDate] = useState<Date | undefined>(undefined)
   const [isFilterOpen, setIsFilterOpen] = useState(false)
-
-  const filterRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (filterRef.current && !filterRef.current.contains(event.target as Node) && event.target !== filterRef.current) {
-        setIsFilterOpen(false)
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [])
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false)
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -123,6 +103,12 @@ export default function RapportManagement() {
 
   const applyFilters = () => {
     console.log('Filters applied:', { filterStatus, filterDate })
+    setIsFilterOpen(false)
+  }
+
+  const handleDateSelect = (date: Date | undefined) => {
+    setFilterDate(date)
+    setIsCalendarOpen(false)
   }
 
   return (
@@ -168,66 +154,59 @@ export default function RapportManagement() {
                 <ArrowsUpDownIcon className="h-6 w-6 text-gray-600" />
               </button>
 
-              <TooltipProvider>
-                <Tooltip open={isFilterOpen}>
-                  <TooltipTrigger asChild>
-                    <button className="p-2 hover:bg-gray-100 rounded-md" onClick={() => setIsFilterOpen(!isFilterOpen)}>
-                      <FunnelIcon className="h-6 w-6 text-gray-600" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent
-                    side="bottom"
-                    align="end"
-                    className="w-80 p-0 bg-white border border-gray-200 shadow-lg text-black"
-                    ref={filterRef}
-                  >
-                    <div className="p-4 space-y-4 text-black" >
-                      <h3 className="font-semibold text-lg text-black">Filtre</h3>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-black">Statut</label>
-                        <Select value={filterStatus} onValueChange={setFilterStatus}>
-                          <SelectTrigger className="text-black">
-                            <SelectValue placeholder="Sélectionner le statut" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="publie" className="text-black">Publié</SelectItem>
-                            <SelectItem value="en_revision" className="text-black">En révision</SelectItem>
-                            <SelectItem value="brouillon" className="text-black">Brouillon</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-black">Date</label>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button 
-                              variant="outline" 
-                              className="w-full justify-start text-left font-normal"
-                            >
-                              {filterDate 
-                                ? format(filterDate, "P", { locale: fr }) 
-                                : "Sélectionner la date"
-                              }
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={filterDate}
-                              onSelect={setFilterDate}
-                              initialFocus
-                            />
-                          </PopoverContent>
-                        </Popover>
-                      </div>
-                      <div className="flex justify-between">
-                        <Button variant="outline" onClick={resetFilters} className="text-black">Réinitialiser</Button>
-                        <Button onClick={applyFilters} className="bg-orange-500 hover:bg-orange-600 text-white">Appliquer</Button>
-                      </div>
+              <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+                <PopoverTrigger asChild>
+                  <button className="p-2 hover:bg-gray-100 rounded-md">
+                    <FunnelIcon className="h-6 w-6 text-gray-600" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 p-0">
+                  <div className="p-4 space-y-4">
+                    <h3 className="font-semibold text-lg">Filtre</h3>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Statut</label>
+                      <Select value={filterStatus} onValueChange={setFilterStatus}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sélectionner le statut" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="publie">Publié</SelectItem>
+                          <SelectItem value="en_revision">En révision</SelectItem>
+                          <SelectItem value="brouillon">Brouillon</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Date</label>
+                      <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                        <PopoverTrigger asChild>
+                          <Button 
+                            variant="outline" 
+                            className="w-full justify-start text-left font-normal"
+                          >
+                            {filterDate 
+                              ? format(filterDate, "P", { locale: fr }) 
+                              : "Sélectionner la date"
+                            }
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={filterDate}
+                            onSelect={handleDateSelect}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    <div className="flex justify-between">
+                      <Button variant="outline" onClick={resetFilters}>Réinitialiser</Button>
+                      <Button onClick={applyFilters} className="bg-orange-500 hover:bg-orange-600 text-white">Appliquer</Button>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
           )}
         </div>

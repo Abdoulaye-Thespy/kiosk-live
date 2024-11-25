@@ -1,5 +1,6 @@
-'use client';
-import React, { useState, useRef, useEffect } from 'react'
+'use client'
+
+import React, { useState } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
@@ -9,15 +10,8 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Calendar } from "@/components/ui/calendar"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { EnvelopeIcon, BellIcon, EllipsisHorizontalIcon, ArrowDownTrayIcon, MagnifyingGlassIcon, UserGroupIcon, UserPlusIcon } from '@heroicons/react/24/outline'
-import styles from '@/app/ui/utilisateurs.module.css';
 import {
   ArrowLongRightIcon,
   ArrowUpCircleIcon,
@@ -26,11 +20,10 @@ import {
   ArrowsUpDownIcon,
   TrashIcon, 
   PencilIcon
-} from '@heroicons/react/24/solid';
-
+} from '@heroicons/react/24/solid'
 import { format } from "date-fns"
 import { fr } from "date-fns/locale"
-import Header from '@/app/ui/header';
+import Header from '@/app/ui/header'
 
 const users = [
   { id: 1, name: 'Darlene Robertson', role: 'Client', email: 'darlenerobertson@gmail.com', number: '+237 691 234 567', date: '01/02/2024', status: 'Inactif' },
@@ -41,7 +34,15 @@ const users = [
 ]
 
 export default function UserManagement() {
-  const [selectedUsers, setSelectedUsers] = React.useState<number[]>([])
+  const [selectedUsers, setSelectedUsers] = useState<number[]>([])
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedUserType, setSelectedUserType] = useState('all')
+  const [filterRole, setFilterRole] = useState('')
+  const [filterDate, setFilterDate] = useState<Date | undefined>(undefined)
+  const [filterStatus, setFilterStatus] = useState('')
+  const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false)
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -52,7 +53,6 @@ export default function UserManagement() {
   }
 
   const handleDelete = () => {
-    // Implement delete functionality here
     console.log('Deleting users:', selectedUsers)
   }
 
@@ -64,31 +64,6 @@ export default function UserManagement() {
     }
   }
 
-  const [isModalOpen, setIsModalOpen] = React.useState(false)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [selectedUserType, setSelectedUserType] = useState('all')
-  const [filterRole, setFilterRole] = useState('')
-  const [filterDate, setFilterDate] = useState<Date | undefined>(undefined)
-  const [filterStatus, setFilterStatus] = useState('')
-  const [isFilterOpen, setIsFilterOpen] = useState(false)
-
-  const filterRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (filterRef.current && !filterRef.current.contains(event.target as Node) && event.target !== filterRef.current) {
-        setIsFilterOpen(false)
-      }
-    }
-
-    console.log("rendered");
-
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [])
-
   const openModal = () => setIsModalOpen(true)
   const closeModal = () => setIsModalOpen(false)
 
@@ -99,138 +74,132 @@ export default function UserManagement() {
   }
 
   const applyFilters = () => {
-    // Apply filters logic here
     console.log('Filters applied:', { filterRole, filterDate, filterStatus })
-    // setIsFilterOpen(false)
+    setIsFilterOpen(false)
+  }
+
+  const handleDateSelect = (date: Date | undefined) => {
+    setFilterDate(date)
+    setIsCalendarOpen(false)
   }
 
   return (
     <div className="container mx-auto space-y-6">
-      <Header title ="Utilisateurs"/>
+      <Header title="Utilisateurs" />
 
       <div className="flex justify-end items-center">
         <Button variant="ghost">
           <ArrowDownTrayIcon className="mr-2 h-4 w-4" />
         </Button>
-        <Button className={styles.add} onClick={openModal}>
+        <Button className="bg-orange-500 hover:bg-orange-600 text-white" onClick={openModal}>
           <UserPlusIcon className="mr-2 h-4 w-4" />
           Ajouter des utilisateurs
         </Button>
         
-        <div>
-          {isModalOpen && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center">
-              <div className="fixed inset-0 bg-black bg-opacity-25 backdrop-blur-sm" onClick={closeModal}></div>
-              <div className="relative bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
-                <div className="p-6">
-                  <button
-                    onClick={closeModal}
-                    className="absolute top-3 right-3 text-gray-400 hover:text-gray-500"
-                  >
-                    <XMarkIcon className="h-6 w-6" />
-                  </button>
-                  <h2 className="text-xl font-semibold mb-4">Créer un utilisateur</h2>
-                  <form className="space-y-4">
+        {isModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="fixed inset-0 bg-black bg-opacity-25 backdrop-blur-sm" onClick={closeModal}></div>
+            <div className="relative bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+              <div className="p-6">
+                <button
+                  onClick={closeModal}
+                  className="absolute top-3 right-3 text-gray-400 hover:text-gray-500"
+                >
+                  <XMarkIcon className="h-6 w-6" />
+                </button>
+                <h2 className="text-xl font-semibold mb-4">Créer un utilisateur</h2>
+                <form className="space-y-4">
+                  <div>
+                    <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1">
+                      Nom complet
+                    </label>
+                    <Input id="fullName" placeholder="Tahsan Khan" className="w-full" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1">
-                        Nom complet
+                      <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                        Email
                       </label>
-                      <Input id="fullName" placeholder="Tahsan Khan" className="w-full" />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                          Email
-                        </label>
-                        <Input id="email" type="email" placeholder="Adresse mail" className="w-full" />
-                      </div>
-                      <div>
-                        <label htmlFor="number" className="block text-sm font-medium text-gray-700 mb-1">
-                          Numéro
-                        </label>
-                        <Input id="number" type="tel" placeholder="6 012 345 678" className="w-full" />
-                      </div>
+                      <Input id="email" type="email" placeholder="Adresse mail" className="w-full" />
                     </div>
                     <div>
-                      <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
-                        Rôle
+                      <label htmlFor="number" className="block text-sm font-medium text-gray-700 mb-1">
+                        Numéro
                       </label>
-                      <Select>
-                        <SelectTrigger id="role" className="w-full">
-                          <SelectValue placeholder="Sélectionner un rôle" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="client">Client</SelectItem>
-                          <SelectItem value="admin">Admin</SelectItem>
-                          <SelectItem value="manager">Manager</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <Input id="number" type="tel" placeholder="6 012 345 678" className="w-full" />
                     </div>
-                    <div>
-                      <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
-                        Address
-                      </label>
-                      <Input id="address" placeholder="address line" className="w-full" />
-                    </div>
-                    <div className="flex justify-end space-x-3 mt-6">
-                      <Button variant="outline" onClick={closeModal} className="px-4 py-2">
-                        Cancel
-                      </Button>
-                      <Button type="submit" className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2">
-                        Ajouter
-                      </Button>
-                    </div>
-                  </form>
-                </div>
+                  </div>
+                  <div>
+                    <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
+                      Rôle
+                    </label>
+                    <Select>
+                      <SelectTrigger id="role" className="w-full">
+                        <SelectValue placeholder="Sélectionner un rôle" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="client">Client</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                        <SelectItem value="manager">Manager</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
+                      Address
+                    </label>
+                    <Input id="address" placeholder="address line" className="w-full" />
+                  </div>
+                  <div className="flex justify-end space-x-3 mt-6">
+                    <Button variant="outline" onClick={closeModal}>
+                      Cancel
+                    </Button>
+                    <Button type="submit" className="bg-orange-500 hover:bg-orange-600 text-white">
+                      Ajouter
+                    </Button>
+                  </div>
+                </form>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
       <hr />
 
       <div className="grid grid-cols-2 gap-4">
-        <Card className={`shadow-md ${styles.carte}`}>
-          <CardHeader className={`flex flex-column space-y-0 pb-2 shadow-md ${styles.carteEntete}`}>
-            <CardTitle className="text-sm font-medium">Total d’utilisateurs</CardTitle>
+        <Card>
+          <CardHeader className="flex flex-column space-y-0 pb-2 shadow-md">
+            <CardTitle className="text-sm font-medium">Nombre Total de Kiosques</CardTitle>
             <div className="flex items-baseline space-x-3 ">
               <div className="text-2xl font-bold mt-2">1,822</div>
               <div className="flex items-center bg-green-500 rounded-full bg-opacity-15 px-2 py-0.5">
-                <div className="inline-block  text-xs font-medium text-green-500 flex items-center">
-                  <ArrowUpCircleIcon className='inline-block h-5 w-5' />
-
-                </div>
+                <ArrowUpCircleIcon className='inline-block h-5 w-5 text-green-500' />
                 <div className="ml-2 text-medium text-gray-500">5.2%</div>
               </div>
             </div>
           </CardHeader>
           <CardContent>
-
             <div className="flex items-center text-medium">
-              <p> <span className='font-bold'>+22</span> le dernier mois</p>
+              <p><span className='font-bold'>+22</span> le dernier mois</p>
             </div>
           </CardContent>
         </Card>
-
-
-        <Card className={`shadow-md ${styles.carte}`}>
-          <CardHeader className={`flex flex-column space-y-0 pb-2 shadow-md ${styles.carteEntete}`}>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Nouveaux utilisateurs</CardTitle>
-            <div className="flex items-baseline space-x-3 ">
-              <div className="text-2xl font-bold mt-2">1,822</div>
+            <UserPlusIcon className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-baseline space-x-8">
+              <div className="text-2xl font-bold">1,822</div>
               <div className="flex items-center bg-green-500 rounded-full bg-opacity-15 px-2 py-0.5">
-                <div className="inline-block  text-xs font-medium text-green-500 flex items-center">
-                  <ArrowUpCircleIcon className='inline-block h-5 w-5' />
-
-                </div>
+                <ArrowUpCircleIcon className='inline-block h-5 w-5 text-green-500' />
                 <div className="ml-2 text-medium text-gray-500">5.2%</div>
               </div>
             </div>
-          </CardHeader>
-          <CardContent>
-
-            <div className="flex items-center text-medium">
-              <p> <span className='font-bold'>+22</span> le dernier mois</p>
+            <div className="mt-2 flex items-center justify-between text-sm text-muted-foreground w-70">
+              <span><b>+140</b> Ce dernier mois</span>
+              <ArrowLongRightIcon className="h-4 w-4" />
             </div>
           </CardContent>
         </Card>
@@ -260,108 +229,102 @@ export default function UserManagement() {
           </Select>
         </div>
         <div>
-        {selectedUsers.length > 0 && (
-          <Button 
+          {selectedUsers.length > 0 && (
+            <Button 
               onClick={handleDelete}
               className='bg-white border border-gray-500 text-black-500 font-medium py-2 px-4 rounded inline-flex items-center'
             >
               <TrashIcon className="h-4 w-4" />
               Supprimer
             </Button>
-         )}
+          )}
 
-      { selectedUsers.length == 1 && (
-        <Button 
-        className='bg-white border border-gray-500 text-black-500 font-medium py-2 px-4 rounded inline-flex items-center ml-4'
-        >
-        <PencilIcon className="h-4 w-4" />
-          Modifier
-        </Button>
-        )}
+          {selectedUsers.length === 1 && (
+            <Button 
+              className='bg-white border border-gray-500 text-black-500 font-medium py-2 px-4 rounded inline-flex items-center ml-4'
+            >
+              <PencilIcon className="h-4 w-4" />
+              Modifier
+            </Button>
+          )}
 
-        { selectedUsers.length == 0 && (
-         <div>
-         <button className="p-2 hover:bg-gray-100 rounded-md">
-            <ArrowsUpDownIcon className="h-6 w-6 text-gray-600" />
-          </button>
+          {selectedUsers.length === 0 && (
+            <div>
+              <button className="p-2 hover:bg-gray-100 rounded-md">
+                <ArrowsUpDownIcon className="h-6 w-6 text-gray-600" />
+              </button>
 
-          <TooltipProvider>
-            <Tooltip open={isFilterOpen}>
-              <TooltipTrigger asChild>
-                <button className="p-2 hover:bg-gray-100 rounded-md" onClick={() => setIsFilterOpen(!isFilterOpen)}>
-                  <FunnelIcon className="h-6 w-6 text-gray-600" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent
-                side="bottom"
-                align="end"
-                className="w-80 p-0 bg-white border border-gray-200 shadow-lg text-black"
-                ref={filterRef}
-              >
-                <div className="p-4 space-y-4 text-black">
-                  <h3 className="font-semibold text-lg text-black">Filtre</h3>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-black">Rôle</label>
-                    <Select value={filterRole} onValueChange={setFilterRole}>
-                      <SelectTrigger className="text-black">
-                        <SelectValue placeholder="Sélectionner un rôle" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="admin" className="text-black">Administrateur</SelectItem>
-                        <SelectItem value="user" className="text-black">Utilisateur</SelectItem>
-                      </SelectContent>
-                    </Select>
+              <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+                <PopoverTrigger asChild>
+                  <button className="p-2 hover:bg-gray-100 rounded-md">
+                    <FunnelIcon className="h-6 w-6 text-gray-600" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 p-0">
+                  <div className="p-4 space-y-4">
+                    <h3 className="font-semibold text-lg">Filtre</h3>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Rôle</label>
+                      <Select value={filterRole} onValueChange={setFilterRole}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sélectionner un rôle" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="admin">Administrateur</SelectItem>
+                          <SelectItem value="user">Utilisateur</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Date</label>
+                      <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                        <PopoverTrigger asChild>
+                          <Button 
+                            variant="outline" 
+                            className="w-full justify-start text-left font-normal"
+                            onClick={() => setIsCalendarOpen(true)}
+                          >
+                            {filterDate 
+                              ? format(filterDate, "P", { locale: fr }) 
+                              : "Sélectionner la date"
+                            }
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={filterDate}
+                            onSelect={handleDateSelect}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Statut</label>
+                      <Select value={filterStatus} onValueChange={setFilterStatus}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sélectionner le statut" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="active">Actif</SelectItem>
+                          <SelectItem value="inactive">Inactif</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex justify-between">
+                      <Button variant="outline" onClick={resetFilters}>Réinitialiser</Button>
+                      <Button onClick={applyFilters} className="bg-orange-500 hover:bg-orange-600 text-white">Appliquer</Button>
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-black">Date</label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button 
-                          variant="outline" 
-                          className="w-full justify-start text-left font-normal"
-                        >
-                          {filterDate 
-                            ? format(filterDate, "P", { locale: fr }) 
-                            : "Sélectionner la date"
-                          }
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={filterDate}
-                          onSelect={setFilterDate}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-black">Statut</label>
-                    <Select value={filterStatus} onValueChange={setFilterStatus}>
-                      <SelectTrigger className="text-black">
-                        <SelectValue placeholder="Sélectionner le statut" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="active" className="text-black">Actif</SelectItem>
-                        <SelectItem value="inactive" className="text-black">Inactif</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="flex justify-between">
-                    <Button variant="outline" onClick={resetFilters} className="text-black">Réinitialiser</Button>
-                    <Button onClick={applyFilters} className="bg-orange-500 hover:bg-orange-600 text-white">Appliquer</Button>
-                  </div>
-                </div>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-         </div>
-        )}
+                </PopoverContent>
+              </Popover>
+            </div>
+          )}
         </div>
       </div>
 
-      <Table className=' shadow'>
+      <Table className='shadow'>
         <TableHeader>
           <TableRow>
             <TableHead className="w-[50px]">
@@ -385,7 +348,7 @@ export default function UserManagement() {
               <TableCell>
                 <Checkbox
                   checked={selectedUsers.includes(user.id)}
-                  onCheckedChange={(checked) => handleSelectUser(user.id, !checked)}
+                  onCheckedChange={(checked) => handleSelectUser(user.id, checked)}
                 />
               </TableCell>
               <TableCell className="font-medium">
@@ -405,18 +368,18 @@ export default function UserManagement() {
               </TableCell>
               <TableCell>{user.role}</TableCell>
               <TableCell className='font-medium'>
-                <span className='
-                  text-[#E55210] '>
+                <span className='text-[#E55210]'>
                   {user.email}
                 </span>
               </TableCell>
               <TableCell className='font-medium'>{user.number}</TableCell>
               <TableCell className='font-medium'>{user.date}</TableCell>
               <TableCell>
-                <span className={`px-2 py-1 rounded-full text-xs ${user.status === 'Actif' ? 'bg-green-100 text-green-800' :
-                    user.status === 'Inactif' ? 'bg-gray-100 text-gray-800' :
-                      'bg-red-100 text-red-800'
-                  }`}>
+                <span className={`px-2 py-1 rounded-full text-xs ${
+                  user.status === 'Actif' ? 'bg-green-100 text-green-800' :
+                  user.status === 'Inactif' ? 'bg-gray-100 text-gray-800' :
+                  'bg-red-100 text-red-800'
+                }`}>
                   {user.status}
                 </span>
               </TableCell>
