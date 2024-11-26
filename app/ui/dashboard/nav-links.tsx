@@ -16,7 +16,7 @@ import Link from 'next/link';
 
 // Map of links to display in the side navigation.
 // Depending on the size of the application, this would be stored in a database.
-const links = [
+const linksAdmin = [
   { name: 'Tableau de bord', href: '/admin', icon: HomeIcon },
   {
     name: 'Utilisateurs',
@@ -35,8 +35,25 @@ const links = [
   { name: 'Paramètres', href: '/admin/parametres', icon: Cog6ToothIcon },
 ];
 
-export default function NavLinks() {
+const linksCommercial = [
+  { name: 'Gestion des Prospect', href: '/commercial', icon: HomeIcon },
+  {
+    name: 'Devis et Proforma',
+    href: '/commercial/devis',
+    icon: UserGroupIcon,
+  },
+  { name: 'Contrats', 
+    href: '/commercial/contrat', 
+    icon: ChartPieIcon 
+  },
+  { name: 'Rapports de vente', href: '/commercial/rapport', icon: QuestionMarkCircleIcon },
+  { name: 'Paramètres', href: '/commercial/parametres', icon: Cog6ToothIcon },
+];
+
+export default function NavLinks({ userRole = 'client' }: { userRole?: 'admin' | 'commercial' | 'client' }) {
   const pathname = usePathname();
+  const links = userRole === 'admin' ? linksAdmin : linksCommercial;
+
   return (
     <>
       {links.map((link) => {
@@ -51,7 +68,7 @@ export default function NavLinks() {
                 'bg-sky-100 text-[#E55210]': pathname === link.href,
               },
             )}
-            >
+          >
             <LinkIcon className="w-6" />
             <p className="hidden md:block">{link.name}</p>
           </Link>
