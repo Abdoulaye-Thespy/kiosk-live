@@ -158,10 +158,19 @@ export default function OpportunityManagement() {
 
           {selectedOpportunities.length === 0 && (
             <div className="flex items-center gap-2">
-              <Button className="bg-orange-500 hover:bg-orange-600 text-white" onClick={openModal}>
-                <UserPlusIcon className="mr-2 h-4 w-4" />
-                Ajouter une opportunité
-              </Button>
+              <Link
+                href={{
+                  pathname: '/commercial/opportunite/nouvel',
+                }}
+                className="flex items-center hover:bg-gray-100 rounded-md p-1 transition-colors"
+              >
+                <Button className="bg-orange-500 hover:bg-orange-600 text-white">
+                  <UserPlusIcon className="mr-2 h-4 w-4" />
+                  Ajouter une opportunité
+                </Button>
+
+              </Link>
+
 
               <Button variant="ghost" size="icon">
                 <ArrowsUpDownIcon className="h-6 w-6 text-gray-600" />

@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import KioskMetrics from '@/app/ui/kiosques/metrics';
+import KioskMetrics from '@/app/ui/admin/kiosques/metrics';
 import Header from '@/app/ui/header';
 import { Input } from "@/components/ui/input"
 import {

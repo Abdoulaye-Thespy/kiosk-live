@@ -4,9 +4,9 @@ import React, { useState } from 'react'
 import { Button } from "@/components/ui/button"
 import Link from 'next/link'
 import { ArrowDownTrayIcon } from "@heroicons/react/24/outline"
-import TabOneFacturePaiement from '@/app/ui/facturepaiement/tab1'
-import TabTwoFacturePaiment from '@/app/ui/facturepaiement/tab2'
-import TabThreeFacturePaiement from '@/app/ui/facturepaiement/tab3'
+import TabOneFacturePaiement from '@/app/ui/admin/facturepaiement/tab1'
+import TabTwoFacturePaiment from '@/app/ui/admin/facturepaiement/tab2'
+import TabThreeFacturePaiement from '@/app/ui/admin/facturepaiement/tab3'
 
 const tabs = [
   { id: 'dashboard', label: "Tableau de bord" },

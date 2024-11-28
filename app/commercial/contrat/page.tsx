@@ -26,7 +26,7 @@ import {
 import { format } from "date-fns"
 import { fr } from "date-fns/locale"
 
-import ContractDetails from '@/app/ui/contrat/details';
+import ContractDetails from '@/app/ui/admin/contrat/details';
 
 const contracts = [
   {
@@ -154,7 +154,7 @@ export default function ContractManagement() {
         <Button variant="ghost">
           <ArrowDownTrayIcon className="mr-2 h-4 w-4" />
         </Button>
-        <Link href="/admin/contrats/nouveau">
+        <Link href="/commercial/contrat/nouveau">
           <Button className={styles.add}>
             <DocumentPlusIcon className="mr-2 h-4 w-4" />
             Créer un nouveau contrat

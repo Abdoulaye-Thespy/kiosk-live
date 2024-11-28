@@ -46,6 +46,7 @@ const linksCommercial = [
     href: '/commercial/contrat', 
     icon: ChartPieIcon 
   },
+  { name: 'Factures & Paiements', href: '/commercial/facture', icon: QuestionMarkCircleIcon },
   { name: 'Rapports de vente', href: '/commercial/rapport', icon: QuestionMarkCircleIcon },
   { name: 'Paramètres', href: '/commercial/parametres', icon: Cog6ToothIcon },
 ];
