@@ -38,8 +38,8 @@ const linksAdmin = [
 const linksCommercial = [
   { name: 'Gestion des Prospect', href: '/commercial', icon: HomeIcon },
   {
-    name: 'Devis et Proforma',
-    href: '/commercial/devis',
+    name: 'Opportunités',
+    href: '/commercial/opportunite',
     icon: UserGroupIcon,
   },
   { name: 'Contrats', 

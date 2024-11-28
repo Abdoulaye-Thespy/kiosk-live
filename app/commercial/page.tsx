@@ -232,7 +232,7 @@ export default function UserManagement() {
           </Select>
         </div>
         <div>
-          {selectedUsers.length > 0 && (
+          {selectedUsers.length >  0 && (
             <Button 
               onClick={handleDelete}
               className='bg-white border border-gray-500 text-black-500 font-medium py-2 px-4 rounded inline-flex items-center'
@@ -242,13 +242,28 @@ export default function UserManagement() {
             </Button>
           )}
 
-          {selectedUsers.length === 1 && (
-            <Button 
-              className='bg-white border border-gray-500 text-black-500 font-medium py-2 px-4 rounded inline-flex items-center ml-4'
-            >
-              <PencilIcon className="h-4 w-4" />
-              Modifier
-            </Button>
+          {selectedUsers.length == 1 && (
+            <>
+              <Button
+                className='bg-white border border-gray-500 text-black-500 font-medium py-2 px-4 rounded inline-flex items-center ml-4'
+              >
+                <PencilIcon className="h-4 w-4" />
+                Modifier
+              </Button>
+              <Link
+                href={{
+                  pathname: '/commercial/nouveauprospect',
+                }}
+              >
+                <Button
+                  className='bg-white border border-gray-500 text-black-500 font-medium py-2 px-4 rounded inline-flex items-center ml-4'
+                >
+                  <PencilIcon className="h-4 w-4" />
+                  Créer un devis
+                </Button>
+              </Link>
+            </>
+
           )}
 
           {selectedUsers.length === 0 && (
