@@ -3,9 +3,9 @@
 import React, { useState } from 'react'
 import { cn } from "@/lib/utils"
 import Header from '@/app/ui/header'
-import TabOneMaintenance from '@/app/ui/maintenance/tab1'
-import TabTwoMaintenance from '@/app/ui/maintenance/tab2'
-import TabThreeMaintenance from '@/app/ui/maintenance/tab3'
+import TabOneMaintenance from '@/app/ui/admin/maintenance/tab1'
+import TabTwoMaintenance from '@/app/ui/admin/maintenance/tab2'
+import TabThreeMaintenance from '@/app/ui/admin/maintenance/tab3'
 
 const tabs = [
   { id: 'overview', label: "Vue d'ensemble" },

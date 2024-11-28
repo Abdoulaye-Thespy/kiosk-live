@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { MagnifyingGlassIcon, PhotoIcon } from "@heroicons/react/24/outline"
 import { ArrowPathIcon } from "@heroicons/react/24/solid"
-import TabOneParemetre from "@/app/ui/parametre/tab1"
-import TabTwoParemetre from "@/app/ui/parametre/tab2"
-import TabThreeParametre from "@/app/ui/parametre/tab3"
-import TabFourParametre from "@/app/ui/parametre/tab4"
+import TabOneParemetre from "@/app/ui/admin/parametre/tab1"
+import TabTwoParemetre from "@/app/ui/admin/parametre/tab2"
+import TabThreeParametre from "@/app/ui/admin/parametre/tab3"
+import TabFourParametre from "@/app/ui/admin/parametre/tab4"
 
 const tabs = [
   { id: 'general', label: "Général" },

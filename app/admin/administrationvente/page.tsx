@@ -22,10 +22,10 @@ import {
 } from "@heroicons/react/24/outline"
 import { CheckCircleIcon, XCircleIcon, ClockIcon } from "@heroicons/react/24/solid"
 
-import TabTwo from '@/app/ui/administrationvente/tab2'
-import TabOne from '@/app/ui/administrationvente/tab1'
-import TabThree from '@/app/ui/administrationvente/tab3'
-import TabFour from '@/app/ui/administrationvente/tab4'
+import TabTwo from '@/app/ui/admin/administrationvente/tab2'
+import TabOne from '@/app/ui/admin/administrationvente/tab1'
+import TabThree from '@/app/ui/admin/administrationvente/tab3'
+import TabFour from '@/app/ui/admin/administrationvente/tab4'
 import Header from '@/app/ui/header'
 
 const tabs = [
