@@ -4,9 +4,9 @@ import React, { useState } from 'react'
 import { Button } from "@/components/ui/button"
 import Link from 'next/link'
 import { ArrowDownTrayIcon } from "@heroicons/react/24/outline"
-import TabOneFacturePaiement from '@/app/ui/admin/facturepaiement/tab1'
-import TabTwoFacturePaiment from '@/app/ui/admin/facturepaiement/tab2'
+import TabTwoFacturePaiementClient from '@/app/ui/client/SAV/tab2'
 import TabOneFacturePaiementClient from '@/app/ui/client/SAV/tab1'
+import TabThreeFacturePaiementClient from '@/app/ui/client/SAV/tab3'
 
 const tabs = [
   { id: 'dashboard', label: "Tableau de bord" },
@@ -60,10 +60,10 @@ export default function InvoiceDashboard() {
       <div className="mt-4">
         {activeTab === 'dashboard' && <TabOneFacturePaiementClient />}
         {activeTab === 'invoices' && (
-           <TabTwoFacturePaiment />
+           <TabTwoFacturePaiementClient />
         )}
         {activeTab === 'transactions' && (
-          <TabOneFacturePaiementClient />
+          <TabThreeFacturePaiementClient />
         )}
       </div>
     </div>
