@@ -59,13 +59,13 @@ export default function TabFourParametre() {
   ]
 
   return (
-    <div className="flex justify-between container mx-auto px-6 py-4 space-y-6">
-      <div className="space-y-1">
+    <div className="flex justify-between container mx-auto px-6 py-4 space-y-6 space-x-4 bg-white rounded-lg p-4">
+      <div className="space-y-1 w-1/4">
         <h2 className="text-xl font-semibold">Informations de connexion</h2>
         <p className="text-sm text-gray-500">Activité sur votre compte</p>
       </div>
 
-      <div className="space-y-1">
+      <div className="space-y-2 w-3/4 ">
         <h3 className="text-sm font-medium text-gray-500">Vous êtes connecté</h3>
         <div className="space-y-1">
           {devices.map((device) => (

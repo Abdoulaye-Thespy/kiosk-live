@@ -62,25 +62,21 @@ export default function SettingsPage() {
         <div className="mt-6">
           {activeTab === 'general' && (
             <div>
-              <h2 className="text-2xl font-bold mb-4">Général</h2>
               <TabOneParemetre />
             </div>
           )}
           {activeTab === 'bank' && (
             <div>
-              <h2 className="text-2xl font-bold mb-4">Comptes bancaires</h2>
               <TabTwoParemetre />
             </div>
           )}
           {activeTab === 'notifications' && (
             <div>
-              <h2 className="text-2xl font-bold mb-4">Notifications</h2>
               <TabThreeParametre />
             </div>
           )}
           {activeTab === 'connection' && (
             <div>
-              <h2 className="text-2xl font-bold mb-4">Informations de connexion</h2>
               <TabFourParametre />
             </div>
           )}

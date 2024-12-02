@@ -21,6 +21,7 @@ import {
   PencilIcon
 } from '@heroicons/react/24/solid'
 import Header from '@/app/ui/header'
+import ProspectDetails from '../ui/commercial/prospect/details'
 
 const users = [
   { id: 1, name: 'Darlene Robertson', email: 'darlenerobertson@gmail.com', besoin: 'Nouveau Kiosque', number: '+237 691 234 567', date: '01/02/2024', status: 'Inactif' },
@@ -29,6 +30,14 @@ const users = [
   { id: 4, name: 'Robert Fox',  email: 'robertfox@gmail.com', besoin: 'Nouveau Kiosque', number: '+237 691 234 567', date: '01/02/2024', status: 'Inactif' },
   { id: 5, name: 'Wade Warren', email: 'wadewarren@gmail.com', besoin: 'Nouveau Kiosque', number: '+237 691 234 567', date: '01/02/2024', status: 'Inactif' },
 ]
+
+const prospectData = {
+  fullName: "Jenny Wilson",
+  email: "jennywilson@gmail.com",
+  phone: "(555) 555-1234",
+  address: "Bonamoussadi - rue 2345",
+  needs: "Lorem ipsum dolor sit amet consectetur. Tortor vel nunc fusce ut euismod tempor mattis. Interdum nibh nec commodo congue ac mattis neque donec. Malesuada eleifend suspendisse risus at. Vitae maecenas nibh sed tellus. Lorem ipsum dolor sit amet consectetur. Tortor vel nunc fusce ut euismod tempor mattis. Interdum nibh nec commodo congue ac mattis neque donec. Malesuada eleifend suspendisse risus at. Vitae maecenas nibh sed tellus."
+}
 
 export default function UserManagement() {
   const [selectedUsers, setSelectedUsers] = useState<number[]>([])
@@ -364,6 +373,12 @@ export default function UserManagement() {
                 </span>
               </TableCell>
               <TableCell className='font-medium'>{user.date}</TableCell>
+              <TableCell>
+                <ProspectDetails
+                  trigger=""
+                  prospect={prospectData}
+                />
+              </TableCell>
               <TableCell className="text-right">
                 <Button variant="ghost" size="icon">
                   <EllipsisHorizontalIcon className="h-4 w-4" />

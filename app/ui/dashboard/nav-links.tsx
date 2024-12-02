@@ -51,9 +51,86 @@ const linksCommercial = [
   { name: 'Paramètres', href: '/commercial/parametres', icon: Cog6ToothIcon },
 ];
 
-export default function NavLinks({ userRole = 'client' }: { userRole?: 'admin' | 'commercial' | 'client' }) {
+const linksClient = [
+  { name: 'Mes kiosques', href: '/client', icon: HomeIcon },
+  {
+    name: 'Mes Contrats',
+    href: '/client/contrats',
+    icon: UserGroupIcon,
+  },
+  { name: 'SAV', 
+    href: '/client/SAV', 
+    icon: ChartPieIcon 
+  },
+  { name: 'Paramètres', href: '/client/parametre', icon: QuestionMarkCircleIcon },
+];
+
+const linksComptable = [
+  { name: 'Facturation', href: '/comptable', icon: HomeIcon },
+  {
+    name: 'Paiements',
+    href: '/comptable/paiement',
+    icon: UserGroupIcon,
+  },
+  { name: 'Recouvrement', 
+    href: '/comptable/recouvrement', 
+    icon: ChartPieIcon 
+  },
+  { name: 'Paramètres', href: '/comptable/parametre', icon: QuestionMarkCircleIcon },
+];
+
+const linksTechnicien = [
+  { name: 'Mes tâches', href: '/technicien', icon: HomeIcon },
+  {
+    name: 'Historique',
+    href: '/technicien/historique',
+    icon: UserGroupIcon,
+  },
+  { name: 'documentation', 
+    href: '/technicien/documentation', 
+    icon: ChartPieIcon 
+  },
+  { name: 'Paramètres', href: '/technicien/parametre', icon: QuestionMarkCircleIcon },
+];
+
+const linksResponsable = [
+  { name: 'Tableau de bord', href: '/responsable', icon: HomeIcon },
+  {
+    name: 'Gestion des kiosques',
+    href: '/responsable/gestion',
+    icon: UserGroupIcon,
+  },
+  { name: 'Interventions', 
+    href: '/responsable/interventions', 
+    icon: ChartPieIcon 
+  },
+  { name: 'Inventaires', 
+    href: '/responsable/inventaires', 
+    icon: ChartPieIcon 
+  },
+  { name: 'Rapports d’activités', 
+    href: '/responsable/rapports', 
+    icon: ChartPieIcon 
+  },
+  { name: 'Paramètres', href: '/responsable/parametre', icon: QuestionMarkCircleIcon },
+];
+
+export default function NavLinks({ userRole = 'client' }: { userRole?: 'admin' | 'commercial' | 'client' | 'technicien' | 'comptable'| 'responsable' }) {
   const pathname = usePathname();
-  const links = userRole === 'admin' ? linksAdmin : linksCommercial;
+  
+  let links = linksClient;
+
+  if (userRole === 'admin') {
+      links = linksAdmin;
+  } else if (userRole === 'commercial') {
+      links = linksCommercial;
+  } else if (userRole === 'technicien') {
+      links = linksTechnicien;
+  } else if (userRole === 'comptable') {
+      links = linksComptable;
+  } else if (userRole === 'responsable') {
+      links = linksResponsable;
+  }
 
   return (
     <>
