@@ -58,6 +58,11 @@ const linksClient = [
     href: '/client/contrats',
     icon: UserGroupIcon,
   },
+  {
+    name: 'Mes Factures',
+    href: '/client/factures',
+    icon: UserGroupIcon,
+  },
   { name: 'SAV', 
     href: '/client/SAV', 
     icon: ChartPieIcon 
