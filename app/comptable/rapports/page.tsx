@@ -12,9 +12,10 @@ import {
 } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
+import { Label } from "@/components/ui/label"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { FileText, Eye, Download, ChevronDown, Filter } from 'lucide-react'
 import { format } from "date-fns"
 import { fr } from "date-fns/locale"
@@ -142,22 +143,32 @@ export default function FinancialReports() {
               <div className="p-4 space-y-4">
                 <h3 className="font-semibold text-lg">Filtre</h3>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Type</label>
-                  <Select value={filterType} onValueChange={setFilterType}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Sélectionner le type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="">Tous</SelectItem>
-                      <SelectItem value="Paiement">Paiement</SelectItem>
-                      <SelectItem value="Contrats">Contrats</SelectItem>
-                      <SelectItem value="Inventaire">Inventaire</SelectItem>
-                      <SelectItem value="Facture">Facture</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label className="text-sm font-medium">Type</Label>
+                  <RadioGroup value={filterType} onValueChange={setFilterType}>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="" id="all" />
+                      <Label htmlFor="all">Tous</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="Paiement" id="payment" />
+                      <Label htmlFor="payment">Paiement</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="Contrats" id="contracts" />
+                      <Label htmlFor="contracts">Contrats</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="Inventaire" id="inventory" />
+                      <Label htmlFor="inventory">Inventaire</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="Facture" id="invoice" />
+                      <Label htmlFor="invoice">Facture</Label>
+                    </div>
+                  </RadioGroup>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Date de début</label>
+                  <Label className="text-sm font-medium">Date de début</Label>
                   <Popover open={isStartDateOpen} onOpenChange={setIsStartDateOpen}>
                     <PopoverTrigger asChild>
                       <Button 
@@ -184,7 +195,7 @@ export default function FinancialReports() {
                   </Popover>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Date de fin</label>
+                  <Label className="text-sm font-medium">Date de fin</Label>
                   <Popover open={isEndDateOpen} onOpenChange={setIsEndDateOpen}>
                     <PopoverTrigger asChild>
                       <Button 

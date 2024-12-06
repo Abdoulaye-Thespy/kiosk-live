@@ -5,7 +5,7 @@ import { EllipsisHorizontalIcon } from '@heroicons/react/24/solid'
 import Image from 'next/image';
 import { Switch } from "@/components/ui/switch"
 
-export default function SideNav({ userRole = 'client' }: { userRole?: 'admin' | 'commercial' | 'client'| 'technicien' | 'comptable' | 'responsable'}) {
+export default function SideNav({ userRole = 'client' }: { userRole?: 'admin' | 'commercial' | 'client'| 'technicien' | 'comptable' | 'responsable' | 'juridique'}) {
   return (
     <div className="flex h-full flex-col px-2 py-4 md:px-2 border-r border-gray-10">
       <Link

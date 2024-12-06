@@ -81,6 +81,10 @@ const linksComptable = [
     href: '/comptable/recouvrement', 
     icon: ChartPieIcon 
   },
+  { name: 'Rapports financiers', 
+    href: '/comptable/rapports', 
+    icon: ChartPieIcon 
+  },
   { name: 'Paramètres', href: '/comptable/parametre', icon: QuestionMarkCircleIcon },
 ];
 
@@ -119,22 +123,34 @@ const linksResponsable = [
   },
   { name: 'Paramètres', href: '/responsable/parametre', icon: QuestionMarkCircleIcon },
 ];
-
-export default function NavLinks({ userRole = 'client' }: { userRole?: 'admin' | 'commercial' | 'client' | 'technicien' | 'comptable'| 'responsable' }) {
+const linksJuridique = [
+  { name: 'Contrat', href: '/juridique', icon: HomeIcon },
+  {
+    name: 'Contrat à valider',
+    href: '/juridique/validation',
+    icon: UserGroupIcon,
+  },
+  { name: 'Paramètres', 
+    href: '/responsable/parametre', 
+    icon: QuestionMarkCircleIcon },
+];
+export default function NavLinks({ userRole = 'client' }: { userRole?: 'admin' | 'commercial' | 'client' | 'technicien' | 'comptable'| 'responsable' | 'juridique' }) {
   const pathname = usePathname();
   
   let links = linksClient;
 
   if (userRole === 'admin') {
-      links = linksAdmin;
+    links = linksAdmin;
   } else if (userRole === 'commercial') {
-      links = linksCommercial;
+    links = linksCommercial;
   } else if (userRole === 'technicien') {
-      links = linksTechnicien;
+    links = linksTechnicien;
   } else if (userRole === 'comptable') {
-      links = linksComptable;
+    links = linksComptable;
   } else if (userRole === 'responsable') {
-      links = linksResponsable;
+    links = linksResponsable;
+  } else if (userRole === 'juridique') {
+    links = linksJuridique;
   }
 
   return (

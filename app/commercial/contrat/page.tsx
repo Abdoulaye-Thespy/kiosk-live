@@ -26,7 +26,7 @@ import {
 import { format } from "date-fns"
 import { fr } from "date-fns/locale"
 
-import ContractDetails from '@/app/ui/admin/contrat/details';
+import ContractDetails from '@/app/ui/commercial/contrat/details';
 
 const contracts = [
   {
