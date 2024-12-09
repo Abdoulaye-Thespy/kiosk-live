@@ -2,330 +2,65 @@
 
 import React, { useState } from 'react'
 import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
-import KioskMetrics from '@/app/ui/admin/kiosques/metrics';
-import Header from '@/app/ui/header';
-import { Input } from "@/components/ui/input"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { MagnifyingGlassIcon } from "@heroicons/react/24/outline"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Calendar } from "@/components/ui/calendar"
-import { format } from "date-fns"
-import { fr } from "date-fns/locale"
-import { MoreHorizontal, RotateCcw, Settings, Signal, Filter } from 'lucide-react'
+import Link from 'next/link'
+import { ArrowDownTrayIcon } from "@heroicons/react/24/outline"
+import KioskTab1 from '@/app/ui/admin/kiosques/tab1'
+import KioskTab2 from '@/app/ui/admin/kiosques/tab2'
 
-interface Kiosk {
-  id: string
-  manager: string
-  city: string
-  zone: string
-  status: 'En activité' | 'En maintenance' | 'Fermé'
-  revenue: string
-}
 
-const kiosks: Kiosk[] = [
-  {
-    id: "1345",
-    manager: "NDOUMBE François",
-    city: "Douala",
-    zone: "Makepe plateau",
-    status: "En activité",
-    revenue: "1 000 000 FCFA"
-  },
-  {
-    id: "1345",
-    manager: "NDOUMBE François",
-    city: "Douala",
-    zone: "Makepe BM fin des pavés",
-    status: "En maintenance",
-    revenue: "1 000 000 FCFA"
-  },
-  {
-    id: "1345",
-    manager: "NDOUMBE François",
-    city: "Douala",
-    zone: "Makepe plateau",
-    status: "Fermé",
-    revenue: "1 000 000 FCFA"
-  },
-  {
-    id: "1345",
-    manager: "NDOUMBE François",
-    city: "Yaoundé",
-    zone: "Akwa Nord 2",
-    status: "Fermé",
-    revenue: "1 000 000 FCFA"
-  },
-  {
-    id: "1345",
-    manager: "Ngono Freddy",
-    city: "Yaoundé",
-    zone: "Makepe BM fin des pavés",
-    status: "En maintenance",
-    revenue: "1 000 000 FCFA"
-  },
-  {
-    id: "1345",
-    manager: "Ngono Freddy",
-    city: "Douala",
-    zone: "Deido",
-    status: "En activité",
-    revenue: "1 000 000 FCFA"
-  },
-  {
-    id: "1345",
-    manager: "HABIB Oumarou",
-    city: "Douala",
-    zone: "Akwa Nord 2",
-    status: "En maintenance",
-    revenue: "1 000 000 FCFA"
-  },
-  {
-    id: "1345",
-    manager: "HABIB Oumarou",
-    city: "Yaoundé",
-    zone: "Deido",
-    status: "Fermé",
-    revenue: "1 000 000 FCFA"
-  },
-  {
-    id: "1345",
-    manager: "ABDOU Rayim",
-    city: "Yaoundé",
-    zone: "Total Bonateki",
-    status: "En activité",
-    revenue: "1 000 000 FCFA"
-  }
+const tabs = [
+  { id: 'dashboard', label: "Vue des kiosque sur tableau" },
+  { id: 'invoices', label: "Vue des kiosque sur Map" },
 ]
 
-export default function KioskTable() {
-  const [currentPage, setCurrentPage] = useState(1)
-  const [selectedIds, setSelectedIds] = useState<string[]>([])
-  const [searchTerm, setSearchTerm] = useState('')
-  const [isFilterOpen, setIsFilterOpen] = useState(false)
-  const [filterStatus, setFilterStatus] = useState('')
-  const [filterDate, setFilterDate] = useState<Date | undefined>(undefined)
-  const totalPages = 34
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "En activité":
-        return "text-green-600 bg-green-50"
-      case "En maintenance":
-        return "text-yellow-600 bg-yellow-50"
-      case "Fermé":
-        return "text-red-600 bg-red-50"
-      default:
-        return "text-gray-600 bg-gray-50"
-    }
-  }
-
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedIds(kiosks.map(kiosk => kiosk.id))
-    } else {
-      setSelectedIds([])
-    }
-  }
-
-  const resetFilters = () => {
-    setFilterStatus('')
-    setFilterDate(undefined)
-  }
-
-  const applyFilters = () => {
-    console.log('Filters applied:', { filterStatus, filterDate })
-    setIsFilterOpen(false)
-  }
+export default function InvoiceDashboard() {
+  const [activeTab, setActiveTab] = useState('dashboard')
 
   return (
-    <div className="space-y-4 p-6">
-      <Header title='Kiosque' />
-      <KioskMetrics />
-      <div className="flex items-center gap-4">
-        <div className="relative w-72">
-          <MagnifyingGlassIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Rechercher..."
-            className="pl-8"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <Select defaultValue="all">
-          <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder="TOUS LES KIOSQUES" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">TOUS LES KIOSQUES</SelectItem>
-            <SelectItem value="active">En activité</SelectItem>
-            <SelectItem value="maintenance">En maintenance</SelectItem>
-            <SelectItem value="closed">Fermé</SelectItem>
-          </SelectContent>
-        </Select>
-        <div className="ml-auto flex items-center gap-2">
-          <Button variant="outline" size="icon">
-            <Settings className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" size="icon">
-            <RotateCcw className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" size="icon">
-            <Signal className="h-4 w-4" />
-          </Button>
-          <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="icon">
-                <Filter className="h-4 w-4" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-80">
-              <div className="space-y-4">
-                <h3 className="font-medium text-lg">Filtres</h3>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Statut</label>
-                  <Select value={filterStatus} onValueChange={setFilterStatus}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Sélectionner le statut" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="En activité">En activité</SelectItem>
-                      <SelectItem value="En maintenance">En maintenance</SelectItem>
-                      <SelectItem value="Fermé">Fermé</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Date</label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="w-full justify-start text-left font-normal"
-                      >
-                        {filterDate ? format(filterDate, "P", { locale: fr }) : "Sélectionner la date"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={filterDate}
-                        onSelect={setFilterDate}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                <div className="flex justify-between">
-                  <Button variant="outline" onClick={resetFilters}>Réinitialiser</Button>
-                  <Button onClick={applyFilters}>Appliquer</Button>
-                </div>
-              </div>
-            </PopoverContent>
-          </Popover>
-        </div>
-      </div>
-
-      <div className="rounded-lg border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[50px]">
-                <Checkbox
-                  checked={selectedIds.length === kiosks.length}
-                  onCheckedChange={handleSelectAll}
-                />
-              </TableHead>
-              <TableHead>N° kiosque</TableHead>
-              <TableHead>Responsable</TableHead>
-              <TableHead>Ville</TableHead>
-              <TableHead>Zone</TableHead>
-              <TableHead>Statut</TableHead>
-              <TableHead>Revenu mensuel moyen</TableHead>
-              <TableHead className="w-[50px]"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {kiosks.map((kiosk) => (
-              <TableRow key={kiosk.id}>
-                <TableCell>
-                  <Checkbox
-                    checked={selectedIds.includes(kiosk.id)}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        setSelectedIds([...selectedIds, kiosk.id])
-                      } else {
-                        setSelectedIds(selectedIds.filter(id => id !== kiosk.id))
-                      }
-                    }}
-                  />
-                </TableCell>
-                <TableCell>{kiosk.id}</TableCell>
-                <TableCell>{kiosk.manager}</TableCell>
-                <TableCell>{kiosk.city}</TableCell>
-                <TableCell>{kiosk.zone}</TableCell>
-                <TableCell>
-                  <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${getStatusColor(kiosk.status)}`}>
-                    {kiosk.status}
-                  </span>
-                </TableCell>
-                <TableCell>{kiosk.revenue}</TableCell>
-                <TableCell>
-                  <Button variant="ghost" size="icon">
-                    <MoreHorizontal className="h-4 w-4" />
-                    <span className="sr-only">More actions</span>
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-500">
-          Page {currentPage} of {totalPages}
-        </p>
-        <div className="flex gap-1">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-            disabled={currentPage === 1}
-          >
-            Previous
-          </Button>
-          {[1, 2, 3, '...', totalPages].map((page, index) => (
-            <Button
-              key={index}
-              variant={currentPage === page ? "default" : "outline"}
-              size="sm"
-              onClick={() => {
-                if (typeof page === 'number') setCurrentPage(page)
-              }}
-              className={`${typeof page !== 'number' ? 'pointer-events-none' : ''
-                } ${page === currentPage ? 'bg-orange-500 text-white hover:bg-orange-600' : ''}`}
+    <div className="container mx-auto p-4">
+      <div className="flex justify-between items-center mb-6">
+        <nav className="flex space-x-1 border-b border-gray-200">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 focus:outline-none ${
+                activeTab === tab.id ? "border-b-2 border-orange-500 text-orange-600" : ""
+              }`}
             >
-              {page}
-            </Button>
+              {tab.label}
+            </button>
           ))}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-            disabled={currentPage === totalPages}
-          >
-            Next
+        </nav>
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon">
+            <ArrowDownTrayIcon className="h-5 w-5" />
           </Button>
+          <Link
+            href={{
+              pathname: '/admin/facturepaiement/create',
+            }}
+            className=""
+          >
+            <Button className="bg-orange-500 hover:bg-orange-600 text-white">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M5.99988 11.8332C5.72655 11.8332 5.49988 11.6066 5.49988 11.3332V8.53991L5.01988 9.01991C4.82655 9.21324 4.50655 9.21324 4.31321 9.01991C4.11988 8.82658 4.11988 8.50658 4.31321 8.31324L5.64655 6.97991C5.78655 6.83991 6.00655 6.79324 6.19321 6.87324C6.37988 6.94658 6.49988 7.13324 6.49988 7.33324V11.3332C6.49988 11.6066 6.27321 11.8332 5.99988 11.8332Z" fill="white" />
+                <path d="M7.33338 9.16663C7.20671 9.16663 7.08004 9.11996 6.98004 9.01996L5.64671 7.68663C5.45338 7.49329 5.45338 7.17329 5.64671 6.97996C5.84004 6.78663 6.16004 6.78663 6.35338 6.97996L7.68671 8.31329C7.88004 8.50663 7.88004 8.82663 7.68671 9.01996C7.58671 9.11996 7.46004 9.16663 7.33338 9.16663Z" fill="white" />
+                <path d="M9.99992 15.1666H5.99992C2.37992 15.1666 0.833252 13.6199 0.833252 9.99992V5.99992C0.833252 2.37992 2.37992 0.833252 5.99992 0.833252H9.33325C9.60659 0.833252 9.83325 1.05992 9.83325 1.33325C9.83325 1.60659 9.60659 1.83325 9.33325 1.83325H5.99992C2.92659 1.83325 1.83325 2.92659 1.83325 5.99992V9.99992C1.83325 13.0733 2.92659 14.1666 5.99992 14.1666H9.99992C13.0733 14.1666 14.1666 13.0733 14.1666 9.99992V6.66659C14.1666 6.39325 14.3933 6.16659 14.6666 6.16659C14.9399 6.16659 15.1666 6.39325 15.1666 6.66659V9.99992C15.1666 13.6199 13.6199 15.1666 9.99992 15.1666Z" fill="white" />
+                <path d="M14.6666 7.16658H11.9999C9.71992 7.16658 8.83325 6.27991 8.83325 3.99991V1.33324C8.83325 1.13324 8.95325 0.946578 9.13992 0.873244C9.32659 0.793244 9.53992 0.839911 9.68659 0.979911L15.0199 6.31324C15.1599 6.45324 15.2066 6.67324 15.1266 6.85991C15.0466 7.04658 14.8666 7.16658 14.6666 7.16658ZM9.83325 2.53991V3.99991C9.83325 5.71991 10.2799 6.16658 11.9999 6.16658H13.4599L9.83325 2.53991Z" fill="white" />
+              </svg>
+              Ajouter un nouveau kiosque
+            </Button>
+          </Link>
+
         </div>
+      </div>
+      
+      <div className="mt-4">
+        {activeTab === 'dashboard' && <KioskTab1 />}
+        {activeTab === 'invoices' && (
+           <KioskTab2 />
+        )}
       </div>
     </div>
   )

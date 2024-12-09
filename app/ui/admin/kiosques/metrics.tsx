@@ -1,8 +1,8 @@
 'use client'
-
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { ArrowRight, PlusCircle } from 'lucide-react'
+import { Button,  } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { ArrowRight, PlusCircle, ArrowUpCircleIcon } from 'lucide-react'
+import styles from '@/app/ui/dashboard.module.css';
 
 const metrics = [
   {
@@ -28,50 +28,30 @@ const metrics = [
 export default function KioskMetrics() {
   return (
     <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <div className="space-y-1">
-          <h2 className="text-sm text-muted-foreground font-medium uppercase">
-            NOMBRE TOTAL DE KIOSQUES
-          </h2>
-          <div className="flex items-center gap-2">
-            <span className="text-3xl font-bold">390</span>
-            <span className="px-2 py-1 text-sm bg-green-100 text-green-700 rounded-md">
-              +12
-            </span>
-          </div>
-        </div>
-        <Button className="bg-orange-500 hover:bg-orange-600 text-white gap-2">
-          <PlusCircle className="h-4 w-4" />
-          Ajouter un nouveau kiosque
-        </Button>
-      </div>
 
       <div className="grid md:grid-cols-3 gap-4">
         {metrics.map((metric, index) => (
-          <Card key={index} className="relative overflow-hidden">
-            <CardContent className="p-6">
-              <div className="space-y-4">
-                <h3 className="font-medium capitalize">{metric.title}</h3>
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-orange-500 rounded-sm" />
-                    <span className="text-2xl font-bold">{metric.metrics.current}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-blue-500 rounded-sm" />
-                    <span className="text-2xl font-bold">{metric.metrics.target}</span>
-                  </div>
+          <Card className={`shadow-md ${styles.carte}`} key={index}>
+          <CardHeader className={`flex flex-column space-y-0 pb-2 shadow-md ${styles.carteEntete}`}>
+            <CardTitle className="text-sm font-medium">{metric.title}</CardTitle>
+            <div className="flex items-baseline space-x-3">
+              <div className="text-2xl font-bold mt-2">132</div>
+              <div className="flex items-center bg-green-500 rounded-full bg-opacity-15 px-2 py-0.5">
+                <div className="inline-block  text-xs font-medium text-green-500 flex items-center">
+                  <ArrowUpCircleIcon className='inline-block h-5 w-5' />
+
                 </div>
-                <div className="flex items-center justify-between text-sm text-muted-foreground">
-                  <span>{metric.stock}</span>
-                  <div className="flex items-center gap-2">
-                    <span>{metric.period}</span>
-                    <ArrowRight className="h-4 w-4" />
-                  </div>
-                </div>
+                <div className="ml-2 text-medium text-gray-500">5.2%</div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </CardHeader>
+          <CardContent>
+
+            <div className="flex items-center text-medium">
+              <p> <span className='font-bold'>+29</span> le dernier mois</p>
+            </div>
+          </CardContent>
+        </Card>
         ))}
       </div>
     </div>
