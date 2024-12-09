@@ -6,17 +6,6 @@ import { Badge } from "@/components/ui/badge"
 import { Eye, X } from 'lucide-react'
 import { useState } from 'react'
 
-interface Payment {
-    id: string
-    name: string
-    avatar: string
-    invoice: string
-    type: string
-    amount: string
-    date: string
-    status: 'En attente' | 'Échoué' | 'Effectué' | 'Actif'
-  }
-
 export function TransactionDetailsDialog() {
   const [isOpen, setIsOpen] = useState(false)
 
