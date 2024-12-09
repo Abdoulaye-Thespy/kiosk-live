@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import Header from '@/app/ui/header'
-import { ReminderLetterDialog } from './nouveau/page'
+import ReminderLetterDialog from './nouveau/page'
 
 
 import {
