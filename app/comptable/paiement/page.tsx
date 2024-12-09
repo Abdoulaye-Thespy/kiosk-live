@@ -174,7 +174,6 @@ export default function PaymentTable() {
               <TableCell className="text-right">
                
               <Button variant="ghost" size="icon">
-              <TransactionDetailsDialog />
                 </Button>
                 <Button variant="ghost" size="icon">
                   <MoreHorizontal className="h-4 w-4" />
