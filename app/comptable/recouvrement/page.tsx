@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import Header from '@/app/ui/header'
-import ReminderLetterDialog from './nouveau/page'
 
 
 import {
@@ -72,11 +71,6 @@ export default function RecoveryTable() {
       >
         Générer une lettre de relance
       </Button>
-
-      <ReminderLetterDialog 
-        isOpen={isReminderOpen}
-        onClose={() => setIsReminderOpen(false)}
-      />
         </div>
       </div>
 
