@@ -22,7 +22,6 @@ import {
 import { Search, Download, Filter, Plus, MoreHorizontal } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { TransactionDetailsDialog } from './details/page'
 import Link from 'next/link'
 
 interface Payment {
