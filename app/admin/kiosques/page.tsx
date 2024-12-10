@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { ArrowDownTrayIcon } from "@heroicons/react/24/outline"
 import KioskTab1 from '@/app/ui/admin/kiosques/tab1'
 import KioskTab2 from '@/app/ui/admin/kiosques/tab2'
-import { AddKioskDialog } from './nouveau/page'
+import { AddKioskDialog } from '@/app/ui/admin/kiosques/nouveau'
 
 
 const tabs = [
