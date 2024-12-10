@@ -50,7 +50,7 @@ export default function MapView() {
   }
 
   return (
-    <div className="space-y-4 p-4">
+    <div className="">
       <Card className="p-4">
         <LoadScript googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!}>
           <GoogleMap

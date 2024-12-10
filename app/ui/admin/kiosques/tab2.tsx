@@ -2,7 +2,7 @@
 
 import React from 'react'
 
-import MapView from '../../maps';
+import MapView from '../../maps/maps';
 import KioskMetrics from './metrics';
 
 

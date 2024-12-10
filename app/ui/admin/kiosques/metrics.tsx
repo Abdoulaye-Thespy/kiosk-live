@@ -1,8 +1,10 @@
 'use client'
 import { Button,  } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ArrowRight, PlusCircle, ArrowUpCircleIcon } from 'lucide-react'
+import {ArrowUpCircleIcon } from 'lucide-react'
 import styles from '@/app/ui/dashboard.module.css';
+import ThreeKioskSVG from "../../svg/threekiosks";
+import OneKioskSVG from "../../svg/onekiosks";
 
 const metrics = [
   {
@@ -27,23 +29,47 @@ const metrics = [
 
 export default function KioskMetrics() {
   return (
-    <div className="p-6 space-y-6">
+    <div className="">
 
       <div className="grid md:grid-cols-3 gap-4">
         {metrics.map((metric, index) => (
           <Card className={`shadow-md ${styles.carte}`} key={index}>
           <CardHeader className={`flex flex-column space-y-0 pb-2 shadow-md ${styles.carteEntete}`}>
             <CardTitle className="text-sm font-medium">{metric.title}</CardTitle>
-            <div className="flex items-baseline space-x-3">
-              <div className="text-2xl font-bold mt-2">132</div>
-              <div className="flex items-center bg-green-500 rounded-full bg-opacity-15 px-2 py-0.5">
-                <div className="inline-block  text-xs font-medium text-green-500 flex items-center">
-                  <ArrowUpCircleIcon className='inline-block h-5 w-5' />
 
+              <div className="flex justify-between pt-2">
+                <div className="flex items-baseline space-x-3">
+                  <div className="flex items-center bg-gray-500 rounded-full bg-opacity-15 px-2 py-0.5">
+                    <div className="inline-block  text-xs font-medium text-grey-500 flex items-center">
+                      <ThreeKioskSVG />
+
+                    </div>
+                    <div className="ml-2 text-xl font-bold text-grey-500">445</div>
+                  </div>
                 </div>
-                <div className="ml-2 text-medium text-gray-500">5.2%</div>
+
+                <div className="flex items-baseline space-x-3">
+                  <div className="flex items-center bg-gray-500 rounded-full bg-opacity-15 px-2 py-0.5">
+                    <div className="inline-block  text-xs font-medium text-grey-500 flex items-center">
+                      <ThreeKioskSVG />
+
+                    </div>
+                    <div className="ml-2 text-xl font-bold text-grey-500">445</div>
+                  </div>
+                </div>
+
+                <div className="flex items-baseline space-x-3">
+                  <div className="flex items-center bg-gray-500 rounded-full bg-opacity-15 px-2 py-0.5">
+                    <div className="inline-block  text-xs font-medium text-grey-500 flex items-center">
+                      <OneKioskSVG />
+
+                    </div>
+                    <div className="ml-2 text-xl font-bold text-grey-500">445</div>
+                  </div>
+                </div>
+
               </div>
-            </div>
+
           </CardHeader>
           <CardContent>
 
