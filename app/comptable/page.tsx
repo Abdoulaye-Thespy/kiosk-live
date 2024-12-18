@@ -31,6 +31,9 @@ import {
 import { Label } from "@/components/ui/label"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Download, Filter, Copy, ArrowUpRight, TrendingDown, TrendingUp, X } from 'lucide-react'
+import TrashSVG from "../ui/svg/trash"
+import ModifySVG from "../ui/svg/modify"
+import { ExportDialog } from "../ui/commercial/facture/exportdialog"
 
 interface Invoice {
   id: string
@@ -225,10 +228,6 @@ export default function InvoiceDashboard() {
               Plus de filtres
             </Button>
           </div>
-          <Button variant="outline">
-            <Download className="h-4 w-4 mr-2" />
-            Exporter
-          </Button>
 
           <Dialog>
             <DialogTrigger asChild>
@@ -240,14 +239,9 @@ export default function InvoiceDashboard() {
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader className="flex flex-row items-center justify-between">
                 <DialogTitle>Exporter les factures</DialogTitle>
-                <DialogTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-6 w-6 absolute right-4 top-4">
-                    <X className="h-4 w-4" />
-                  </Button>
-                </DialogTrigger>
               </DialogHeader>
-              <div className="space-y-6 pt-4">
-                <div className="space-y-4">
+              <div className="space-y-6 pt-2">
+                <div className="space-y-2">
                   <h4 className="font-medium">Fuseau horaire</h4>
                   <div className="flex items-center space-x-2">
                     <div className="h-2 w-2 rounded-full bg-orange-500" />
@@ -256,7 +250,7 @@ export default function InvoiceDashboard() {
                   </div>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-2">
                   <h4 className="font-medium">Période de date</h4>
                   <RadioGroup defaultValue="today" className="space-y-3">
                     <div className="flex items-center space-x-2">
@@ -362,10 +356,10 @@ export default function InvoiceDashboard() {
                 <TableCell>
                   <div className="flex gap-2">
                     <Button variant="ghost" size="icon">
-                      <Copy className="h-4 w-4" />
+                      <TrashSVG  />
                     </Button>
                     <Button variant="ghost" size="icon">
-                      <ArrowUpRight className="h-4 w-4" />
+                      <ModifySVG />
                     </Button>
                   </div>
                 </TableCell>

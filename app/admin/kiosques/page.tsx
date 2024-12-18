@@ -7,7 +7,7 @@ import { ArrowDownTrayIcon } from "@heroicons/react/24/outline"
 import KioskTab1 from '@/app/ui/admin/kiosques/tab1'
 import KioskTab2 from '@/app/ui/admin/kiosques/tab2'
 import { AddKioskDialog } from '@/app/ui/admin/kiosques/nouveau'
-import ThreeKioskSVG from '@/app/ui/svg/threekiosks'
+import Header from '@/app/ui/header'
 
 
 const tabs = [
@@ -20,6 +20,7 @@ export default function InvoiceDashboard() {
 
   return (
     <div className="container mx-auto p-4">
+      <Header title='Kiosques'/>
       <div className="flex justify-between items-center mb-6">
         <nav className="flex space-x-1 border-b border-gray-200">
           {tabs.map((tab) => (
