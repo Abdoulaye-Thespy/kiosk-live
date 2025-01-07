@@ -6,3 +6,13 @@ For more information, see the [course curriculum](https://nextjs.org/learn) on t
 
 
 To install icon run pnpm dlx shadcn@latest add packagename.
+
+Switch to the postgres User:
+bash
+
+Copier
+sudo -i -u postgres
+
+Run prima command
+
+pnpm dlx prima 

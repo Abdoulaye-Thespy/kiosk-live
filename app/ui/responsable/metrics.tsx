@@ -65,7 +65,7 @@ const metrics = [
 ]
 
 
-export default function MetricsResponsable() {
+export default function MetricsResponsableTab() {
 
     return (
         <div className="space-y-8">

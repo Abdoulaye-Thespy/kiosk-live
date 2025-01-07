@@ -1,17 +1,17 @@
 'use client'
 
-import React, { useState } from 'react'
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import Link from 'next/link'
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { EnvelopeIcon, BellIcon, EllipsisHorizontalIcon, ArrowDownTrayIcon, MagnifyingGlassIcon, UserGroupIcon, UserPlusIcon } from '@heroicons/react/24/outline'
+import React, { useState, useEffect } from 'react';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import Link from 'next/link';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { EnvelopeIcon, BellIcon, EllipsisHorizontalIcon, ArrowDownTrayIcon, MagnifyingGlassIcon, UserGroupIcon, UserPlusIcon } from '@heroicons/react/24/outline';
 import {
   ArrowLongRightIcon,
   ArrowUpCircleIcon,
@@ -20,68 +20,96 @@ import {
   ArrowsUpDownIcon,
   TrashIcon, 
   PencilIcon
-} from '@heroicons/react/24/solid'
-import { format } from "date-fns"
-import { fr } from "date-fns/locale"
-import Header from '@/app/ui/header'
+} from '@heroicons/react/24/solid';
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+import Header from '@/app/ui/header';
 
-const users = [
-  { id: 1, name: 'Darlene Robertson', role: 'Client', email: 'darlenerobertson@gmail.com', number: '+237 691 234 567', date: '01/02/2024', status: 'Inactif' },
-  { id: 2, name: 'Jane Cooper', role: 'Admin', email: 'janecooper@gmail.com', number: '+237 691 234 567', date: '01/02/2024', status: 'Suspendu' },
-  { id: 3, name: 'Jenny Wilson', role: 'Comptable', email: 'jennywilson@gmail.com', number: '+237 691 234 567', date: '01/02/2024', status: 'Actif' },
-  { id: 4, name: 'Robert Fox', role: 'Client', email: 'robertfox@gmail.com', number: '+237 691 234 567', date: '01/02/2024', status: 'Inactif' },
-  { id: 5, name: 'Wade Warren', role: 'R. Kiosque', email: 'wadewarren@gmail.com', number: '+237 691 234 567', date: '01/02/2024', status: 'Inactif' },
-]
+type User = {
+  id: number;
+  name: string;
+  role: string;
+  email: string;
+  phone: string;
+  CreatedAt: Date;
+  status: string;
+};
+type transformedData = {
+  id: number;
+  name: string;
+  role: string;
+  email: string;
+  phone: string;
+  CreatedAt: Date;
+  status: string;
+};
 
 export default function UserManagement() {
-  const [selectedUsers, setSelectedUsers] = useState<number[]>([])
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [selectedUserType, setSelectedUserType] = useState('all')
-  const [filterRole, setFilterRole] = useState('')
-  const [filterDate, setFilterDate] = useState<Date | undefined>(undefined)
-  const [filterStatus, setFilterStatus] = useState('')
-  const [isFilterOpen, setIsFilterOpen] = useState(false)
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false)
+  const [users, setUsers] = useState<User[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedUserType, setSelectedUserType] = useState('all');
+  const [filterRole, setFilterRole] = useState('');
+  const [filterDate, setFilterDate] = useState<Date | undefined>(undefined);
+  const [filterStatus, setFilterStatus] = useState('');
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+
+  useEffect(() => {
+    // Fetch users from the API
+    const fetchUsers = async () => {
+      try {
+        const response = await fetch('/api/users');
+        const data: User[] = await response.json();
+  
+        setUsers(data);
+      } catch (error) {
+        console.error('Error fetching users:', error);
+      }
+    };
+  
+    fetchUsers();
+  }, []);
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedUsers(users.map(user => user.id))
+      setSelectedUsers(users.map(user => user.id));
     } else {
-      setSelectedUsers([])
+      setSelectedUsers([]);
     }
-  }
+  };
 
   const handleDelete = () => {
-    console.log('Deleting users:', selectedUsers)
-  }
+    console.log('Deleting users:', selectedUsers);
+  };
 
   const handleSelectUser = (userId: number, checked: boolean) => {
     if (checked) {
-      setSelectedUsers([...selectedUsers, userId])
+      setSelectedUsers([...selectedUsers, userId]);
     } else {
-      setSelectedUsers(selectedUsers.filter(id => id !== userId))
+      setSelectedUsers(selectedUsers.filter(id => id !== userId));
     }
-  }
+  };
 
-  const openModal = () => setIsModalOpen(true)
-  const closeModal = () => setIsModalOpen(false)
+  const openModal = () => setIsModalOpen(true);
+  const closeModal = () => setIsModalOpen(false);
 
   const resetFilters = () => {
-    setFilterRole('')
-    setFilterDate(undefined)
-    setFilterStatus('')
-  }
+    setFilterRole('');
+    setFilterDate(undefined);
+    setFilterStatus('');
+  };
 
   const applyFilters = () => {
-    console.log('Filters applied:', { filterRole, filterDate, filterStatus })
-    setIsFilterOpen(false)
-  }
+    console.log('Filters applied:', { filterRole, filterDate, filterStatus });
+    setIsFilterOpen(false);
+  };
 
   const handleDateSelect = (date: Date | undefined) => {
-    setFilterDate(date)
-    setIsCalendarOpen(false)
-  }
+    setFilterDate(date);
+    setIsCalendarOpen(false);
+  };
 
   return (
     <div className="container mx-auto space-y-6">
@@ -372,8 +400,8 @@ export default function UserManagement() {
                   {user.email}
                 </span>
               </TableCell>
-              <TableCell className='font-medium'>{user.number}</TableCell>
-              <TableCell className='font-medium'>{user.date}</TableCell>
+              <TableCell className='font-medium'>{user.phone}</TableCell>
+              <TableCell className='font-medium'>{user.CreatedAt}</TableCell>
               <TableCell>
                 <span className={`px-2 py-1 rounded-full text-xs ${
                   user.status === 'Actif' ? 'bg-green-100 text-green-800' :
@@ -422,5 +450,5 @@ export default function UserManagement() {
         </div>
       </div>
     </div>
-  )
+  );
 }
