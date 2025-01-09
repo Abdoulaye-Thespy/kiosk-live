@@ -1,33 +1,46 @@
-import AcmeLogo from '@/app/ui/acme-logo';
-import { ArrowRightIcon } from '@heroicons/react/24/outline';
-import Link from 'next/link';
+import { AuthTabs } from "@/components/auth-tabs";
+import { Store } from 'lucide-react';
 
-export default function Page() {
+export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col p-6">
-      <div className="flex h-20 shrink-0 items-end rounded-lg bg-blue-500 p-4 md:h-52">
-        {/* <AcmeLogo /> */}
-      </div>
-      <div className="mt-4 flex grow flex-col gap-4 md:flex-row">
-        <div className="flex flex-col justify-center gap-6 rounded-lg bg-gray-50 px-6 py-10 md:w-2/5 md:px-20">
-          <p className={`text-xl text-gray-800 md:text-3xl md:leading-normal`}>
-            <strong>Welcome to Acme.</strong> This is the example for the{' '}
-            <a href="https://nextjs.org/learn/" className="text-blue-500">
-              Next.js Learn Course
-            </a>
-            , brought to you by Vercel.
-          </p>
-          <Link
-            href="/login"
-            className="flex items-center gap-5 self-start rounded-lg bg-blue-500 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-blue-400 md:text-base"
-          >
-            <span>Log in</span> <ArrowRightIcon className="w-5 md:w-6" />
-          </Link>
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
+      <div className="grid w-full max-w-5xl lg:grid-cols-2 bg-white rounded-lg shadow-lg overflow-hidden">
+        <div
+          className="relative hidden lg:block"
+          style={{
+            backgroundImage: "url('/total.jpg')",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }}
+        >
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-[90%] max-w-[500px] bg-white rounded-lg p-8 shadow-lg">
+              <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                Gestion de vos kiosque
+              </h2>
+              <p className="text-sm text-gray-600">
+                Simplifiez la gestion de vos kiosques et optimisez vos opérations au quotidien. 
+                Accédez aux statistiques pour maximiser vos résultats
+              </p>
+              <div className="flex justify-center mt-6">
+                <div className="flex gap-1">
+                  {[1, 2, 3].map((_, i) => (
+                    <div
+                      key={i}
+                      className={`h-2 w-2 rounded-full ${
+                        i === 0 ? "bg-[#ff6b4a]" : "bg-gray-200"
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="flex items-center justify-center p-6 md:w-3/5 md:px-28 md:py-12">
-          {/* Add Hero Images Here */}
+        <div className="flex items-center justify-center p-8">
+          <AuthTabs />
         </div>
       </div>
-    </main>
+    </div>
   );
 }
