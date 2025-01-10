@@ -34,15 +34,6 @@ type User = {
   CreatedAt: Date;
   status: string;
 };
-type transformedData = {
-  id: number;
-  name: string;
-  role: string;
-  email: string;
-  phone: string;
-  CreatedAt: Date;
-  status: string;
-};
 
 export default function UserManagement() {
   const [users, setUsers] = useState<User[]>([]);
@@ -55,20 +46,25 @@ export default function UserManagement() {
   const [filterStatus, setFilterStatus] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    role: '',
+    address: '',
+    status: '',
+  });
 
   useEffect(() => {
-    // Fetch users from the API
     const fetchUsers = async () => {
       try {
         const response = await fetch('/api/users');
         const data: User[] = await response.json();
-  
         setUsers(data);
       } catch (error) {
         console.error('Error fetching users:', error);
       }
     };
-  
     fetchUsers();
   }, []);
 
@@ -111,6 +107,36 @@ export default function UserManagement() {
     setIsCalendarOpen(false);
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prevData => ({
+      ...prevData,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    try {
+      const response = await fetch('/api/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+      if (response.ok) {
+        const newUser = await response.json();
+        setUsers(prevUsers => [...prevUsers, newUser]);
+        closeModal();
+      } else {
+        console.error('Failed to add user');
+      }
+    } catch (error) {
+      console.error('Error adding user:', error);
+    }
+  };
+
   return (
     <div className="container mx-auto space-y-6">
       <Header title="Utilisateurs" />
@@ -136,47 +162,84 @@ export default function UserManagement() {
                   <XMarkIcon className="h-6 w-6" />
                 </button>
                 <h2 className="text-xl font-semibold mb-4">Créer un utilisateur</h2>
-                <form className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
-                    <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
                       Nom complet
                     </label>
-                    <Input id="fullName" placeholder="Tahsan Khan" className="w-full" />
+                    <Input 
+                      id="fullName" 
+                      name="name"
+                      value={formData.name}
+                      onChange={handleInputChange}
+                      placeholder="Tahsan Khan" 
+                      className="w-full" 
+                    />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                         Email
                       </label>
-                      <Input id="email" type="email" placeholder="Adresse mail" className="w-full" />
+                      <Input 
+                        id="email" 
+                        name="email"
+                        type="email" 
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        placeholder="Adresse mail" 
+                        className="w-full" 
+                      />
                     </div>
                     <div>
                       <label htmlFor="number" className="block text-sm font-medium text-gray-700 mb-1">
                         Numéro
                       </label>
-                      <Input id="number" type="tel" placeholder="6 012 345 678" className="w-full" />
+                      <Input 
+                        id="number" 
+                        name="phone"
+                        type="tel" 
+                        value={formData.number}
+                        onChange={handleInputChange}
+                        placeholder="6 012 345 678" 
+                        className="w-full" 
+                      />
                     </div>
                   </div>
                   <div>
                     <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
                       Rôle
                     </label>
-                    <Select>
-                      <SelectTrigger id="role" className="w-full">
-                        <SelectValue placeholder="Sélectionner un rôle" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="client">Client</SelectItem>
-                        <SelectItem value="admin">Admin</SelectItem>
-                        <SelectItem value="manager">Manager</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <select
+                      id="role"
+                      name="role"
+                      value={formData.role}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                    >
+                      <option value="">Sélectionner un rôle</option>
+                      <option value="Client">Client</option>
+                      <option value="Super admin">Super Admin</option>
+                      <option value="Admin">Admin</option>
+                      <option value="Responsable Kiosque">Responsable Kiosque</option>
+                      <option value="Technicien">Technicien</option>
+                      <option value="Commercial">Commercial</option>
+                      <option value="Responsable Juridique">Responsable Juridique</option>
+
+                    </select>
                   </div>
                   <div>
                     <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
                       Address
                     </label>
-                    <Input id="address" placeholder="address line" className="w-full" />
+                    <Input 
+                      id="address" 
+                      name="address"
+                      value={formData.address}
+                      onChange={handleInputChange}
+                      placeholder="address line" 
+                      className="w-full" 
+                    />
                   </div>
                   <div className="flex justify-end space-x-3 mt-6">
                     <Button variant="outline" onClick={closeModal}>
@@ -452,3 +515,4 @@ export default function UserManagement() {
     </div>
   );
 }
+
