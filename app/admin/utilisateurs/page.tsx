@@ -109,6 +109,7 @@ export default function UserManagement() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+    console.log(formData);
     setFormData(prevData => ({
       ...prevData,
       [name]: value
