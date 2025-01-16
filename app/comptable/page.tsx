@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Link from 'next/link'
+import Header from "../ui/header"
 import {
   Table,
   TableBody,
@@ -141,6 +142,7 @@ const invoices: Invoice[] = [
 export default function InvoiceDashboard() {
   return (
     <div className="space-y-6 p-6">
+       <Header title="Facturation" />
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Factures</h1>
         <Link

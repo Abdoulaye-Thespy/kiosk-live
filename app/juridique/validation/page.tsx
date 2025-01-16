@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import Header from '@/app/ui/header'
 import {
   Dialog,
   DialogContent,
@@ -125,6 +126,7 @@ export default function ContractManagement() {
 
   return (
     <div className="space-y-4">
+      <Header title="Contrat à Valider" />
       <Table>
         <TableHeader>
           <TableRow>

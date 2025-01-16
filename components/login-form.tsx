@@ -1,7 +1,9 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { signIn } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Loader2, Mail, KeyRound, Eye, EyeOff } from 'lucide-react'
@@ -9,14 +11,38 @@ import { Loader2, Mail, KeyRound, Eye, EyeOff } from 'lucide-react'
 export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [error, setError] = useState("")
+  const router = useRouter()
 
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault()
     setIsLoading(true)
+    setError("")
 
-    setTimeout(() => {
+    try {
+      const result = await signIn("credentials", {
+        redirect: false,
+        email,
+        password,
+      })
+
+      if (result?.error) {
+        setError("Invalid email or password")
+      } else {
+        // Fetch user data to get the role
+        const res = await fetch('/api/auth/session')
+        const session = await res.json()
+        const userRole = session.user.role.toLowerCase()
+        router.push(`/${userRole}`)
+      }
+    } catch (error) {
+      setError("An error occurred. Please try again.")
+      console.error(error)
+    } finally {
       setIsLoading(false)
-    }, 3000)
+    }
   }
 
   return (
@@ -33,6 +59,9 @@ export function LoginForm() {
               placeholder="johndoe@mail.com"
               className="h-11 pl-10 border-gray-200"
               disabled={isLoading}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
             />
           </div>
         </div>
@@ -47,6 +76,9 @@ export function LoginForm() {
               placeholder="Votre mot de passe"
               className="h-11 pl-10 pr-10 border-gray-200"
               disabled={isLoading}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
             />
             <button
               type="button"
@@ -70,6 +102,12 @@ export function LoginForm() {
           </div>
         </div>
       </div>
+
+      {error && (
+        <div className="text-red-500 text-sm mt-2">
+          {error}
+        </div>
+      )}
 
       <Button 
         type="submit"
@@ -96,6 +134,7 @@ export function LoginForm() {
         variant="outline"
         disabled={isLoading}
         className="w-full h-11 border-gray-200 bg-white hover:bg-gray-50"
+        onClick={() => signIn("google")}
       >
         <div className="flex items-center justify-center gap-3">
           <svg viewBox="0 0 24 24" className="h-5 w-5">
@@ -110,4 +149,3 @@ export function LoginForm() {
     </form>
   )
 }
-

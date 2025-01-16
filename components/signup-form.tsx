@@ -1,21 +1,63 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Loader2, User, Mail, KeyRound, Eye, EyeOff } from 'lucide-react'
 
+import { signUp } from "@/app/actions/auth"
+
 export function SignupForm() {
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [name, setName] = useState("")
+  const [email, setEmail] = useState("")
+  const [status, setStatus] = useState("pending")
+  const [password, setPassword] = useState("")
+  const [error, setError] = useState("")
+  const [signupSuccess, setSignupSuccess] = useState(false)
+  const router = useRouter()
 
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault()
     setIsLoading(true)
+    setError("")
 
-    setTimeout(() => {
+    try {
+      console.log("trying.....")
+      const result = await signUp(name, email, password, "CLIENT", status)
+      console.log(result);
+      if (result.success) {
+        setSignupSuccess(true)
+      } else {
+        setError("Failed to sign up. Please try again.")
+      }
+    } catch (error) {
+      setError("An error occurred. Please try again.")
+      console.error(error)
+    } finally {
       setIsLoading(false)
-    }, 3000)
+    }
+  }
+
+  function handleConfirmation() {
+    window.location.reload()
+  }
+
+  if (signupSuccess) {
+    return (
+      <div className="text-center">
+        <h2 className="text-2xl font-bold mb-4">Signup Successful!</h2>
+        <p className="mb-6">Your account has been created successfully.</p>
+        <Button 
+          onClick={handleConfirmation}
+          className="w-full h-11 bg-[#ff6b4a] hover:bg-[#ff5a36] text-white font-medium"
+        >
+          Okay
+        </Button>
+      </div>
+    )
   }
 
   return (
@@ -32,6 +74,9 @@ export function SignupForm() {
               placeholder="John Doe"
               className="h-11 pl-10 border-gray-200"
               disabled={isLoading}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
             />
           </div>
         </div>
@@ -46,6 +91,9 @@ export function SignupForm() {
               placeholder="johndoe@mail.com"
               className="h-11 pl-10 border-gray-200"
               disabled={isLoading}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
             />
           </div>
         </div>
@@ -60,6 +108,9 @@ export function SignupForm() {
               placeholder="Enter your password"
               className="h-11 pl-10 pr-10 border-gray-200"
               disabled={isLoading}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
             />
             <button
               type="button"
@@ -89,6 +140,12 @@ export function SignupForm() {
         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
         Créer un compte
       </Button>
+
+      {error && (
+        <div className="text-red-500 text-sm mt-2">
+          {error}
+        </div>
+      )}
 
       <div className="relative">
         <div className="absolute inset-0 flex items-center">

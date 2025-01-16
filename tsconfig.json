@@ -30,6 +30,6 @@
     ".next/types/**/*.ts",
     "app/lib/placeholder-data.ts",
     "scripts/seed.js"
-, ".next/types/app/commercial/opportunite/nouvel/page.tsx"  ],
+, ".next/types/app/commercial/opportunite/nouvel/page.tsx", "app/api/auth/[...nextauth]/route.ts"  ],
   "exclude": ["node_modules"]
 }

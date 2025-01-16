@@ -1,13 +1,19 @@
+// app/layout.tsx
+import { Providers } from './providers'
 import '@/app/ui/global.css';
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: React.ReactNode
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <Providers>
+          {children}
+        </Providers>
+      </body>
     </html>
-  );
+  )
 }

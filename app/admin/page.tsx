@@ -9,7 +9,6 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 
 import {
   ArrowDownTrayIcon,
-  UserPlusIcon,
   ArrowUpCircleIcon,
 } from '@heroicons/react/24/solid';
 import { Search, RefreshCw, TrendingUp, Users, Store, FileText, Building2, ArrowUpRight, ArrowRight, ArrowUpLeft } from "lucide-react"

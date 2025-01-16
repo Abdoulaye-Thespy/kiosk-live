@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { ArrowUpCircleIcon, FunnelIcon, ArrowsUpDownIcon } from '@heroicons/react/24/solid'
 import { Eye, Download, RotateCcw, Ban, Trash, PenSquare } from 'lucide-react'
+import Header from '../ui/header'
 
 interface Contract {
   id: string
@@ -139,6 +140,7 @@ export default function ContractManagement() {
 
   return (
     <div className="container mx-auto space-y-6">
+      <Header title="Contrat" />
 
       <div className="grid grid-cols-3 gap-4">
         <Card>

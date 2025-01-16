@@ -19,6 +19,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { FileText, Eye, Download, ChevronDown, Filter } from 'lucide-react'
 import { format } from "date-fns"
 import { fr } from "date-fns/locale"
+import Header from "@/app/ui/header"
 
 interface Report {
   id: string
@@ -121,6 +122,7 @@ export default function FinancialReports() {
 
   return (
     <div className="space-y-4">
+      <Header title="Rapport" />
       <div className="flex items-center justify-between">
         <Input
           placeholder="Recherche"

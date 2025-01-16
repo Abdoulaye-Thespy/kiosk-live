@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/popover"
 import { format } from "date-fns"
 import { fr } from "date-fns/locale"
+import Header from '@/app/ui/header'
 
 interface InvoiceItem {
   name: string
@@ -41,6 +42,8 @@ export default function CreateInvoice() {
 
   return (
     <div className="container mx-auto p-6">
+      
+      <Header title="Facturation" />
       <div className="flex justify-between items-center mb-8">
               <Link
                   href={{
