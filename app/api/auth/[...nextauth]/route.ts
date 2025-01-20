@@ -79,26 +79,6 @@ const authOptions: NextAuthOptions = {
       }
       return session;
     },
-    async redirect({ url, baseUrl }) {
-      // If the url is a relative url, prefix it with the baseUrl
-      if (url.startsWith("/")) {
-        url = `${baseUrl}${url}`
-      }
-      // If the url is not on the same origin as the baseUrl, return the baseUrl
-      if (!url.startsWith(baseUrl)) {
-        return baseUrl
-      }
-
-      console.log("MyRole during redirect:", MyRole);
-
-      // Use MyRole to determine the redirect path
-      if (MyRole) {
-        const rolePath = MyRole.toLowerCase();
-        return `${baseUrl}/${rolePath}`;
-      }
-
-      return url;
-    },
   },
 
   pages: {

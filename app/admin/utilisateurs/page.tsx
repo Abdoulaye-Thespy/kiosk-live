@@ -1,142 +1,155 @@
-'use client'
+"use client"
 
-import React, { useState, useEffect } from 'react';
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import Link from 'next/link';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { EnvelopeIcon, BellIcon, EllipsisHorizontalIcon, ArrowDownTrayIcon, MagnifyingGlassIcon, UserGroupIcon, UserPlusIcon } from '@heroicons/react/24/outline';
+import type React from "react"
+import { useState, useEffect } from "react"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Calendar } from "@/components/ui/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import {
+  EnvelopeIcon,
+  BellIcon,
+  EllipsisHorizontalIcon,
+  ArrowDownTrayIcon,
+  MagnifyingGlassIcon,
+  UserGroupIcon,
+  UserPlusIcon,
+} from "@heroicons/react/24/outline"
 import {
   ArrowLongRightIcon,
   ArrowUpCircleIcon,
   XMarkIcon,
   FunnelIcon,
   ArrowsUpDownIcon,
-  TrashIcon, 
-  PencilIcon
-} from '@heroicons/react/24/solid';
-import { format } from "date-fns";
-import { fr } from "date-fns/locale";
-import Header from '@/app/ui/header';
+  TrashIcon,
+  PencilIcon,
+} from "@heroicons/react/24/solid"
+import { Loader2 } from "lucide-react"
+import { format } from "date-fns"
+import { fr } from "date-fns/locale"
+import Header from "@/app/ui/header"
 
 type User = {
-  id: number;
-  name: string;
-  role: string;
-  email: string;
-  phone: string;
-  CreatedAt: Date;
-  status: string;
-};
+  id: number
+  name: string
+  role: string
+  email: string
+  phone: string
+  CreatedAt: Date
+  status: string
+}
 
 export default function UserManagement() {
-  const [users, setUsers] = useState<User[]>([]);
-  const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedUserType, setSelectedUserType] = useState('all');
-  const [filterRole, setFilterRole] = useState('');
-  const [filterDate, setFilterDate] = useState<Date | undefined>(undefined);
-  const [filterStatus, setFilterStatus] = useState('');
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [users, setUsers] = useState<User[]>([])
+  const [selectedUsers, setSelectedUsers] = useState<number[]>([])
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [selectedUserType, setSelectedUserType] = useState("all")
+  const [filterRole, setFilterRole] = useState("")
+  const [filterDate, setFilterDate] = useState<Date | undefined>(undefined)
+  const [filterStatus, setFilterStatus] = useState("")
+  const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false)
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    role: '',
-    address: '',
-    status: '',
-  });
+    name: "",
+    email: "",
+    phone: "",
+    role: "",
+    address: "",
+    status: "",
+  })
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     const fetchUsers = async () => {
+      setIsLoading(true)
       try {
-        const response = await fetch('/api/users');
-        const data: User[] = await response.json();
-        setUsers(data);
+        const response = await fetch("/api/users")
+        const data: User[] = await response.json()
+        setUsers(data)
       } catch (error) {
-        console.error('Error fetching users:', error);
+        console.error("Error fetching users:", error)
+      } finally {
+        setIsLoading(false)
       }
-    };
-    fetchUsers();
-  }, []);
+    }
+    fetchUsers()
+  }, [])
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedUsers(users.map(user => user.id));
+      setSelectedUsers(users.map((user) => user.id))
     } else {
-      setSelectedUsers([]);
+      setSelectedUsers([])
     }
-  };
+  }
 
   const handleDelete = () => {
-    console.log('Deleting users:', selectedUsers);
-  };
+    console.log("Deleting users:", selectedUsers)
+  }
 
   const handleSelectUser = (userId: number, checked: boolean) => {
     if (checked) {
-      setSelectedUsers([...selectedUsers, userId]);
+      setSelectedUsers([...selectedUsers, userId])
     } else {
-      setSelectedUsers(selectedUsers.filter(id => id !== userId));
+      setSelectedUsers(selectedUsers.filter((id) => id !== userId))
     }
-  };
+  }
 
-  const openModal = () => setIsModalOpen(true);
-  const closeModal = () => setIsModalOpen(false);
+  const openModal = () => setIsModalOpen(true)
+  const closeModal = () => setIsModalOpen(false)
 
   const resetFilters = () => {
-    setFilterRole('');
-    setFilterDate(undefined);
-    setFilterStatus('');
-  };
+    setFilterRole("")
+    setFilterDate(undefined)
+    setFilterStatus("")
+  }
 
   const applyFilters = () => {
-    console.log('Filters applied:', { filterRole, filterDate, filterStatus });
-    setIsFilterOpen(false);
-  };
+    console.log("Filters applied:", { filterRole, filterDate, filterStatus })
+    setIsFilterOpen(false)
+  }
 
   const handleDateSelect = (date: Date | undefined) => {
-    setFilterDate(date);
-    setIsCalendarOpen(false);
-  };
+    setFilterDate(date)
+    setIsCalendarOpen(false)
+  }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    console.log(formData);
-    setFormData(prevData => ({
+    const { name, value } = e.target
+    setFormData((prevData) => ({
       ...prevData,
-      [name]: value
-    }));
-  };
+      [name]: value,
+    }))
+  }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+    e.preventDefault()
     try {
-      const response = await fetch('/api/users', {
-        method: 'POST',
+      const response = await fetch("/api/users", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(formData),
-      });
+      })
       if (response.ok) {
-        const newUser = await response.json();
-        setUsers(prevUsers => [...prevUsers, newUser]);
-        closeModal();
+        const newUser = await response.json()
+        setUsers((prevUsers) => [...prevUsers, newUser])
+        closeModal()
       } else {
-        console.error('Failed to add user');
+        console.error("Failed to add user")
       }
     } catch (error) {
-      console.error('Error adding user:', error);
+      console.error("Error adding user:", error)
     }
-  };
+  }
 
   return (
     <div className="container mx-auto space-y-6">
@@ -150,16 +163,13 @@ export default function UserManagement() {
           <UserPlusIcon className="mr-2 h-4 w-4" />
           Ajouter des utilisateurs
         </Button>
-        
+
         {isModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center">
             <div className="fixed inset-0 bg-black bg-opacity-25 backdrop-blur-sm" onClick={closeModal}></div>
             <div className="relative bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
               <div className="p-6">
-                <button
-                  onClick={closeModal}
-                  className="absolute top-3 right-3 text-gray-400 hover:text-gray-500"
-                >
+                <button onClick={closeModal} className="absolute top-3 right-3 text-gray-400 hover:text-gray-500">
                   <XMarkIcon className="h-6 w-6" />
                 </button>
                 <h2 className="text-xl font-semibold mb-4">Créer un utilisateur</h2>
@@ -168,13 +178,13 @@ export default function UserManagement() {
                     <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
                       Nom complet
                     </label>
-                    <Input 
-                      id="fullName" 
+                    <Input
+                      id="fullName"
                       name="name"
                       value={formData.name}
                       onChange={handleInputChange}
-                      placeholder="Tahsan Khan" 
-                      className="w-full" 
+                      placeholder="Tahsan Khan"
+                      className="w-full"
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
@@ -182,28 +192,28 @@ export default function UserManagement() {
                       <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                         Email
                       </label>
-                      <Input 
-                        id="email" 
+                      <Input
+                        id="email"
                         name="email"
-                        type="email" 
+                        type="email"
                         value={formData.email}
                         onChange={handleInputChange}
-                        placeholder="Adresse mail" 
-                        className="w-full" 
+                        placeholder="Adresse mail"
+                        className="w-full"
                       />
                     </div>
                     <div>
                       <label htmlFor="number" className="block text-sm font-medium text-gray-700 mb-1">
                         Numéro
                       </label>
-                      <Input 
-                        id="number" 
+                      <Input
+                        id="number"
                         name="phone"
-                        type="tel" 
-                        value={formData.number}
+                        type="tel"
+                        value={formData.phone}
                         onChange={handleInputChange}
-                        placeholder="6 012 345 678" 
-                        className="w-full" 
+                        placeholder="6 012 345 678"
+                        className="w-full"
                       />
                     </div>
                   </div>
@@ -226,20 +236,19 @@ export default function UserManagement() {
                       <option value="Technicien">Technicien</option>
                       <option value="Commercial">Commercial</option>
                       <option value="Responsable Juridique">Responsable Juridique</option>
-
                     </select>
                   </div>
                   <div>
                     <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
                       Address
                     </label>
-                    <Input 
-                      id="address" 
+                    <Input
+                      id="address"
                       name="address"
                       value={formData.address}
                       onChange={handleInputChange}
-                      placeholder="address line" 
-                      className="w-full" 
+                      placeholder="address line"
+                      className="w-full"
                     />
                   </div>
                   <div className="flex justify-end space-x-3 mt-6">
@@ -265,14 +274,16 @@ export default function UserManagement() {
             <div className="flex items-baseline space-x-3 ">
               <div className="text-2xl font-bold mt-2">1,822</div>
               <div className="flex items-center bg-green-500 rounded-full bg-opacity-15 px-2 py-0.5">
-                <ArrowUpCircleIcon className='inline-block h-5 w-5 text-green-500' />
+                <ArrowUpCircleIcon className="inline-block h-5 w-5 text-green-500" />
                 <div className="ml-2 text-medium text-gray-500">5.2%</div>
               </div>
             </div>
           </CardHeader>
           <CardContent>
             <div className="flex items-center text-medium">
-              <p><span className='font-bold'>+22</span> le dernier mois</p>
+              <p>
+                <span className="font-bold">+22</span> le dernier mois
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -285,12 +296,14 @@ export default function UserManagement() {
             <div className="flex items-baseline space-x-8">
               <div className="text-2xl font-bold">1,822</div>
               <div className="flex items-center bg-green-500 rounded-full bg-opacity-15 px-2 py-0.5">
-                <ArrowUpCircleIcon className='inline-block h-5 w-5 text-green-500' />
+                <ArrowUpCircleIcon className="inline-block h-5 w-5 text-green-500" />
                 <div className="ml-2 text-medium text-gray-500">5.2%</div>
               </div>
             </div>
             <div className="mt-2 flex items-center justify-between text-sm text-muted-foreground w-70">
-              <span><b>+140</b> Ce dernier mois</span>
+              <span>
+                <b>+140</b> Ce dernier mois
+              </span>
               <ArrowLongRightIcon className="h-4 w-4" />
             </div>
           </CardContent>
@@ -298,7 +311,7 @@ export default function UserManagement() {
       </div>
 
       <div className="flex items-center justify-between space-x-4 p-4 bg-white shadow rounded-lg">
-        <div className='flex'>
+        <div className="flex">
           <div className="relative mr-5">
             <Input
               type="text"
@@ -322,9 +335,9 @@ export default function UserManagement() {
         </div>
         <div>
           {selectedUsers.length > 0 && (
-            <Button 
+            <Button
               onClick={handleDelete}
-              className='bg-white border border-gray-500 text-black-500 font-medium py-2 px-4 rounded inline-flex items-center'
+              className="bg-white border border-gray-500 text-black-500 font-medium py-2 px-4 rounded inline-flex items-center"
             >
               <TrashIcon className="h-4 w-4" />
               Supprimer
@@ -332,9 +345,7 @@ export default function UserManagement() {
           )}
 
           {selectedUsers.length === 1 && (
-            <Button 
-              className='bg-white border border-gray-500 text-black-500 font-medium py-2 px-4 rounded inline-flex items-center ml-4'
-            >
+            <Button className="bg-white border border-gray-500 text-black-500 font-medium py-2 px-4 rounded inline-flex items-center ml-4">
               <PencilIcon className="h-4 w-4" />
               Modifier
             </Button>
@@ -371,24 +382,16 @@ export default function UserManagement() {
                       <label className="text-sm font-medium">Date</label>
                       <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                         <PopoverTrigger asChild>
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             className="w-full justify-start text-left font-normal"
                             onClick={() => setIsCalendarOpen(true)}
                           >
-                            {filterDate 
-                              ? format(filterDate, "P", { locale: fr }) 
-                              : "Sélectionner la date"
-                            }
+                            {filterDate ? format(filterDate, "P", { locale: fr }) : "Sélectionner la date"}
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={filterDate}
-                            onSelect={handleDateSelect}
-                            initialFocus
-                          />
+                          <Calendar mode="single" selected={filterDate} onSelect={handleDateSelect} initialFocus />
                         </PopoverContent>
                       </Popover>
                     </div>
@@ -405,8 +408,12 @@ export default function UserManagement() {
                       </Select>
                     </div>
                     <div className="flex justify-between">
-                      <Button variant="outline" onClick={resetFilters}>Réinitialiser</Button>
-                      <Button onClick={applyFilters} className="bg-orange-500 hover:bg-orange-600 text-white">Appliquer</Button>
+                      <Button variant="outline" onClick={resetFilters}>
+                        Réinitialiser
+                      </Button>
+                      <Button onClick={applyFilters} className="bg-orange-500 hover:bg-orange-600 text-white">
+                        Appliquer
+                      </Button>
                     </div>
                   </div>
                 </PopoverContent>
@@ -416,79 +423,84 @@ export default function UserManagement() {
         </div>
       </div>
 
-      <Table className='shadow'>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[50px]">
-              <Checkbox
-                checked={selectedUsers.length === users.length}
-                onCheckedChange={handleSelectAll}
-              />
-            </TableHead>
-            <TableHead className="w-[200px]">Nom complet</TableHead>
-            <TableHead>Rôle</TableHead>
-            <TableHead>Adresse Email</TableHead>
-            <TableHead>Numéro</TableHead>
-            <TableHead>Date d&apos;insc.</TableHead>
-            <TableHead>Statut</TableHead>
-            <TableHead className="text-right"></TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {users.map((user) => (
-            <TableRow key={user.id}>
-              <TableCell>
-                <Checkbox
-                  checked={selectedUsers.includes(user.id)}
-                  onCheckedChange={(checked) => handleSelectUser(user.id, checked)}
-                />
-              </TableCell>
-              <TableCell className="font-medium">
-                <Link
-                  href={{
-                    pathname: '/admin/utilisateurs/details',
-                    query: { userId: user.id },
-                  }}
-                  className="flex items-center hover:bg-gray-100 rounded-md p-1 transition-colors"
-                >
-                  <Avatar className="h-8 w-8 mr-2">
-                    <AvatarImage src="/placeholder.svg?height=32&width=32" alt={user.name} />
-                    <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                  <span className="text-blue-600 hover:underline">{user.name}</span>
-                </Link>
-              </TableCell>
-              <TableCell>{user.role}</TableCell>
-              <TableCell className='font-medium'>
-                <span className='text-[#E55210]'>
-                  {user.email}
-                </span>
-              </TableCell>
-              <TableCell className='font-medium'>{user.phone}</TableCell>
-              <TableCell className='font-medium'>{user.CreatedAt}</TableCell>
-              <TableCell>
-                <span className={`px-2 py-1 rounded-full text-xs ${
-                  user.status === 'Actif' ? 'bg-green-100 text-green-800' :
-                  user.status === 'Inactif' ? 'bg-gray-100 text-gray-800' :
-                  'bg-red-100 text-red-800'
-                }`}>
-                  {user.status}
-                </span>
-              </TableCell>
-              <TableCell className="text-right">
-                <Button variant="ghost" size="icon">
-                  <EllipsisHorizontalIcon className="h-4 w-4" />
-                </Button>
-              </TableCell>
+      {isLoading ? (
+        <div className="flex justify-center items-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+        </div>
+      ) : (
+        <Table className="shadow">
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[50px]">
+                <Checkbox checked={selectedUsers.length === users.length} onCheckedChange={handleSelectAll} />
+              </TableHead>
+              <TableHead className="w-[200px]">Nom complet</TableHead>
+              <TableHead>Rôle</TableHead>
+              <TableHead>Adresse Email</TableHead>
+              <TableHead>Numéro</TableHead>
+              <TableHead>Date d&apos;insc.</TableHead>
+              <TableHead>Statut</TableHead>
+              <TableHead className="text-right"></TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {users.map((user) => (
+              <TableRow key={user.id}>
+                <TableCell>
+                  <Checkbox
+                    checked={selectedUsers.includes(user.id)}
+                    onCheckedChange={(checked) => handleSelectUser(user.id, checked)}
+                  />
+                </TableCell>
+                <TableCell className="font-medium">
+                  <Link
+                    href={{
+                      pathname: "/admin/utilisateurs/details",
+                      query: { userId: user.id },
+                    }}
+                    className="flex items-center hover:bg-gray-100 rounded-md p-1 transition-colors"
+                  >
+                    <Avatar className="h-8 w-8 mr-2">
+                      <AvatarImage src="/placeholder.svg?height=32&width=32" alt={user.name} />
+                      <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <span className="text-blue-600 hover:underline">{user.name}</span>
+                  </Link>
+                </TableCell>
+                <TableCell>{user.role}</TableCell>
+                <TableCell className="font-medium">
+                  <span className="text-[#E55210]">{user.email}</span>
+                </TableCell>
+                <TableCell className="font-medium">{user.phone}</TableCell>
+                <TableCell className="font-medium">
+                  {user.CreatedAt}
+                </TableCell>
+                <TableCell>
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs ${
+                      user.status === "Actif"
+                        ? "bg-green-100 text-green-800"
+                        : user.status === "Inactif"
+                          ? "bg-gray-100 text-gray-800"
+                          : "bg-red-100 text-red-800"
+                    }`}
+                  >
+                    {user.status}
+                  </span>
+                </TableCell>
+                <TableCell className="text-right">
+                  <Button variant="ghost" size="icon">
+                    <EllipsisHorizontalIcon className="h-4 w-4" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
 
       <div className="flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">
-          Page 1 of 34
-        </div>
+        <div className="text-sm text-muted-foreground">Page 1 of 34</div>
         <div className="flex space-x-2">
           <Button variant="outline" size="icon" disabled>
             &lt;
@@ -514,6 +526,6 @@ export default function UserManagement() {
         </div>
       </div>
     </div>
-  );
+  )
 }
 
