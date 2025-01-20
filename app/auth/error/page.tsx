@@ -1,25 +1,40 @@
-// app/auth/error/page.tsx
+"use client"
 
-'use client';
+import { useSearchParams } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card"
+import { AlertCircle } from "lucide-react"
 
-import { useSearchParams } from 'next/navigation';
+const ErrorContent = () => {
+  const searchParams = useSearchParams()
+  const error = searchParams.get("error")
 
-const ErrorPage = () => {
-  const searchParams = useSearchParams();
-  const error = searchParams.get('error');
-
-  let errorMessage = 'An unknown error occurred.';
-  if (error === 'CredentialsSignin') {
-    errorMessage = 'Invalid email or password.';
+  let errorMessage = "An unknown error occurred."
+  if (error === "CredentialsSignin") {
+    errorMessage = "Invalid email or password."
   }
 
   return (
-    <div>
-      <h1>Authentication Error</h1>
-      <p>{errorMessage}</p>
-      <a href='/auth/signin'>Back to Sign In</a>
+    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle className="flex items-center text-red-600">
+            <AlertCircle className="mr-2" />
+            Authentication Error
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-gray-600">{errorMessage}</p>
+        </CardContent>
+        <CardFooter>
+          <Button asChild className="w-full">
+            <a href="/auth/signin">Back to Sign In</a>
+          </Button>
+        </CardFooter>
+      </Card>
     </div>
-  );
-};
+  )
+}
 
-export default ErrorPage;
+export default ErrorContent
+
