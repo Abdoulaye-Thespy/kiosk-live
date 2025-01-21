@@ -29,7 +29,8 @@ export function LoginForm() {
       })
 
       if (result?.error) {
-        setError("Invalid email or password")
+        console.log(error);
+        setError(error)
       } else {
         // Fetch user data to get the role
         const res = await fetch('/api/auth/session')
@@ -38,8 +39,8 @@ export function LoginForm() {
         router.push(`/${userRole}`)
       }
     } catch (error) {
-      setError("An error occurred. Please try again.")
-      console.error(error)
+      setError(error)
+      console.error(Error)
     } finally {
       setIsLoading(false)
     }

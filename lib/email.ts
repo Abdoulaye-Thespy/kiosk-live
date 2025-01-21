@@ -9,7 +9,7 @@ const sesClient = new SESClient({
 })
 
 export async function sendVerificationEmail(email: string, token: string) {
-  const verificationLink = `${process.env.NEXT_PUBLIC_APP_URL}/verify-email/${token}`
+  const verificationLink = `${process.env.NEXT_PUBLIC_APP_URL}/auth/verify-email/${token}`
 
   const params = {
     Source: process.env.EMAIL_FROM,
@@ -38,7 +38,7 @@ export async function sendVerificationEmail(email: string, token: string) {
 }
 
 export async function sendPasswordResetEmail(email: string, token: string) {
-  const resetLink = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password/${token}`
+  const resetLink = `${process.env.NEXT_PUBLIC_APP_URL}/auth/reset-password/${token}`
 
   const params = {
     Source: process.env.EMAIL_FROM,

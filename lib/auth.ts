@@ -1,11 +1,10 @@
-'use server';
+"use server"
 
-import { hash } from 'bcrypt';
-import { PrismaClient, Role, UserStatus } from '@prisma/client';
-import { NextResponse } from "next/server"
+import { hash } from "bcrypt"
+import { PrismaClient, type Role, type UserStatus } from "@prisma/client"
 import { sendVerificationEmail } from "@/lib/email"
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient()
 
 export async function signUp(
   name: string,
@@ -13,20 +12,17 @@ export async function signUp(
   password: string,
   role: Role,
   status: UserStatus,
-  emailVerified: Boolean
-  
+  emailVerified: boolean,
 ) {
-
-
   const existingUser = await prisma.user.findUnique({ where: { email } })
   if (existingUser) {
-    return NextResponse.json({ error: "Email already in use" }, { status: 400 })
+    return { success: false, error: "Email already in use" }
   }
 
-  const hashedPassword = await hash(password, 10);
-  console.log('hashed the password');
+  const hashedPassword = await hash(password, 10)
+  console.log("hashed the password")
   const verificationToken = crypto.randomUUID()
-  
+
   const user = await prisma.user.create({
     data: {
       name,
@@ -35,13 +31,12 @@ export async function signUp(
       role,
       status,
       emailVerified,
-      verificationToken 
-      
+      verificationToken,
     },
-  });
+  })
 
   await sendVerificationEmail(email, verificationToken)
 
-
-  return { success: true, user };
+  return { success: true, user }
 }
+

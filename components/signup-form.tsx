@@ -4,16 +4,15 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Loader2, User, Mail, KeyRound, Eye, EyeOff } from 'lucide-react'
+import { Loader2, User, Mail, KeyRound, Eye, EyeOff } from "lucide-react"
+import CheckEmailPage from "@/app/auth/check-email/page"
 
-import { signUp } from "@/app/actions/auth"
 
 export function SignupForm() {
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
-  const [status, setStatus] = useState("PENDING")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [signupSuccess, setSignupSuccess] = useState(false)
@@ -25,17 +24,24 @@ export function SignupForm() {
     setError("")
 
     try {
-      console.log("trying.....")
-      const result = await signUp(name, email, password, "CLIENT", status)
-      console.log(result);
-      if (result.success) {
+      const response = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name, email, password }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
         setSignupSuccess(true)
       } else {
-        setError("Failed to sign up. Please try again.")
+        setError(data.error || "Failed to sign up. Please try again.")
       }
     } catch (error) {
-      setError("An error occurred. Please try again.")
       console.error(error)
+      setError("An error occurred during signup. Please try again.")
     } finally {
       setIsLoading(false)
     }
@@ -47,15 +53,8 @@ export function SignupForm() {
 
   if (signupSuccess) {
     return (
-      <div className="text-center">
-        <h2 className="text-2xl font-bold mb-4">Signup Successful!</h2>
-        <p className="mb-6">Your account has been created successfully.</p>
-        <Button 
-          onClick={handleConfirmation}
-          className="w-full h-11 bg-[#ff6b4a] hover:bg-[#ff5a36] text-white font-medium"
-        >
-          Okay
-        </Button>
+      <div className="">
+        <CheckEmailPage/>
       </div>
     )
   }
@@ -64,9 +63,7 @@ export function SignupForm() {
     <form onSubmit={onSubmit} className="space-y-6">
       <div className="space-y-4">
         <div>
-          <label className="text-sm text-gray-700 mb-1.5 block">
-            Nom complet
-          </label>
+          <label className="text-sm text-gray-700 mb-1.5 block">Nom complet</label>
           <div className="relative">
             <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
             <Input
@@ -81,9 +78,7 @@ export function SignupForm() {
           </div>
         </div>
         <div>
-          <label className="text-sm text-gray-700 mb-1.5 block">
-            Email
-          </label>
+          <label className="text-sm text-gray-700 mb-1.5 block">Email</label>
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
             <Input
@@ -98,9 +93,7 @@ export function SignupForm() {
           </div>
         </div>
         <div>
-          <label className="text-sm text-gray-700 mb-1.5 block">
-            Mot de passe
-          </label>
+          <label className="text-sm text-gray-700 mb-1.5 block">Mot de passe</label>
           <div className="relative">
             <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
             <Input
@@ -117,22 +110,16 @@ export function SignupForm() {
               onClick={() => setShowPassword(!showPassword)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
             >
-              {showPassword ? (
-                <EyeOff className="h-5 w-5" />
-              ) : (
-                <Eye className="h-5 w-5" />
-              )}
+              {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
             </button>
           </div>
           <div className="mt-1">
-            <span className="text-sm text-gray-500">
-              Minimum 8 caractères
-            </span>
+            <span className="text-sm text-gray-500">Minimum 8 caractères</span>
           </div>
         </div>
       </div>
 
-      <Button 
+      <Button
         type="submit"
         disabled={isLoading}
         className="w-full h-11 bg-[#ff6b4a] hover:bg-[#ff5a36] text-white font-medium"
@@ -141,20 +128,14 @@ export function SignupForm() {
         Créer un compte
       </Button>
 
-      {error && (
-        <div className="text-red-500 text-sm mt-2">
-          {error}
-        </div>
-      )}
+      {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
 
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
           <div className="w-full border-t border-gray-200" />
         </div>
         <div className="relative flex justify-center text-xs">
-          <span className="bg-white px-2 text-gray-500">
-            Or
-          </span>
+          <span className="bg-white px-2 text-gray-500">Or</span>
         </div>
       </div>
 

@@ -15,9 +15,12 @@ model User {
   status        UserStatus      @default(PENDING)
   address       String?
   phone         String?
-  emailVerified DateTime?
+  verificationToken String?
+  emailVerified Boolean @default(false)
   image         String?
   password      String?
+  resetPasswordToken     String?   @unique
+  resetPasswordExpires   DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -319,6 +322,8 @@ enum InvoiceStatus {
 enum UserStatus {
   PENDING
   VERIFIED
+  ONLINE
+  OFFLINE
 }
 
 enum NotificationStatus {

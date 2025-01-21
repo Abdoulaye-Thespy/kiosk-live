@@ -1,43 +1,52 @@
-import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-import bcrypt from "bcrypt";
-import { sendVerificationEmail } from "@/lib/email";
+import { type NextRequest, NextResponse } from "next/server"
+import { PrismaClient } from "@prisma/client"
+import bcrypt from "bcrypt"
+import { sendVerificationEmail } from "@/lib/email"
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient()
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const { name, email, password } = await req.json();
+    const { name, email, password } = await req.json()
 
-    // Check if the user already exists
-    const existingUser = await prisma.user.findUnique({ where: { email } });
-    if (existingUser) {
-      return NextResponse.json({ error: "Email already in use" }, { status: 400 });
+    // Validate input
+    if (!name || !email || !password) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    // Hash the password using bcrypt
-    const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    // Check if user already exists
+    const existingUser = await prisma.user.findUnique({ where: { email } })
+    if (existingUser) {
+      return NextResponse.json({ error: "Email already in use" }, { status: 400 })
+    }
 
-    // Generate a verification token
-    const verificationToken = crypto.randomUUID();
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10)
 
-    // Create the user in the database
+    // Generate verification token
+    const verificationToken = crypto.randomUUID()
+
+
+    // Send verification email
+    await sendVerificationEmail(email, verificationToken)
+
+    // Create user
     const user = await prisma.user.create({
       data: {
         name,
         email,
         password: hashedPassword,
+        role: "CLIENT",
+        status: "PENDING",
+        emailVerified: false,
         verificationToken,
       },
-    });
+    })
 
-    // Send a verification email
-    await sendVerificationEmail(email, verificationToken);
-
-    return NextResponse.json({ message: "User created successfully" }, { status: 201 });
+    return NextResponse.json({ success: true, message: "User created successfully" }, { status: 201 })
   } catch (error) {
-    console.error("Error creating user:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    console.error("Signup error:", error)
+    return NextResponse.json({ error: "An error occurred during signup" }, { status: 500 })
   }
 }
+
