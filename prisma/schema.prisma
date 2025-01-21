@@ -7,25 +7,32 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-
 model User {
   id            String    @id @default(cuid())
-  name          String    // Cannot be null
-  email         String    @unique // Cannot be null (also unique)
-  role          Role      @default(CLIENT) // Cannot be null (has a default)
-  status        String    // Cannot be null
-  address       String?   // Can be null
-  phone         String?   // Can be null
-  emailVerified DateTime? // Can be null
-  image         String?   // Can be null
-  password      String?   // Can be null
-  accounts      Account[] // Can be empty
-  sessions      Session[] // Can be empty
-  createdAt     DateTime?  @default(now()) // Automatically populates on creation
-  updatedAt     DateTime?  @updatedAt // Automatically updates on each update
-}
+  name          String
+  email         String    @unique
+  role          Role      @default(CLIENT)
+  status        UserStatus      @default(PENDING)
+  address       String?
+  phone         String?
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
+  accounts      Account[]
+  sessions      Session[]
+  notifications Notification[]
+  contracts     Contract[]
+  inventoryMoves InventoryMovement[]
+  serviceRequests ServiceRequest[]
+  locationHistory LocationHistory[]
+  prospects     Prospect[]
+  prospectActions ProspectAction[]
+  quotes        Quote[]
+  reports       Report[]
+}
 
 model Account {
   id                 String  @id @default(cuid())
@@ -62,6 +69,212 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+model Kiosk {
+  id                    String    @id @default(cuid())
+  kioskName             String
+  clientName            String?
+  kioskAddress          String?
+  gpsCoordinates        String?
+  productTypes          String?
+  managerName           String?
+  managerContacts       String?
+  location              Location? @relation(fields: [locationId], references: [id])
+  locationId            String?
+  status                KioskStatus @default(AVAILABLE)
+  image                 String?
+  averageMonthlyRevenue Decimal?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  contracts             Contract[]
+  inventory             KioskInventory[]
+  inventoryMoves        InventoryMovement[]
+  serviceRequests       ServiceRequest[]
+  locationHistory       LocationHistory[]
+}
+
+model Contract {
+  id                  String    @id @default(cuid())
+  user                User      @relation(fields: [userId], references: [id])
+  userId              String
+  kiosk               Kiosk     @relation(fields: [kioskId], references: [id])
+  kioskId             String
+  type                String?
+  amount              Decimal?
+  startDate           DateTime 
+  endDate             DateTime?
+  status              ContractStatus @default(PENDING)
+  responsibilities    String?
+  cancellationTerms   String?
+  contractNumber      String?
+  paymentMethod       String?
+  lateFee             Decimal?
+  note                String?
+  documents           String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  invoices            Invoice[]
+}
+
+model Product {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  category    ProductCategory @relation(fields: [categoryId], references: [id])
+  categoryId  String
+  unitPrice   Decimal
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  inventory   KioskInventory[]
+  moves       InventoryMovement[]
+}
+
+model ProductCategory {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  products    Product[]
+}
+
+model KioskInventory {
+  id                String    @id @default(cuid())
+  kiosk             Kiosk     @relation(fields: [kioskId], references: [id])
+  kioskId           String
+  product           Product   @relation(fields: [productId], references: [id])
+  productId         String
+  quantity          Int       @default(0)
+  lastRestocked     DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+model InventoryMovement {
+  id                String    @id @default(cuid())
+  kiosk             Kiosk     @relation(fields: [kioskId], references: [id])
+  kioskId           String
+  product           Product   @relation(fields: [productId], references: [id])
+  productId         String
+  movementType      String
+  quantity          Int
+  reason            String?
+  createdBy         User      @relation(fields: [createdById], references: [id])
+  createdById       String
+  movementDate      DateTime  @default(now())
+}
+
+model ServiceRequest {
+  id                String    @id @default(cuid())
+  kiosk             Kiosk     @relation(fields: [kioskId], references: [id])
+  kioskId           String
+  technician        User      @relation(fields: [technicianId], references: [id])
+  technicianId      String
+  problemDescription String
+  comments          String?
+  status            RequestStatus @default(OPEN)
+  priority          RequestPriority @default(MEDIUM)
+  createdDate       DateTime  @default(now())
+  resolvedDate      DateTime?
+  attachments       String?
+  updatedAt         DateTime  @updatedAt
+}
+
+model LocationHistory {
+  id              String    @id @default(cuid())
+  kiosk           Kiosk     @relation(fields: [kioskId], references: [id])
+  kioskId         String
+  oldLocation     String?
+  newLocation     String?
+  validatedBy     User?     @relation(fields: [validatedById], references: [id])
+  validatedById   String?
+  createdAt       DateTime  @default(now())
+}
+
+model Payment {
+  id              String    @id @default(cuid())
+  invoice         Invoice   @relation(fields: [invoiceId], references: [id])
+  invoiceId       String
+  amount          Decimal
+  paymentDate     DateTime
+  paymentMethod   String?
+}
+
+model Invoice {
+  id              String    @id @default(cuid())
+  clientOrVendor  String?
+  type            String?
+  issueDate       DateTime?
+  termsConditions String?
+  contract        Contract  @relation(fields: [contractId], references: [id])
+  contractId      String
+  amount          Decimal
+  dueDate         DateTime?
+  status          InvoiceStatus @default(PENDING)
+  payments        Payment[]
+}
+
+model Notification {
+  id          String    @id @default(cuid())
+  user        User      @relation(fields: [userId], references: [id])
+  userId      String
+  message     String
+  status      NotificationStatus @default(SENT)
+}
+
+model Prospect {
+  id          String    @id @default(cuid())
+  name        String?
+  contact     String?
+  need        String?
+  statusId    String?
+  assignedTo  User?     @relation(fields: [assignedToId], references: [id])
+  assignedToId String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  actions     ProspectAction[]
+  quotes      Quote[]
+}
+
+model ProspectAction {
+  id            String    @id @default(cuid())
+  prospect      Prospect  @relation(fields: [prospectId], references: [id])
+  prospectId    String
+  user          User      @relation(fields: [userId], references: [id])
+  userId        String
+  actionType    String
+  actionDetails String?
+  createdAt     DateTime  @default(now())
+}
+
+model Quote {
+  id          String    @id @default(cuid())
+  prospect    Prospect  @relation(fields: [prospectId], references: [id])
+  prospectId  String
+  createdBy   User      @relation(fields: [createdById], references: [id])
+  createdById String
+  services    String?
+  totalCost   Decimal?
+  deadlineDate DateTime?
+  pdfUrl      String?
+  createdAt   DateTime  @default(now())
+}
+
+model Location {
+  id          String    @id @default(cuid())
+  address     String?
+  city        String?
+  coordinates String?
+  kiosks      Kiosk[]
+}
+
+model Report {
+  id              String    @id @default(cuid())
+  type            String
+  generatedBy     User      @relation(fields: [generatedById], references: [id])
+  generatedById   String
+  validationDate  DateTime?
+  createdAt       DateTime  @default(now())
+}
+
+// Enums
 enum Role {
   CLIENT
   RESPONSABLE
@@ -74,3 +287,41 @@ enum Role {
   COMPTABLE
 }
 
+enum ContractStatus {
+  ACTIVE
+  EXPIRED
+  PENDING
+}
+
+enum KioskStatus {
+  AVAILABLE
+  UNDER_MAINTENANCE
+}
+
+enum RequestStatus {
+  OPEN
+  IN_PROGRESS
+  CLOSED
+}
+
+enum RequestPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum InvoiceStatus {
+  PAID
+  PENDING
+  OVERDUE
+}
+
+enum UserStatus {
+  PENDING
+  VERIFIED
+}
+
+enum NotificationStatus {
+  SENT
+  VIEWED
+}

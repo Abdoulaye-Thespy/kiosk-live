@@ -13,7 +13,7 @@ export function SignupForm() {
   const [showPassword, setShowPassword] = useState(false)
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
-  const [status, setStatus] = useState("pending")
+  const [status, setStatus] = useState("PENDING")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [signupSuccess, setSignupSuccess] = useState(false)

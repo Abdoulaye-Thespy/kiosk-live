@@ -9,7 +9,7 @@ export async function signUp(
   name: string,
   email: string,
   password: string,
-  role: 'USER' | 'CLIENT' | 'ADMIN',
+  role: 'CLIENT' | 'ADMIN',
   status: string
 ) {
   const hashedPassword = await hash(password, 10);
