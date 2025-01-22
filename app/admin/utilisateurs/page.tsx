@@ -473,14 +473,14 @@ export default function UserManagement() {
                 </TableCell>
                 <TableCell className="font-medium">{user.phone}</TableCell>
                 <TableCell className="font-medium">
-                  {user.CreatedAt}
+                {new Date(user.createdAt).toLocaleDateString()}
                 </TableCell>
                 <TableCell>
                   <span
                     className={`px-2 py-1 rounded-full text-xs ${
-                      user.status === "Actif"
+                      user.status === "VERIFIED"
                         ? "bg-green-100 text-green-800"
-                        : user.status === "Inactif"
+                        : user.status === "PENDING"
                           ? "bg-gray-100 text-gray-800"
                           : "bg-red-100 text-red-800"
                     }`}

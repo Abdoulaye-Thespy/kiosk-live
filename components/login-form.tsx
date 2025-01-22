@@ -29,8 +29,7 @@ export function LoginForm() {
       })
 
       if (result?.error) {
-        console.log(error);
-        setError(error)
+        setError(result.error || "Failed to sign in. Please try again.")
       } else {
         // Fetch user data to get the role
         const res = await fetch('/api/auth/session')

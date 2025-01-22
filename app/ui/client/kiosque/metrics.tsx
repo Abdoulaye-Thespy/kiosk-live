@@ -37,22 +37,11 @@ export default function KioskMetricsClient() {
           <CardHeader className={`flex flex-column space-y-0 pb-2 shadow-md ${styles.carteEntete}`}>
             <CardTitle className="text-sm font-medium">{metric.title}</CardTitle>
 
-              <div className="flex justify-between pt-2">
+              <div className="flex justify-start pt-2">
                 <div className="flex items-baseline space-x-3">
-                  <div className="flex items-center bg-gray-500 rounded-full bg-opacity-15 px-2 py-0.5">
+                  <div className="flex items-center bg-gray-500 rounded-full bg-opacity-15 px-2 py-0.5 mr-2">
                     <div className="inline-block  text-xs font-medium text-grey-500 flex items-center">
                       <ThreeKioskSVG />
-
-                    </div>
-                    <div className="ml-2 text-xl font-bold text-grey-500">445</div>
-                  </div>
-                </div>
-
-                <div className="flex items-baseline space-x-3">
-                  <div className="flex items-center bg-gray-500 rounded-full bg-opacity-15 px-2 py-0.5">
-                    <div className="inline-block  text-xs font-medium text-grey-500 flex items-center">
-                      <ThreeKioskSVG />
-
                     </div>
                     <div className="ml-2 text-xl font-bold text-grey-500">445</div>
                   </div>

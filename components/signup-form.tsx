@@ -7,13 +7,13 @@ import { Input } from "@/components/ui/input"
 import { Loader2, User, Mail, KeyRound, Eye, EyeOff } from "lucide-react"
 import CheckEmailPage from "@/app/auth/check-email/page"
 
-
 export function SignupForm() {
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
   const [error, setError] = useState("")
   const [signupSuccess, setSignupSuccess] = useState(false)
   const router = useRouter()
@@ -22,6 +22,12 @@ export function SignupForm() {
     event.preventDefault()
     setIsLoading(true)
     setError("")
+
+    if (password !== confirmPassword) {
+      setError("Les mots de passe ne correspondent pas.")
+      setIsLoading(false)
+      return
+    }
 
     try {
       const response = await fetch("/api/auth/signup", {
@@ -54,7 +60,7 @@ export function SignupForm() {
   if (signupSuccess) {
     return (
       <div className="">
-        <CheckEmailPage/>
+        <CheckEmailPage />
       </div>
     )
   }
@@ -117,7 +123,31 @@ export function SignupForm() {
             <span className="text-sm text-gray-500">Minimum 8 caractères</span>
           </div>
         </div>
+        <div>
+          <label className="text-sm text-gray-700 mb-1.5 block">Confirmer le mot de passe</label>
+          <div className="relative">
+            <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <Input
+              type={showPassword ? "text" : "password"}
+              placeholder="Confirm your password"
+              className="h-11 pl-10 pr-10 border-gray-200"
+              disabled={isLoading}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+            </button>
+          </div>
+        </div>
       </div>
+
+      {error && <div className="text-red-500 text-md mt-2">{error}</div>}
 
       <Button
         type="submit"
@@ -127,8 +157,6 @@ export function SignupForm() {
         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
         Créer un compte
       </Button>
-
-      {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
 
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
