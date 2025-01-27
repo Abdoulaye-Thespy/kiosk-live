@@ -18,8 +18,8 @@ export default function ResetPasswordPage({ params }: { params: { token: string 
     e.preventDefault()
 
     if (password !== confirmPassword) {
-      setError("Passwords do not match")
-      return
+        setError("Les mots de passe ne correspondent pas")
+        return
     }
 
     setStatus("loading")
@@ -128,6 +128,8 @@ export default function ResetPasswordPage({ params }: { params: { token: string 
                   className="w-full"
                 />
               </div>
+
+              {error && <p className="text-red-500 text-sm">{error}</p>}
 
               <Button
                 type="submit"

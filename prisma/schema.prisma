@@ -73,17 +73,18 @@ model VerificationToken {
 }
 
 model Kiosk {
-  id                    String    @id @default(cuid())
+  id                    Int      @id @default(autoincrement())
   kioskName             String
   clientName            String?
   kioskAddress          String?
-  gpsCoordinates        String?
+  gpsLatitude           Decimal?
+  gpsLongitude          Decimal?
   productTypes          String?
   managerName           String?
   managerContacts       String?
-  location              Location? @relation(fields: [locationId], references: [id])
   locationId            String?
   status                KioskStatus @default(AVAILABLE)
+  type                  KioskType    @default(ONE_COMPARTMENT_WITHOUT_BRANDING)
   image                 String?
   averageMonthlyRevenue Decimal?
   createdAt             DateTime  @default(now())
@@ -100,7 +101,7 @@ model Contract {
   user                User      @relation(fields: [userId], references: [id])
   userId              String
   kiosk               Kiosk     @relation(fields: [kioskId], references: [id])
-  kioskId             String
+  kioskId             Int
   type                String?
   amount              Decimal?
   startDate           DateTime 
@@ -141,7 +142,7 @@ model ProductCategory {
 model KioskInventory {
   id                String    @id @default(cuid())
   kiosk             Kiosk     @relation(fields: [kioskId], references: [id])
-  kioskId           String
+  kioskId           Int
   product           Product   @relation(fields: [productId], references: [id])
   productId         String
   quantity          Int       @default(0)
@@ -153,7 +154,7 @@ model KioskInventory {
 model InventoryMovement {
   id                String    @id @default(cuid())
   kiosk             Kiosk     @relation(fields: [kioskId], references: [id])
-  kioskId           String
+  kioskId           Int
   product           Product   @relation(fields: [productId], references: [id])
   productId         String
   movementType      String
@@ -167,7 +168,7 @@ model InventoryMovement {
 model ServiceRequest {
   id                String    @id @default(cuid())
   kiosk             Kiosk     @relation(fields: [kioskId], references: [id])
-  kioskId           String
+  kioskId           Int
   technician        User      @relation(fields: [technicianId], references: [id])
   technicianId      String
   problemDescription String
@@ -183,7 +184,7 @@ model ServiceRequest {
 model LocationHistory {
   id              String    @id @default(cuid())
   kiosk           Kiosk     @relation(fields: [kioskId], references: [id])
-  kioskId         String
+  kioskId         Int
   oldLocation     String?
   newLocation     String?
   validatedBy     User?     @relation(fields: [validatedById], references: [id])
@@ -260,14 +261,6 @@ model Quote {
   createdAt   DateTime  @default(now())
 }
 
-model Location {
-  id          String    @id @default(cuid())
-  address     String?
-  city        String?
-  coordinates String?
-  kiosks      Kiosk[]
-}
-
 model Report {
   id              String    @id @default(cuid())
   type            String
@@ -277,7 +270,6 @@ model Report {
   createdAt       DateTime  @default(now())
 }
 
-// Enums
 enum Role {
   CLIENT
   RESPONSABLE
@@ -290,15 +282,24 @@ enum Role {
   COMPTABLE
 }
 
+enum KioskType {
+  ONE_COMPARTMENT_WITH_BRANDING
+  THREE_COMPARTMENT_WITH_BRANDING
+  ONE_COMPARTMENT_WITHOUT_BRANDING
+  THREE_COMPARTMENT_WITHOUT_BRANDING
+}
+
+enum KioskStatus {
+  REQUEST
+  LOCALIZING
+  AVAILABLE
+  UNDER_MAINTENANCE
+}
+
 enum ContractStatus {
   ACTIVE
   EXPIRED
   PENDING
-}
-
-enum KioskStatus {
-  AVAILABLE
-  UNDER_MAINTENANCE
 }
 
 enum RequestStatus {

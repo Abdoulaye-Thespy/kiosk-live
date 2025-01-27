@@ -21,7 +21,7 @@ export default function InvoiceDashboard() {
   return (
     <div className="container mx-auto p-4">
       <Header title='Kiosques'/>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-6 mt-6">
         <nav className="flex space-x-1 border-b border-gray-200">
           {tabs.map((tab) => (
             <button

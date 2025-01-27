@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -13,8 +13,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import {
-  EnvelopeIcon,
-  BellIcon,
   EllipsisHorizontalIcon,
   ArrowDownTrayIcon,
   MagnifyingGlassIcon,
@@ -31,9 +29,10 @@ import {
   PencilIcon,
 } from "@heroicons/react/24/solid"
 import { Loader2 } from "lucide-react"
-import { format } from "date-fns"
+import { format, isAfter, isBefore, isEqual } from "date-fns"
 import { fr } from "date-fns/locale"
 import Header from "@/app/ui/header"
+import { createUserByAdmin } from "@/app/actions/createUserByAdmin"
 
 type User = {
   id: number
@@ -50,7 +49,6 @@ export default function UserManagement() {
   const [selectedUsers, setSelectedUsers] = useState<number[]>([])
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedUserType, setSelectedUserType] = useState("all")
   const [filterRole, setFilterRole] = useState("")
   const [filterDate, setFilterDate] = useState<Date | undefined>(undefined)
   const [filterStatus, setFilterStatus] = useState("")
@@ -62,9 +60,11 @@ export default function UserManagement() {
     phone: "",
     role: "",
     address: "",
-    status: "",
+    status: "VERIFIED",
   })
   const [isLoading, setIsLoading] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState("")
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -72,7 +72,7 @@ export default function UserManagement() {
       try {
         const response = await fetch("/api/users")
         const data: User[] = await response.json()
-        setUsers(data)
+        setUsers(data.sort((a, b) => new Date(b.CreatedAt).getTime() - new Date(a.CreatedAt).getTime()))
       } catch (error) {
         console.error("Error fetching users:", error)
       } finally {
@@ -82,9 +82,22 @@ export default function UserManagement() {
     fetchUsers()
   }, [])
 
+  const filteredUsers = useMemo(() => {
+    return users.filter((user) => {
+      const matchesSearch =
+        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchTerm.toLowerCase())
+      const matchesRole = !filterRole || user.role === filterRole
+      const matchesStatus = !filterStatus || user.status === filterStatus
+      const matchesDate =
+        !filterDate || isEqual(new Date(user.CreatedAt), filterDate) || isAfter(new Date(user.CreatedAt), filterDate)
+      return matchesSearch && matchesRole && matchesStatus && matchesDate
+    })
+  }, [users, searchTerm, filterRole, filterStatus, filterDate])
+
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedUsers(users.map((user) => user.id))
+      setSelectedUsers(filteredUsers.map((user) => user.id))
     } else {
       setSelectedUsers([])
     }
@@ -109,10 +122,10 @@ export default function UserManagement() {
     setFilterRole("")
     setFilterDate(undefined)
     setFilterStatus("")
+    setIsFilterOpen(false)
   }
 
   const applyFilters = () => {
-    console.log("Filters applied:", { filterRole, filterDate, filterStatus })
     setIsFilterOpen(false)
   }
 
@@ -131,23 +144,28 @@ export default function UserManagement() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    setIsSubmitting(true)
     try {
-      const response = await fetch("/api/users", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      })
-      if (response.ok) {
-        const newUser = await response.json()
-        setUsers((prevUsers) => [...prevUsers, newUser])
+      const result = await createUserByAdmin(formData)
+      if (result.success) {
+        setUsers((prevUsers) => [result.user, ...prevUsers])
         closeModal()
+        setFormData({
+          name: "",
+          email: "",
+          phone: "",
+          role: "",
+          address: "",
+          status: "VERIFIED",
+        })
       } else {
-        console.error("Failed to add user")
+        console.error("Failed to add user:", result.error)
+        setError(result.error)
       }
     } catch (error) {
       console.error("Error adding user:", error)
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -229,13 +247,12 @@ export default function UserManagement() {
                       className="w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                     >
                       <option value="">Sélectionner un rôle</option>
-                      <option value="Client">Client</option>
-                      <option value="Super admin">Super Admin</option>
-                      <option value="Admin">Admin</option>
-                      <option value="Responsable Kiosque">Responsable Kiosque</option>
-                      <option value="Technicien">Technicien</option>
-                      <option value="Commercial">Commercial</option>
-                      <option value="Responsable Juridique">Responsable Juridique</option>
+                      <option value="CLIENT">Client</option>
+                      <option value="ADMIN">Admin</option>
+                      <option value="RESPONSABLE">Responsable Kiosque</option>
+                      <option value="TECHNICIEN">Technicien</option>
+                      <option value="COMMERCIAL">Commercial</option>
+                      <option value="JURIDIQUE">Responsable Juridique</option>
                     </select>
                   </div>
                   <div>
@@ -255,8 +272,19 @@ export default function UserManagement() {
                     <Button variant="outline" onClick={closeModal}>
                       Cancel
                     </Button>
-                    <Button type="submit" className="bg-orange-500 hover:bg-orange-600 text-white">
-                      Ajouter
+                    <Button
+                      type="submit"
+                      className="bg-orange-500 hover:bg-orange-600 text-white"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Adding...
+                        </>
+                      ) : (
+                        "Ajouter"
+                      )}
                     </Button>
                   </div>
                 </form>
@@ -322,16 +350,6 @@ export default function UserManagement() {
             />
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
           </div>
-          <Select value={selectedUserType} onValueChange={setSelectedUserType}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Tous les utilisateurs" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tous les utilisateurs</SelectItem>
-              <SelectItem value="admin">Administrateurs</SelectItem>
-              <SelectItem value="user">Utilisateurs</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
         <div>
           {selectedUsers.length > 0 && (
@@ -373,8 +391,13 @@ export default function UserManagement() {
                           <SelectValue placeholder="Sélectionner un rôle" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="admin">Administrateur</SelectItem>
-                          <SelectItem value="user">Utilisateur</SelectItem>
+                          <SelectItem value="ADMIN">Administrateur</SelectItem>
+                          <SelectItem value="CLIENT">Client</SelectItem>
+                          <SelectItem value="RESPONSABLE">Responsable Kiosque</SelectItem>
+                          <SelectItem value="TECHNICIEN">Technicien</SelectItem>
+                          <SelectItem value="JURIDIQUE">Responsable Juridique</SelectItem>
+                          <SelectItem value="COMMERCIAL">Commercial</SelectItem>
+                          <SelectItem value="COMPTABLE">Comptable</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -387,7 +410,7 @@ export default function UserManagement() {
                             className="w-full justify-start text-left font-normal"
                             onClick={() => setIsCalendarOpen(true)}
                           >
-                            {filterDate ? format(filterDate, "P", { locale: fr }) : "Sélectionner la date"}
+                            444444444
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
@@ -402,8 +425,8 @@ export default function UserManagement() {
                           <SelectValue placeholder="Sélectionner le statut" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="active">Actif</SelectItem>
-                          <SelectItem value="inactive">Inactif</SelectItem>
+                          <SelectItem value="PENDING">En Attente</SelectItem>
+                          <SelectItem value="VERIFIED">Vérifié</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -432,7 +455,7 @@ export default function UserManagement() {
           <TableHeader>
             <TableRow>
               <TableHead className="w-[50px]">
-                <Checkbox checked={selectedUsers.length === users.length} onCheckedChange={handleSelectAll} />
+                <Checkbox checked={selectedUsers.length === filteredUsers.length} onCheckedChange={handleSelectAll} />
               </TableHead>
               <TableHead className="w-[200px]">Nom complet</TableHead>
               <TableHead>Rôle</TableHead>
@@ -444,7 +467,7 @@ export default function UserManagement() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {users.map((user) => (
+            {filteredUsers.map((user) => (
               <TableRow key={user.id}>
                 <TableCell>
                   <Checkbox
@@ -473,7 +496,7 @@ export default function UserManagement() {
                 </TableCell>
                 <TableCell className="font-medium">{user.phone}</TableCell>
                 <TableCell className="font-medium">
-                {new Date(user.createdAt).toLocaleDateString()}
+                 44444
                 </TableCell>
                 <TableCell>
                   <span

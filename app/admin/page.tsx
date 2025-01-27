@@ -25,8 +25,9 @@ import {
 
 import styles from "@/app/ui/dashboard.module.css"
 import Header from "../ui/header"
-import { fetchLastNineUsers } from "../actions/getrecentusers"
-
+import { fetchUserStats
+  
+ } from "../actions/fetchUserStats"
 interface User {
   id: string
   name: string
@@ -50,24 +51,29 @@ const data = [
 ]
 
 export default function UserManagement() {
-  const [recentUsers, setRecentUsers] = useState<User[]>([])
+  const [userStats, setUserStats] = useState({
+    totalUsers: 0,
+    usersThisMonth: 0,
+    percentageGrowth: 0,
+    lastNineUsers: [] as User[],
+  })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    async function loadRecentUsers() {
+    async function loadUserStats() {
       setLoading(true)
-      const result = await fetchLastNineUsers()
+      const result = await fetchUserStats()
       if (result.success) {
-        setRecentUsers(result.users)
+        setUserStats(result)
         setError(null)
       } else {
-        setError("Failed to load recent users")
+        setError("Échec du chargement des statistiques utilisateurs")
       }
       setLoading(false)
     }
 
-    loadRecentUsers()
+    loadUserStats()
   }, [])
 
   return (
@@ -130,12 +136,16 @@ export default function UserManagement() {
             <CardHeader className={`flex flex-column space-y-0 pb-2 shadow-md ${styles.carteEntete}`}>
               <CardTitle className="text-sm font-medium">Nombre total d'utilisateurs</CardTitle>
               <div className="flex items-baseline space-x-3">
-                <div className="text-2xl font-bold mt-2">132</div>
+                {loading ? (
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                ) : (
+                  <div className="text-2xl font-bold mt-2">{userStats.totalUsers}</div>
+                )}
                 <div className="flex items-center bg-green-500 rounded-full bg-opacity-15 px-2 py-0.5">
                   <div className="inline-block  text-xs font-medium text-green-500 flex items-center">
                     <ArrowUpCircleIcon className="inline-block h-5 w-5" />
                   </div>
-                  <div className="ml-2 text-medium text-gray-500">5.2%</div>
+                  <div className="ml-2 text-medium text-gray-500">{userStats.percentageGrowth.toFixed(1)}%</div>
                 </div>
               </div>
             </CardHeader>
@@ -143,7 +153,7 @@ export default function UserManagement() {
               <div className="flex items-center text-medium">
                 <p>
                   {" "}
-                  <span className="font-bold">+29</span> le dernier mois
+                  <span className="font-bold">+{userStats.usersThisMonth}</span> ce mois-ci
                 </p>
               </div>
             </CardContent>
@@ -317,7 +327,7 @@ export default function UserManagement() {
                 <div className="flex items-center gap-2">
                   <div className="relative flex-1">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="Search kiosks..." className="pl-8" />
+                    <Input placeholder="Rechercher des kiosques..." className="pl-8" />
                   </div>
                   <Button size="icon" variant="outline">
                     <RefreshCw className="h-4 w-4" />
@@ -330,7 +340,7 @@ export default function UserManagement() {
           <div className="md:col-span-2">
             <Card className="shadow-md">
               <CardHeader>
-                <CardTitle>Utilisateurs recents</CardTitle>
+                <CardTitle>Utilisateurs récents</CardTitle>
               </CardHeader>
               <CardContent>
                 {loading ? (
@@ -341,7 +351,7 @@ export default function UserManagement() {
                   <div className="text-center text-red-500">{error}</div>
                 ) : (
                   <div className="space-y-4">
-                    {recentUsers.map((user) => (
+                    {userStats.lastNineUsers.map((user) => (
                       <div key={user.id} className="flex items-center gap-3">
                         <Avatar>
                           <AvatarImage
