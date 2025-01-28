@@ -1,6 +1,6 @@
 "use server"
 
-import { KioskType, KioskStatus, PrismaClient } from "@prisma/client"
+import { KioskType, type KioskStatus, PrismaClient } from "@prisma/client"
 
 const prisma = new PrismaClient()
 
@@ -65,6 +65,18 @@ export async function getKioskCounts() {
   try {
     const totalKiosks = await prisma.kiosk.count()
 
+    const now = new Date()
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+    const kiosksAddedThisMonth = await prisma.kiosk.count({
+      where: {
+        createdAt: {
+          gte: firstDayOfMonth,
+        },
+      },
+    })
+
+    const percentageAddedThisMonth = totalKiosks > 0 ? (kiosksAddedThisMonth / totalKiosks) * 100 : 0
+
     const kioskCounts = await prisma.kiosk.groupBy({
       by: ["type", "status"],
       _count: {
@@ -74,6 +86,8 @@ export async function getKioskCounts() {
 
     const counts = {
       totalKiosks,
+      kiosksAddedThisMonth,
+      percentageAddedThisMonth,
       oneCompartment: {
         AVAILABLE: 0,
         UNDER_MAINTENANCE: 0,
@@ -113,7 +127,7 @@ export async function getKiosks({
   page?: number
   limit?: number
   searchTerm?: string
-  status?: KioskStatus
+  status?: KioskStatus | "all"
   date?: Date
 }) {
   try {
@@ -128,7 +142,7 @@ export async function getKiosks({
       ]
     }
 
-    if (status) {
+    if (status && status !== "all") {
       where.status = status
     }
 
@@ -152,6 +166,7 @@ export async function getKiosks({
     return {
       kiosks,
       totalPages: Math.ceil(totalCount / limit),
+      totalCount,
     }
   } catch (error) {
     console.error("Error fetching kiosks:", error)

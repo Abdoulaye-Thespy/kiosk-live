@@ -1,29 +1,30 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { ArrowDownTrayIcon } from "@heroicons/react/24/outline"
-import { InfoIcon } from "lucide-react"
+import { InfoIcon, Loader2, CheckCircle2, XCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
-// Remove this line if Checkbox is not used elsewhere
-// import { Checkbox } from "@/components/ui/checkbox"
-import { Loader2 } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { addKiosk } from "@/app/actions/kiosk-actions"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 export function AddKioskDialog() {
   const [isOpen, setIsOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
+  const router = useRouter()
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setIsSubmitting(true)
     setError(null)
+    setSuccess(null)
 
     const formData = new FormData(event.currentTarget)
     try {
@@ -31,8 +32,11 @@ export function AddKioskDialog() {
       if (result.error) {
         setError(result.error)
       } else {
-        setIsOpen(false)
-        // Optionally, you can add a success message or refresh the kiosk list here
+        setSuccess("Le kiosque a été ajouté avec succès.")
+        setTimeout(() => {
+          setIsOpen(false)
+          router.refresh() // Refresh the page to show the new kiosk
+        }, 2000) // Close the dialog and refresh after 2 seconds
       }
     } catch (err) {
       setError("Une erreur est survenue lors de l'ajout du kiosque.")
@@ -83,6 +87,20 @@ export function AddKioskDialog() {
             <DialogTitle className="text-xl font-semibold">Ajouter un nouveau kiosque</DialogTitle>
           </DialogHeader>
           <ScrollArea className="flex-grow overflow-auto">
+            {error && (
+              <Alert variant="destructive" className="mb-4">
+                <XCircle className="h-4 w-4" />
+                <AlertTitle>Erreur</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            {success && (
+              <Alert variant="default" className="mb-4 bg-green-50 border-green-200">
+                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                <AlertTitle className="text-green-800">Succès</AlertTitle>
+                <AlertDescription className="text-green-700">{success}</AlertDescription>
+              </Alert>
+            )}
             <form id="add-kiosk-form" onSubmit={handleSubmit} className="space-y-3 pr-4">
               <div>
                 <Label htmlFor="kiosk-name">Nom du kiosque</Label>
@@ -123,10 +141,26 @@ export function AddKioskDialog() {
                 </div>
                 <div className="grid grid-cols-2 gap-2 mt-1">
                   {[
-                    { "type": "un compartiment avec marque", "description": "Kiosque de base avec les services essentiels", "value": "ONE_COMPARTMENT_WITH_BRANDING" },
-                    { "type": "un compartiment sans_marque", "description": "Kiosque amélioré avec des services supplémentaires", "value": "ONE_COMPARTMENT_WITHOUT_BRANDING" },
-                    { "type": "trois compartiments sans_marque", "description": "Kiosque haut de gamme avec tous les services disponibles", "value": "THREE_COMPARTMENT_WITHOUT_BRANDING" },
-                    { "type": "trois compartiments avec_marque", "description": "Kiosque personnalisé selon les besoins spécifiques du client", "value": "THREE_COMPARTMENT_WITH_BRANDING" }
+                    {
+                      type: "un compartiment avec marque",
+                      description: "Kiosque de base avec les services essentiels",
+                      value: "ONE_COMPARTMENT_WITH_BRANDING",
+                    },
+                    {
+                      type: "un compartiment sans_marque",
+                      description: "Kiosque amélioré avec des services supplémentaires",
+                      value: "ONE_COMPARTMENT_WITHOUT_BRANDING",
+                    },
+                    {
+                      type: "trois compartiments sans_marque",
+                      description: "Kiosque haut de gamme avec tous les services disponibles",
+                      value: "THREE_COMPARTMENT_WITHOUT_BRANDING",
+                    },
+                    {
+                      type: "trois compartiments avec_marque",
+                      description: "Kiosque personnalisé selon les besoins spécifiques du client",
+                      value: "THREE_COMPARTMENT_WITH_BRANDING",
+                    },
                   ].map(({ type, description, value }) => (
                     <div key={type} className="flex items-center space-x-2">
                       <input
@@ -176,8 +210,6 @@ export function AddKioskDialog() {
                   className="w-full mt-1"
                 />
               </div>
-
-              {error && <p className="text-red-500">{error}</p>}
             </form>
           </ScrollArea>
           <div className="flex justify-end gap-4 pt-4 border-t">

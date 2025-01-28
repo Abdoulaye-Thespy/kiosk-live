@@ -1,127 +1,63 @@
-'use client'
+"use client"
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import KioskMetrics from '@/app/ui/admin/kiosques/metrics';
-import Header from '@/app/ui/header';
+import KioskMetrics from "@/app/ui/admin/kiosques/metrics"
 import { Input } from "@/components/ui/input"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { MagnifyingGlassIcon } from "@heroicons/react/24/outline"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Calendar } from "@/components/ui/calendar"
 import { format } from "date-fns"
 import { fr } from "date-fns/locale"
-import { MoreHorizontal, RotateCcw, Settings, Signal, Filter } from 'lucide-react'
+import { MoreHorizontal, RotateCcw, Settings, Signal, Filter } from "lucide-react"
+import { getKiosks } from "@/app/actions/kiosk-actions"
 
 interface Kiosk {
-  id: string
-  manager: string
-  city: string
-  zone: string
-  status: 'En activité' | 'En maintenance' | 'Fermé'
-  revenue: string
+  id: number
+  kioskName: string
+  managerName: string
+  clientName: string
+  kioskAddress: string
+  status: "AVAILABLE" | "UNDER_MAINTENANCE" | "REQUEST" | "LOCALIZING"
+  averageMonthlyRevenue: number
 }
-
-const kiosks: Kiosk[] = [
-  {
-    id: "1345",
-    manager: "NDOUMBE François",
-    city: "Douala",
-    zone: "Makepe plateau",
-    status: "En activité",
-    revenue: "1 000 000 FCFA"
-  },
-  {
-    id: "1345",
-    manager: "NDOUMBE François",
-    city: "Douala",
-    zone: "Makepe BM fin des pavés",
-    status: "En maintenance",
-    revenue: "1 000 000 FCFA"
-  },
-  {
-    id: "1345",
-    manager: "NDOUMBE François",
-    city: "Douala",
-    zone: "Makepe plateau",
-    status: "Fermé",
-    revenue: "1 000 000 FCFA"
-  },
-  {
-    id: "1345",
-    manager: "NDOUMBE François",
-    city: "Yaoundé",
-    zone: "Akwa Nord 2",
-    status: "Fermé",
-    revenue: "1 000 000 FCFA"
-  },
-  {
-    id: "1345",
-    manager: "Ngono Freddy",
-    city: "Yaoundé",
-    zone: "Makepe BM fin des pavés",
-    status: "En maintenance",
-    revenue: "1 000 000 FCFA"
-  },
-  {
-    id: "1345",
-    manager: "Ngono Freddy",
-    city: "Douala",
-    zone: "Deido",
-    status: "En activité",
-    revenue: "1 000 000 FCFA"
-  },
-  {
-    id: "1345",
-    manager: "HABIB Oumarou",
-    city: "Douala",
-    zone: "Akwa Nord 2",
-    status: "En maintenance",
-    revenue: "1 000 000 FCFA"
-  },
-  {
-    id: "1345",
-    manager: "HABIB Oumarou",
-    city: "Yaoundé",
-    zone: "Deido",
-    status: "Fermé",
-    revenue: "1 000 000 FCFA"
-  },
-  {
-    id: "1345",
-    manager: "ABDOU Rayim",
-    city: "Yaoundé",
-    zone: "Total Bonateki",
-    status: "En activité",
-    revenue: "1 000 000 FCFA"
-  }
-]
 
 export default function KioskTable() {
   const [currentPage, setCurrentPage] = useState(1)
-  const [selectedIds, setSelectedIds] = useState<string[]>([])
-  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedIds, setSelectedIds] = useState<number[]>([])
+  const [searchTerm, setSearchTerm] = useState("")
   const [isFilterOpen, setIsFilterOpen] = useState(false)
-  const [filterStatus, setFilterStatus] = useState('')
+  const [filterStatus, setFilterStatus] = useState("")
   const [filterDate, setFilterDate] = useState<Date | undefined>(undefined)
-  const totalPages = 34
+  const [kiosks, setKiosks] = useState<Kiosk[]>([])
+  const [totalPages, setTotalPages] = useState(1)
+
+  useEffect(() => {
+    fetchKiosks()
+  }, [currentPage, searchTerm, filterStatus, filterDate]) //This line was already correct.  The comment was unnecessary.
+
+  const fetchKiosks = async () => {
+    const result = await getKiosks({
+      page: currentPage,
+      searchTerm,
+      status: filterStatus as any,
+      date: filterDate,
+    })
+    setKiosks(result.kiosks)
+    setTotalPages(result.totalPages)
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "En activité":
+      case "AVAILABLE":
         return "text-green-600 bg-green-50"
-      case "En maintenance":
+      case "UNDER_MAINTENANCE":
         return "text-yellow-600 bg-yellow-50"
-      case "Fermé":
+      case "REQUEST":
+      case "LOCALIZING":
         return "text-red-600 bg-red-50"
       default:
         return "text-gray-600 bg-gray-50"
@@ -130,19 +66,20 @@ export default function KioskTable() {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedIds(kiosks.map(kiosk => kiosk.id))
+      setSelectedIds(kiosks.map((kiosk) => kiosk.id))
     } else {
       setSelectedIds([])
     }
   }
 
   const resetFilters = () => {
-    setFilterStatus('')
+    setFilterStatus("")
     setFilterDate(undefined)
   }
 
   const applyFilters = () => {
-    console.log('Filters applied:', { filterStatus, filterDate })
+    setCurrentPage(1)
+    fetchKiosks()
     setIsFilterOpen(false)
   }
 
@@ -159,26 +96,21 @@ export default function KioskTable() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <Select defaultValue="all">
+        <Select defaultValue="all" onValueChange={(value) => setFilterStatus(value)}>
           <SelectTrigger className="w-[200px]">
             <SelectValue placeholder="TOUS LES KIOSQUES" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">TOUS LES KIOSQUES</SelectItem>
-            <SelectItem value="active">En activité</SelectItem>
-            <SelectItem value="maintenance">En maintenance</SelectItem>
-            <SelectItem value="closed">Fermé</SelectItem>
+            <SelectItem value="AVAILABLE">En activité</SelectItem>
+            <SelectItem value="UNDER_MAINTENANCE">En maintenance</SelectItem>
+            <SelectItem value="REQUEST">En attente</SelectItem>
+            <SelectItem value="LOCALIZING">En localisation</SelectItem>
           </SelectContent>
         </Select>
         <div className="ml-auto flex items-center gap-2">
-          <Button variant="outline" size="icon">
-            <Settings className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" size="icon">
+          <Button variant="outline" size="icon" onClick={fetchKiosks}>
             <RotateCcw className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" size="icon">
-            <Signal className="h-4 w-4" />
           </Button>
           <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
             <PopoverTrigger asChild>
@@ -196,9 +128,10 @@ export default function KioskTable() {
                       <SelectValue placeholder="Sélectionner le statut" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="En activité">En activité</SelectItem>
-                      <SelectItem value="En maintenance">En maintenance</SelectItem>
-                      <SelectItem value="Fermé">Fermé</SelectItem>
+                      <SelectItem value="AVAILABLE">En activité</SelectItem>
+                      <SelectItem value="UNDER_MAINTENANCE">En maintenance</SelectItem>
+                      <SelectItem value="REQUEST">En attente</SelectItem>
+                      <SelectItem value="LOCALIZING">En localisation</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -206,25 +139,19 @@ export default function KioskTable() {
                   <label className="text-sm font-medium">Date</label>
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="w-full justify-start text-left font-normal"
-                      >
+                      <Button variant="outline" className="w-full justify-start text-left font-normal">
                         {filterDate ? format(filterDate, "P", { locale: fr }) : "Sélectionner la date"}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={filterDate}
-                        onSelect={setFilterDate}
-                        initialFocus
-                      />
+                      <Calendar mode="single" selected={filterDate} onSelect={setFilterDate} initialFocus />
                     </PopoverContent>
                   </Popover>
                 </div>
                 <div className="flex justify-between">
-                  <Button variant="outline" onClick={resetFilters}>Réinitialiser</Button>
+                  <Button variant="outline" onClick={resetFilters}>
+                    Réinitialiser
+                  </Button>
                   <Button onClick={applyFilters}>Appliquer</Button>
                 </div>
               </div>
@@ -238,15 +165,12 @@ export default function KioskTable() {
           <TableHeader>
             <TableRow>
               <TableHead className="w-[50px]">
-                <Checkbox
-                  checked={selectedIds.length === kiosks.length}
-                  onCheckedChange={handleSelectAll}
-                />
+                <Checkbox checked={selectedIds.length === kiosks.length} onCheckedChange={handleSelectAll} />
               </TableHead>
               <TableHead>N° kiosque</TableHead>
               <TableHead>Responsable</TableHead>
-              <TableHead>Ville</TableHead>
-              <TableHead>Zone</TableHead>
+              <TableHead>Client</TableHead>
+              <TableHead>Adresse</TableHead>
               <TableHead>Statut</TableHead>
               <TableHead>Revenu mensuel moyen</TableHead>
               <TableHead className="w-[50px]"></TableHead>
@@ -262,21 +186,23 @@ export default function KioskTable() {
                       if (checked) {
                         setSelectedIds([...selectedIds, kiosk.id])
                       } else {
-                        setSelectedIds(selectedIds.filter(id => id !== kiosk.id))
+                        setSelectedIds(selectedIds.filter((id) => id !== kiosk.id))
                       }
                     }}
                   />
                 </TableCell>
-                <TableCell>{kiosk.id}</TableCell>
-                <TableCell>{kiosk.manager}</TableCell>
-                <TableCell>{kiosk.city}</TableCell>
-                <TableCell>{kiosk.zone}</TableCell>
+                <TableCell>{kiosk.kioskName}</TableCell>
+                <TableCell>{kiosk.managerName}</TableCell>
+                <TableCell>{kiosk.clientName}</TableCell>
+                <TableCell>{kiosk.kioskAddress}</TableCell>
                 <TableCell>
-                  <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${getStatusColor(kiosk.status)}`}>
+                  <span
+                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${getStatusColor(kiosk.status)}`}
+                  >
                     {kiosk.status}
                   </span>
                 </TableCell>
-                <TableCell>{kiosk.revenue}</TableCell>
+                <TableCell>{kiosk.averageMonthlyRevenue} FCFA</TableCell>
                 <TableCell>
                   <Button variant="ghost" size="icon">
                     <MoreHorizontal className="h-4 w-4" />
@@ -302,16 +228,17 @@ export default function KioskTable() {
           >
             Previous
           </Button>
-          {[1, 2, 3, '...', totalPages].map((page, index) => (
+          {[1, 2, 3, "...", totalPages].map((page, index) => (
             <Button
               key={index}
               variant={currentPage === page ? "default" : "outline"}
               size="sm"
               onClick={() => {
-                if (typeof page === 'number') setCurrentPage(page)
+                if (typeof page === "number") setCurrentPage(page)
               }}
-              className={`${typeof page !== 'number' ? 'pointer-events-none' : ''
-                } ${page === currentPage ? 'bg-orange-500 text-white hover:bg-orange-600' : ''}`}
+              className={`${
+                typeof page !== "number" ? "pointer-events-none" : ""
+              } ${page === currentPage ? "bg-orange-500 text-white hover:bg-orange-600" : ""}`}
             >
               {page}
             </Button>
@@ -329,3 +256,4 @@ export default function KioskTable() {
     </div>
   )
 }
+

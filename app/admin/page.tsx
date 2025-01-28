@@ -25,9 +25,9 @@ import {
 
 import styles from "@/app/ui/dashboard.module.css"
 import Header from "../ui/header"
-import { fetchUserStats
-  
- } from "../actions/fetchUserStats"
+import { fetchUserStats } from "../actions/fetchUserStats"
+import { getKioskCounts } from "../actions/kiosk-actions"
+
 interface User {
   id: string
   name: string
@@ -57,23 +57,49 @@ export default function UserManagement() {
     percentageGrowth: 0,
     lastNineUsers: [] as User[],
   })
+  const [kioskStats, setKioskStats] = useState({
+    totalKiosks: 0,
+    newKiosksLastMonth: 0,
+    activeContracts: 0,
+    expiredContracts: 0,
+    pendingInvoices: 0,
+    kiosksAddedThisMonth: 0,
+    percentageAddedThisMonth: 0,
+  })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    async function loadUserStats() {
+    async function loadStats() {
       setLoading(true)
-      const result = await fetchUserStats()
-      if (result.success) {
-        setUserStats(result)
-        setError(null)
-      } else {
-        setError("Échec du chargement des statistiques utilisateurs")
+      try {
+        const [userResult, kioskCountsResult] = await Promise.all([fetchUserStats(), getKioskCounts()])
+
+        if (userResult.success) {
+          setUserStats({
+            totalUsers: userResult.totalUsers,
+            usersThisMonth: userResult.usersThisMonth,
+            percentageGrowth: userResult.percentageGrowth,
+            lastNineUsers: userResult.lastNineUsers,
+          })
+          setKioskStats((prevStats) => ({
+            ...prevStats,
+            totalKiosks: kioskCountsResult.totalKiosks,
+            kiosksAddedThisMonth: kioskCountsResult.kiosksAddedThisMonth,
+            percentageAddedThisMonth: kioskCountsResult.percentageAddedThisMonth,
+          }))
+          setError(null)
+        } else {
+          setError("Échec du chargement des statistiques")
+        }
+      } catch (error) {
+        console.error("Error loading stats:", error)
+        setError("Une erreur est survenue lors du chargement des statistiques")
       }
       setLoading(false)
     }
 
-    loadUserStats()
+    loadStats()
   }, [])
 
   return (
@@ -114,12 +140,18 @@ export default function UserManagement() {
             <CardHeader className={`flex flex-column space-y-0 pb-2 shadow-md ${styles.carteEntete}`}>
               <CardTitle className="text-sm font-medium">Nombre Total de Kiosques</CardTitle>
               <div className="flex items-baseline space-x-3 ">
-                <div className="text-2xl font-bold mt-2">1,822</div>
+                {loading ? (
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                ) : (
+                  <div className="text-2xl font-bold mt-2">{kioskStats.totalKiosks}</div>
+                )}
                 <div className="flex items-center bg-green-500 rounded-full bg-opacity-15 px-2 py-0.5">
                   <div className="inline-block  text-xs font-medium text-green-500 flex items-center">
                     <ArrowUpCircleIcon className="inline-block h-5 w-5" />
                   </div>
-                  <div className="ml-2 text-medium text-gray-500">5.2%</div>
+                  <div className="ml-2 text-medium text-gray-500">
+                    {kioskStats.percentageAddedThisMonth.toFixed(1)}%
+                  </div>
                 </div>
               </div>
             </CardHeader>
@@ -127,7 +159,7 @@ export default function UserManagement() {
               <div className="flex items-center text-medium">
                 <p>
                   {" "}
-                  <span className="font-bold">+22</span> le dernier mois
+                  <span className="font-bold">+{kioskStats.kiosksAddedThisMonth}</span> le dernier mois
                 </p>
               </div>
             </CardContent>
@@ -162,13 +194,13 @@ export default function UserManagement() {
             <CardHeader className={`flex flex-column space-y-0 pb-2 shadow-md ${styles.carteEntete}`}>
               <CardTitle className="text-xs font-medium">Contrats actif et exprirés</CardTitle>
               <div className="flex items-baseline space-x-3 ">
-                <div className="text-xl font-bold mt-2">14</div>
+                <div className="text-xl font-bold mt-2">{kioskStats.activeContracts}</div>
                 <div className="flex items-center bg-green-500 rounded-full bg-opacity-15 px-2 py-0.5">
                   <div className="ml-2 text-xm text-black-500 font-bold">Actifs</div>
                 </div>
               </div>
               <div className="flex items-baseline space-x-3 ">
-                <div className="text-xl font-bold mt-2">1,822</div>
+                <div className="text-xl font-bold mt-2">{kioskStats.expiredContracts}</div>
                 <div className="flex items-center bg-red-500 rounded-full bg-opacity-15 px-2 py-0.5">
                   <div className="ml-2 text-xm font-bold text-black-500">Expirés</div>
                 </div>
@@ -178,15 +210,15 @@ export default function UserManagement() {
           </Card>
           <Card className={`shadow-md ${styles.carte}`}>
             <CardHeader className={`flex flex-column space-y-0 pb-2 shadow-md ${styles.carteEntete}`}>
-              <CardTitle className="text-sm font-medium">Factures en attentes</CardTitle>
+              <CardTitle className="text-sm font-medium">Factures en attentes et payés</CardTitle>
               <div className="flex items-baseline space-x-3 ">
-                <div className="text-2xl font-bold mt-2">14</div>
-                <div className="flex items-center bg-red-500 rounded-full bg-opacity-15 px-2 py-0.5">
-                  <div className="ml-2 text-xm font-bold text-black-500">En attente</div>
+                <div className="text-xl font-bold mt-2">{kioskStats.activeContracts}</div>
+                <div className="flex items-center bg-green-500 rounded-full bg-opacity-15 px-2 py-0.5">
+                  <div className="ml-2 text-xm text-black-500 font-bold">Payés</div>
                 </div>
               </div>
               <div className="flex items-baseline space-x-3 ">
-                <div className="text-2xl font-bold mt-2">1,822</div>
+                <div className="text-2xl font-bold mt-2">{kioskStats.pendingInvoices}</div>
                 <div className="flex items-center bg-red-500 rounded-full bg-opacity-15 px-2 py-0.5">
                   <div className="ml-2 text-xm font-bold text-black-500">En attente</div>
                 </div>
@@ -319,8 +351,8 @@ export default function UserManagement() {
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Kiosks</CardTitle>
                 <div className="flex items-center gap-2">
-                  <div className="text-2xl font-bold">390</div>
-                  <span className="text-xs text-green-500">+12</span>
+                  <div className="text-2xl font-bold">{kioskStats.totalKiosks}</div>
+                  <span className="text-xs text-green-500">+{kioskStats.newKiosksLastMonth}</span>
                 </div>
               </CardHeader>
               <CardContent>
