@@ -33,6 +33,7 @@ import { format, isAfter, isBefore, isEqual } from "date-fns"
 import { fr } from "date-fns/locale"
 import Header from "@/app/ui/header"
 import { createUserByAdmin } from "@/app/actions/createUserByAdmin"
+import { fetchUserStats } from "@/app/actions/fetchUserStats"
 
 type User = {
   id: number
@@ -55,6 +56,7 @@ export default function UserManagement() {
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const [isCalendarOpen, setIsCalendarOpen] = useState(false)
   const [formData, setFormData] = useState({
+    id: 0,
     name: "",
     email: "",
     phone: "",
@@ -65,6 +67,15 @@ export default function UserManagement() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState("")
+  const [totalUsers, setTotalUsers] = useState(0)
+  const [newUsersThisMonth, setNewUsersThisMonth] = useState(0)
+  const [isEditing, setIsEditing] = useState(false)
+    const [userStats, setUserStats] = useState({
+      totalUsers: 0,
+      usersThisMonth: 0,
+      percentageGrowth: 0,
+      lastNineUsers: [] as User[],
+    })
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -73,6 +84,7 @@ export default function UserManagement() {
         const response = await fetch("/api/users")
         const data: User[] = await response.json()
         setUsers(data.sort((a, b) => new Date(b.CreatedAt).getTime() - new Date(a.CreatedAt).getTime()))
+        setTotalUsers(data.length)
       } catch (error) {
         console.error("Error fetching users:", error)
       } finally {
@@ -81,6 +93,35 @@ export default function UserManagement() {
     }
     fetchUsers()
   }, [])
+
+    useEffect(() => {
+      async function loadStats() {
+        setIsLoading(true)
+        try {
+          const [userResult] = await Promise.all([fetchUserStats()])
+  
+          if (userResult.success) {
+            setUserStats({
+              totalUsers: userResult.totalUsers,
+              usersThisMonth: userResult.usersThisMonth,
+              percentageGrowth: userResult.percentageGrowth,
+              lastNineUsers: userResult.lastNineUsers,
+            })
+            setError(null)
+          } else {
+            setError("Échec du chargement des statistiques")
+          }
+        } catch (error) {
+          console.error("Error loading stats:", error)
+          setError("Une erreur est survenue lors du chargement des statistiques")
+        }
+        setIsLoading(false)
+      }
+  
+      loadStats()
+    }, [])
+
+
 
   const filteredUsers = useMemo(() => {
     return users.filter((user) => {
@@ -103,8 +144,27 @@ export default function UserManagement() {
     }
   }
 
-  const handleDelete = () => {
-    console.log("Deleting users:", selectedUsers)
+  const handleDelete = async () => {
+    if (window.confirm("Are you sure you want to delete the selected users?")) {
+      try {
+        const response = await fetch("/api/users", {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ userIds: selectedUsers }),
+        })
+        if (response.ok) {
+          setUsers(users.filter((user) => !selectedUsers.includes(user.id)))
+          setSelectedUsers([])
+        } else {
+          throw new Error("Failed to delete users")
+        }
+      } catch (error) {
+        console.error("Error deleting users:", error)
+        setError("Failed to delete users. Please try again.")
+      }
+    }
   }
 
   const handleSelectUser = (userId: number, checked: boolean) => {
@@ -115,8 +175,37 @@ export default function UserManagement() {
     }
   }
 
-  const openModal = () => setIsModalOpen(true)
-  const closeModal = () => setIsModalOpen(false)
+  const openModal = (user?: User) => {
+    if (user) {
+      setFormData({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        address: "", // Assuming address is not in the User type
+        status: user.status,
+      })
+      setIsEditing(true)
+    } else {
+      setFormData({
+        id: 0,
+        name: "",
+        email: "",
+        phone: "",
+        role: "",
+        address: "",
+        status: "VERIFIED",
+      })
+      setIsEditing(false)
+    }
+    setIsModalOpen(true)
+  }
+
+  const closeModal = () => {
+    setIsModalOpen(false)
+    setIsEditing(false)
+  }
 
   const resetFilters = () => {
     setFilterRole("")
@@ -146,24 +235,32 @@ export default function UserManagement() {
     e.preventDefault()
     setIsSubmitting(true)
     try {
-      const result = await createUserByAdmin(formData)
-      if (result.success) {
-        setUsers((prevUsers) => [result.user, ...prevUsers])
-        closeModal()
-        setFormData({
-          name: "",
-          email: "",
-          phone: "",
-          role: "",
-          address: "",
-          status: "VERIFIED",
+      if (isEditing) {
+        const response = await fetch(`/api/users/${formData.id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
         })
+        if (response.ok) {
+          const updatedUser = await response.json()
+          setUsers(users.map((user) => (user.id === updatedUser.id ? updatedUser : user)))
+        } else {
+          throw new Error("Failed to update user")
+        }
       } else {
-        console.error("Failed to add user:", result.error)
-        setError(result.error)
+        const result = await createUserByAdmin(formData)
+        if (result.success) {
+          setUsers((prevUsers) => [result.user, ...prevUsers])
+        } else {
+          throw new Error(result.error)
+        }
       }
+      closeModal()
     } catch (error) {
-      console.error("Error adding user:", error)
+      console.error("Error submitting user:", error)
+      setError("Failed to submit user. Please try again.")
     } finally {
       setIsSubmitting(false)
     }
@@ -177,7 +274,7 @@ export default function UserManagement() {
         <Button variant="ghost">
           <ArrowDownTrayIcon className="mr-2 h-4 w-4" />
         </Button>
-        <Button className="bg-orange-500 hover:bg-orange-600 text-white" onClick={openModal}>
+        <Button className="bg-orange-500 hover:bg-orange-600 text-white" onClick={() => openModal()}>
           <UserPlusIcon className="mr-2 h-4 w-4" />
           Ajouter des utilisateurs
         </Button>
@@ -190,7 +287,9 @@ export default function UserManagement() {
                 <button onClick={closeModal} className="absolute top-3 right-3 text-gray-400 hover:text-gray-500">
                   <XMarkIcon className="h-6 w-6" />
                 </button>
-                <h2 className="text-xl font-semibold mb-4">Créer un utilisateur</h2>
+                <h2 className="text-xl font-semibold mb-4">
+                  {isEditing ? "Modifier l'utilisateur" : "Créer un utilisateur"}
+                </h2>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
                     <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
@@ -280,8 +379,10 @@ export default function UserManagement() {
                       {isSubmitting ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Adding...
+                          {isEditing ? "Updating..." : "Adding..."}
                         </>
+                      ) : isEditing ? (
+                        "Modifier"
                       ) : (
                         "Ajouter"
                       )}
@@ -298,22 +399,16 @@ export default function UserManagement() {
       <div className="grid grid-cols-2 gap-4">
         <Card>
           <CardHeader className="flex flex-column space-y-0 pb-2 shadow-md">
-            <CardTitle className="text-sm font-medium">Nombre Total de Kiosques</CardTitle>
+            <CardTitle className="text-sm font-medium">Nombre Total d'utilisateurs</CardTitle>
             <div className="flex items-baseline space-x-3 ">
-              <div className="text-2xl font-bold mt-2">1,822</div>
+              <div className="text-2xl font-bold mt-2">{totalUsers}</div>
               <div className="flex items-center bg-green-500 rounded-full bg-opacity-15 px-2 py-0.5">
                 <ArrowUpCircleIcon className="inline-block h-5 w-5 text-green-500" />
-                <div className="ml-2 text-medium text-gray-500">5.2%</div>
+                <div className="ml-2 text-medium text-gray-500">{userStats.percentageGrowth} %</div>
               </div>
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="flex items-center text-medium">
-              <p>
-                <span className="font-bold">+22</span> le dernier mois
-              </p>
-            </div>
-          </CardContent>
+          <CardContent></CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -322,15 +417,15 @@ export default function UserManagement() {
           </CardHeader>
           <CardContent>
             <div className="flex items-baseline space-x-8">
-              <div className="text-2xl font-bold">1,822</div>
+              <div className="text-2xl font-bold">{userStats.usersThisMonth}</div>
               <div className="flex items-center bg-green-500 rounded-full bg-opacity-15 px-2 py-0.5">
                 <ArrowUpCircleIcon className="inline-block h-5 w-5 text-green-500" />
-                <div className="ml-2 text-medium text-gray-500">5.2%</div>
+                <div className="ml-2 text-medium text-gray-500">{userStats.percentageGrowth} %</div>
               </div>
             </div>
             <div className="mt-2 flex items-center justify-between text-sm text-muted-foreground w-70">
               <span>
-                <b>+140</b> Ce dernier mois
+                <b>+{userStats.usersThisMonth}</b> Ce dernier mois
               </span>
               <ArrowLongRightIcon className="h-4 w-4" />
             </div>
@@ -363,7 +458,10 @@ export default function UserManagement() {
           )}
 
           {selectedUsers.length === 1 && (
-            <Button className="bg-white border border-gray-500 text-black-500 font-medium py-2 px-4 rounded inline-flex items-center ml-4">
+            <Button
+              className="bg-white border border-gray-500 text-black-500 font-medium py-2 px-4 rounded inline-flex items-center ml-4"
+              onClick={() => openModal(users.find((user) => user.id === selectedUsers[0]))}
+            >
               <PencilIcon className="h-4 w-4" />
               Modifier
             </Button>
@@ -410,7 +508,7 @@ export default function UserManagement() {
                             className="w-full justify-start text-left font-normal"
                             onClick={() => setIsCalendarOpen(true)}
                           >
-                            444444444
+                            {filterDate ? format(filterDate, "PP", { locale: fr }) : "Sélectionner une date"}
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
@@ -496,7 +594,7 @@ export default function UserManagement() {
                 </TableCell>
                 <TableCell className="font-medium">{user.phone}</TableCell>
                 <TableCell className="font-medium">
-                 44444
+                  4444
                 </TableCell>
                 <TableCell>
                   <span
@@ -512,9 +610,25 @@ export default function UserManagement() {
                   </span>
                 </TableCell>
                 <TableCell className="text-right">
-                  <Button variant="ghost" size="icon">
-                    <EllipsisHorizontalIcon className="h-4 w-4" />
-                  </Button>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <EllipsisHorizontalIcon className="h-4 w-4" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-40">
+                      <div className="flex flex-col space-y-1">
+                        <Button variant="ghost" onClick={() => openModal(user)}>
+                          <PencilIcon className="h-4 w-4 mr-2" />
+                          Modifier
+                        </Button>
+                        <Button variant="ghost" onClick={() => handleDelete()}>
+                          <TrashIcon className="h-4 w-4 mr-2" />
+                          Supprimer
+                        </Button>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                 </TableCell>
               </TableRow>
             ))}

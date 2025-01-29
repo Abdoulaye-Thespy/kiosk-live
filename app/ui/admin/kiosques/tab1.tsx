@@ -14,6 +14,7 @@ import { format } from "date-fns"
 import { fr } from "date-fns/locale"
 import { MoreHorizontal, RotateCcw, Settings, Signal, Filter } from "lucide-react"
 import { getKiosks } from "@/app/actions/kiosk-actions"
+import { KioskType } from "@prisma/client"
 
 interface Kiosk {
   id: number
@@ -21,7 +22,7 @@ interface Kiosk {
   managerName: string
   clientName: string
   kioskAddress: string
-  status: "AVAILABLE" | "UNDER_MAINTENANCE" | "REQUEST" | "LOCALIZING"
+  status: KioskType
   averageMonthlyRevenue: number
 }
 
@@ -172,7 +173,7 @@ export default function KioskTable() {
               <TableHead>Client</TableHead>
               <TableHead>Adresse</TableHead>
               <TableHead>Statut</TableHead>
-              <TableHead>Revenu mensuel moyen</TableHead>
+              <TableHead>Type de kiosque</TableHead>
               <TableHead className="w-[50px]"></TableHead>
             </TableRow>
           </TableHeader>
@@ -202,7 +203,7 @@ export default function KioskTable() {
                     {kiosk.status}
                   </span>
                 </TableCell>
-                <TableCell>{kiosk.averageMonthlyRevenue} FCFA</TableCell>
+                <TableCell>{kiosk.type} FCFA</TableCell>
                 <TableCell>
                   <Button variant="ghost" size="icon">
                     <MoreHorizontal className="h-4 w-4" />
