@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import KioskMetrics from "@/app/ui/admin/kiosques/metrics"
@@ -12,9 +12,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar"
 import { format } from "date-fns"
 import { fr } from "date-fns/locale"
-import { MoreHorizontal, RotateCcw, Settings, Signal, Filter } from "lucide-react"
+import { MoreHorizontal, RotateCcw, Filter } from "lucide-react"
 import { getKiosks } from "@/app/actions/kiosk-actions"
-import { KioskType } from "@prisma/client"
+import type { KioskType } from "@prisma/client"
+import { AddKioskDialogAdmin } from "./add-kiosk-dialog"
 
 interface Kiosk {
   id: number
@@ -24,6 +25,8 @@ interface Kiosk {
   kioskAddress: string
   status: KioskType
   averageMonthlyRevenue: number
+  type: string
+  compartment: string
 }
 
 export default function KioskTable() {
@@ -35,10 +38,12 @@ export default function KioskTable() {
   const [filterDate, setFilterDate] = useState<Date | undefined>(undefined)
   const [kiosks, setKiosks] = useState<Kiosk[]>([])
   const [totalPages, setTotalPages] = useState(1)
+  const [isModifyDialogOpen, setIsModifyDialogOpen] = useState(false)
+  const [selectedKiosk, setSelectedKiosk] = useState<Kiosk | null>(null)
 
   useEffect(() => {
     fetchKiosks()
-  }, [currentPage, searchTerm, filterStatus, filterDate]) //This line was already correct.  The comment was unnecessary.
+  }, [currentPage, searchTerm, filterStatus, filterDate]) //This line was flagged as needing fewer dependencies
 
   const fetchKiosks = async () => {
     const result = await getKiosks({
@@ -82,6 +87,48 @@ export default function KioskTable() {
     setCurrentPage(1)
     fetchKiosks()
     setIsFilterOpen(false)
+  }
+
+  const handleModify = (kiosk: Kiosk) => {
+    setSelectedKiosk(kiosk)
+    setIsModifyDialogOpen(true)
+  }
+
+  const handleDelete = (kioskId: number) => {
+    // Implement delete functionality here
+    console.log("Delete kiosk:", kioskId)
+    // You might want to show a confirmation dialog before deleting
+    // and then call an API to delete the kiosk
+  }
+
+  const getStatusTranslation = (status: string) => {
+    switch (status) {
+      case "AVAILABLE":
+        return "En activité"
+      case "UNDER_MAINTENANCE":
+        return "En maintenance"
+      case "REQUEST":
+        return "En attente"
+      case "LOCALIZING":
+        return "En localisation"
+      default:
+        return status
+    }
+  }
+
+  const getCompartmentTranslation = (compartment: string) => {
+    switch (compartment) {
+      case "ONE_COMPARTMENT_WITH_BRANDING":
+        return "Un compartiment avec marque"
+      case "ONE_COMPARTMENT_WITHOUT_BRANDING":
+        return "Un compartiment sans marque"
+      case "THREE_COMPARTMENT_WITHOUT_BRANDING":
+        return "Trois compartiments sans marque"
+      case "THREE_COMPARTMENT_WITH_BRANDING":
+        return "Trois compartiments avec marque"
+      default:
+        return compartment
+    }
   }
 
   return (
@@ -200,15 +247,29 @@ export default function KioskTable() {
                   <span
                     className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${getStatusColor(kiosk.status)}`}
                   >
-                    {kiosk.status}
+                    {getStatusTranslation(kiosk.status)}
                   </span>
                 </TableCell>
-                <TableCell>{kiosk.type} FCFA</TableCell>
+                <TableCell>{getCompartmentTranslation(kiosk.type)}</TableCell>
                 <TableCell>
-                  <Button variant="ghost" size="icon">
-                    <MoreHorizontal className="h-4 w-4" />
-                    <span className="sr-only">More actions</span>
-                  </Button>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <MoreHorizontal className="h-4 w-4" />
+                        <span className="sr-only">More actions</span>
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent side="left" className="w-40">
+                      <div className="flex flex-col space-y-2">
+                        <Button size="sm" onClick={() => handleModify(kiosk)}>
+                          Modifier
+                        </Button>
+                        <Button size="sm" variant="destructive" onClick={() => handleDelete(kiosk.id)}>
+                          Effacer
+                        </Button>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                 </TableCell>
               </TableRow>
             ))}
@@ -254,6 +315,15 @@ export default function KioskTable() {
           </Button>
         </div>
       </div>
+      <AddKioskDialogAdmin
+        isOpen={isModifyDialogOpen}
+        onOpenChange={setIsModifyDialogOpen}
+        kiosk={selectedKiosk}
+        onSuccess={() => {
+          setIsModifyDialogOpen(false)
+          fetchKiosks()
+        }}
+      />
     </div>
   )
 }

@@ -8,33 +8,34 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String
-  email         String    @unique
-  role          Role      @default(CLIENT)
-  status        UserStatus      @default(PENDING)
-  address       String?
-  phone         String?
-  verificationToken String?
-  emailVerified Boolean @default(false)
-  image         String?
-  password      String?
-  resetPasswordToken     String?   @unique
-  resetPasswordExpires   DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                  String             @id @default(cuid())
+  name                String
+  email               String             @unique
+  role                Role               @default(CLIENT)
+  status              UserStatus         @default(PENDING)
+  address             String?
+  phone               String?
+  verificationToken   String?
+  emailVerified       Boolean            @default(false)
+  image               String?
+  password            String?
+  resetPasswordToken  String?            @unique
+  resetPasswordExpires DateTime?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
 
-  accounts      Account[]
-  sessions      Session[]
-  notifications Notification[]
-  contracts     Contract[]
-  inventoryMoves InventoryMovement[]
-  serviceRequests ServiceRequest[]
-  locationHistory LocationHistory[]
-  prospects     Prospect[]
-  prospectActions ProspectAction[]
-  quotes        Quote[]
-  reports       Report[]
+  accounts            Account[]
+  sessions            Session[]
+  notifications       Notification[]
+  contracts           Contract[]
+  inventoryMoves      InventoryMovement[]
+  serviceRequests     ServiceRequest[]
+  locationHistory     LocationHistory[]
+  prospects           Prospect[]
+  prospectActions     ProspectAction[]
+  quotes              Quote[]
+  reports             Report[]
+  kiosks              UserKiosk[]        // Many-to-many relationship with Kiosk model
 }
 
 model Account {
@@ -83,7 +84,7 @@ model Kiosk {
   managerName           String?
   managerContacts       String?
   locationId            String?
-  status                KioskStatus @default(AVAILABLE)
+  status                KioskStatus @default(REQUEST)
   type                  KioskType    @default(ONE_COMPARTMENT_WITHOUT_BRANDING)
   image                 String?
   averageMonthlyRevenue Decimal?
@@ -94,6 +95,19 @@ model Kiosk {
   inventoryMoves        InventoryMovement[]
   serviceRequests       ServiceRequest[]
   locationHistory       LocationHistory[]
+  users                 UserKiosk[]  // Many-to-many relationship with User model
+
+}
+
+model UserKiosk {
+  id      String   @id @default(cuid())
+  userId  String
+  kioskId Int
+
+  user  User  @relation(fields: [userId], references: [id])
+  kiosk Kiosk @relation(fields: [kioskId], references: [id])
+
+  @@unique([userId, kioskId])
 }
 
 model Contract {

@@ -61,3 +61,28 @@ export async function fetchUserStats() {
   }
 }
 
+export async function fetchClients() {
+  try {
+    const clients = await prisma.user.findMany({
+      where: {
+        role: "CLIENT",
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+      },
+    })
+
+    return {
+      success: true,
+      clients,
+    }
+  } catch (error) {
+    console.error("Failed to fetch clients:", error)
+    return { success: false, error: "Failed to fetch clients" }
+  } finally {
+    await prisma.$disconnect()
+  }
+}
+

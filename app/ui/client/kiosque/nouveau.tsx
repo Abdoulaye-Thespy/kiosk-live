@@ -1,51 +1,27 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import type React from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
 import { ArrowDownTrayIcon } from "@heroicons/react/24/outline"
-import { InfoIcon, Loader2, CheckCircle2, XCircle, Search } from "lucide-react"
+import { InfoIcon, Loader2, CheckCircle2, XCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { addKioskByStaff } from "@/app/actions/kiosk-actions"
+import { addKioskByClient } from "@/app/actions/kiosk-actions"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { fetchClients } from "@/app/actions/fetchUserStats"
 
-interface Client {
-  id: string
-  name: string
-  email: string
-}
-
-export function AddKioskDialog() {
+export function AddKioskDialogClient() {
   const [isOpen, setIsOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
-  const [clients, setClients] = useState<Client[]>([])
-  const [selectedClientId, setSelectedClientId] = useState<string>("")
-  const [selectedClientName, setSelectedClientName] = useState<string>("")
-  const [openClientSelect, setOpenClientSelect] = useState(false)
   const router = useRouter()
-
-  useEffect(() => {
-    // Fetch users with role CLIENT from the database
-    const getClients = async () => {
-      try {
-        const data = await fetchClients()
-        setClients(data.clients)
-      } catch (error) {
-        console.error("Error fetching clients:", error)
-      }
-    }
-
-    getClients()
-  }, [])
+  const { data: session } = useSession()
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -54,11 +30,18 @@ export function AddKioskDialog() {
     setSuccess(null)
 
     const formData = new FormData(event.currentTarget)
-    formData.append("userId", selectedClientId)
-    formData.append("clientName", selectedClientName)
+
+    // Add the user ID to the form data
+    if (session?.user?.id) {
+      formData.append("userId", session.user.id)
+    } else {
+      setError("User ID not found. Please ensure you are logged in.")
+      setIsSubmitting(false)
+      return
+    }
 
     try {
-      const result = await addKioskByStaff(formData)
+      const result = await addKioskByClient(formData)
       if (result.error) {
         setError(result.error)
       } else {
@@ -107,7 +90,7 @@ export function AddKioskDialog() {
               fill="white"
             />
           </svg>
-          Ajouter un nouveau kiosque
+          Demander un nouveau kiosque
         </Button>
       </div>
 
@@ -133,48 +116,7 @@ export function AddKioskDialog() {
             )}
             <form id="add-kiosk-form" onSubmit={handleSubmit} className="space-y-3 pr-4">
               <div>
-                <Label htmlFor="client-select">Sélectionner un client</Label>
-                <Popover open={openClientSelect} onOpenChange={setOpenClientSelect}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={openClientSelect}
-                      className="w-full justify-between"
-                    >
-                      {selectedClientId
-                        ? clients.find((client) => client.id === selectedClientId)?.name
-                        : "Sélectionner un client"}
-                      <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[300px] p-0">
-                    <Command>
-                      <CommandInput placeholder="Rechercher un client..." />
-                      <CommandList>
-                        <CommandEmpty>Aucun client trouvé.</CommandEmpty>
-                        <CommandGroup>
-                          {clients.map((client) => (
-                            <CommandItem
-                              key={client.id}
-                              onSelect={() => {
-                                setSelectedClientId(client.id)
-                                setSelectedClientName(client.name)
-                                setOpenClientSelect(false)
-                              }}
-                            >
-                              {client.name} ({client.email})
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              <div>
-                <Label htmlFor="kiosk-name">Nom du kiosque</Label>
+                <Label htmlFor="kiosk-name">Nom de l'Entreprise</Label>
                 <Input id="kiosk-name" name="kioskName" placeholder="Kiosk 639" className="w-full mt-1" />
               </div>
 
@@ -184,7 +126,7 @@ export function AddKioskDialog() {
               </div>
 
               <div>
-                <Label>Coordonnées GPS</Label>
+                <Label>Coordonnées GPS(Optionelles) </Label>
                 <div className="flex gap-4 mt-1">
                   <Input id="latitude" name="latitude" placeholder="Latitude" className="w-full" />
                   <Input id="longitude" name="longitude" placeholder="Longitude" className="w-full" />

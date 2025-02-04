@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import { Button } from "@/components/ui/button"
 import Link from 'next/link'
 import { ArrowDownTrayIcon } from "@heroicons/react/24/outline"
-import { AddKioskDialog } from '@/app/ui/admin/kiosques/nouveau'
+import { AddKioskDialogClient } from '../ui/client/kiosque/nouveau'
 import Header from '../ui/header'
 import KioskMetricsClient from '../ui/client/kiosque/metrics'
 import MapView from '../ui/maps/maps'
@@ -23,7 +23,7 @@ export default function InvoiceDashboard() {
       <Header title='Mes Kiosques'/>
       <div className="flex justify-between items-center mb-6 mt-6">
         <div></div>
-        <AddKioskDialog />
+        <AddKioskDialogClient />
       </div>
       <KioskMetricsClient />
       <div className='mt-5'>

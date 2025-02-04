@@ -154,12 +154,6 @@ export default function ContractManagement() {
         <Button variant="ghost">
           <ArrowDownTrayIcon className="mr-2 h-4 w-4" />
         </Button>
-        <Link href="/commercial/contrat/nouveau">
-          <Button className={styles.add}>
-            <DocumentPlusIcon className="mr-2 h-4 w-4" />
-            Créer un nouveau contrat
-          </Button>
-        </Link>
       </div>
       <hr />
 

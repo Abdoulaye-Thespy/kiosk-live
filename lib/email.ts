@@ -1,12 +1,6 @@
-import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses"
+import { Resend } from "resend"
 
-const sesClient = new SESClient({
-  region: process.env.AWS_REGION,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-  },
-})
+const resend = new Resend(process.env.RESEND_API_KEY)
 
 const emailTemplate = (title: string, content: string, buttonText: string, buttonUrl: string) => `
   <!DOCTYPE html>
@@ -31,34 +25,62 @@ const emailTemplate = (title: string, content: string, buttonText: string, butto
   </html>
 `
 
+const notifyStaffTemplate = (kioskDetails: string) => `
+  <!DOCTYPE html>
+  <html lang="fr">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nouvelle Demande de Kiosque</title>
+  </head>
+  <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <h1 style="color: #FF6B6B;">Nouvelle Demande de Kiosque</h1>
+    <p>Une nouvelle demande de kiosque a été soumise. Voici les détails :</p>
+    <div style="background-color: #f0f0f0; padding: 15px; border-radius: 5px;">
+      ${kioskDetails}
+    </div>
+    <p>Veuillez examiner cette demande dès que possible.</p>
+    <p>Merci,<br>L'équipe Kiosk Online</p>
+  </body>
+  </html>
+`
+
+const notifyClientTemplate = (kioskName: string, kioskAddress: string) => `
+  <!DOCTYPE html>
+  <html lang="fr">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nouveau Kiosque Ajouté</title>
+  </head>
+  <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <h1 style="color: #FF6B6B;">Nouveau Kiosque Ajouté</h1>
+    <p>Nous sommes heureux de vous informer qu'un nouveau kiosque a été ajouté à votre compte :</p>
+    <div style="background-color: #f0f0f0; padding: 15px; border-radius: 5px;">
+      <p><strong>Nom du kiosque :</strong> ${kioskName}</p>
+      <p><strong>Adresse :</strong> ${kioskAddress}</p>
+    </div>
+    <p>Si vous avez des questions ou besoin d'assistance, n'hésitez pas à nous contacter.</p>
+    <p>Merci de votre confiance,<br>L'équipe Kiosk Online</p>
+  </body>
+  </html>
+`
+
 export async function sendVerificationEmail(email: string, token: string) {
   const verificationLink = `${process.env.NEXT_PUBLIC_APP_URL}/auth/verify-email/${token}`
 
-  const params = {
-    Source: process.env.EMAIL_FROM,
-    Destination: {
-      ToAddresses: [email],
-    },
-    Message: {
-      Subject: {
-        Data: "Verify your email",
-      },
-      Body: {
-        Html: {
-          Data: emailTemplate(
-            "Verify Your Email",
-            "Thank you for signing up! Please click the button below to verify your email address:",
-            "Verify Email",
-            verificationLink,
-          ),
-        },
-      },
-    },
-  }
-
   try {
-    const command = new SendEmailCommand(params)
-    await sesClient.send(command)
+    await resend.emails.send({
+      from: process.env.EMAIL_FROM!,
+      to: email,
+      subject: "Verify your email",
+      html: emailTemplate(
+        "Verify Your Email",
+        "Thank you for signing up! Please click the button below to verify your email address:",
+        "Verify Email",
+        verificationLink,
+      ),
+    })
   } catch (error) {
     console.error("Error sending email:", error)
     throw error
@@ -68,31 +90,18 @@ export async function sendVerificationEmail(email: string, token: string) {
 export async function sendPasswordResetEmail(email: string, token: string) {
   const resetLink = `${process.env.NEXT_PUBLIC_APP_URL}/auth/reset-password/${token}`
 
-  const params = {
-    Source: process.env.EMAIL_FROM,
-    Destination: {
-      ToAddresses: [email],
-    },
-    Message: {
-      Subject: {
-        Data: "Reset your password",
-      },
-      Body: {
-        Html: {
-          Data: emailTemplate(
-            "Reset Your Password",
-            "You have requested to reset your password. Click the button below to set a new password:",
-            "Reset Password",
-            resetLink,
-          ),
-        },
-      },
-    },
-  }
-
   try {
-    const command = new SendEmailCommand(params)
-    await sesClient.send(command)
+    await resend.emails.send({
+      from: process.env.EMAIL_FROM!,
+      to: email,
+      subject: "Reset your password",
+      html: emailTemplate(
+        "Reset Your Password",
+        "You have requested to reset your password. Click the button below to set a new password:",
+        "Reset Password",
+        resetLink,
+      ),
+    })
   } catch (error) {
     console.error("Error sending email:", error)
     throw error
@@ -102,33 +111,48 @@ export async function sendPasswordResetEmail(email: string, token: string) {
 export async function sendTemporaryPasswordEmail(email: string, temporaryPassword: string) {
   const loginLink = `${process.env.NEXT_PUBLIC_APP_URL}/auth/login`
 
-  const params = {
-    Source: process.env.EMAIL_FROM,
-    Destination: {
-      ToAddresses: [email],
-    },
-    Message: {
-      Subject: {
-        Data: "Your Temporary Password",
-      },
-      Body: {
-        Html: {
-          Data: emailTemplate(
-            "Your Temporary Password",
-            `Your temporary password is: <strong>${temporaryPassword}</strong><br><br>Please use this password to log in and change it immediately for security reasons.`,
-            "Go to Login",
-            loginLink,
-          ),
-        },
-      },
-    },
-  }
-
   try {
-    const command = new SendEmailCommand(params)
-    await sesClient.send(command)
+    await resend.emails.send({
+      from: process.env.EMAIL_FROM!,
+      to: email,
+      subject: "Your Temporary Password",
+      html: emailTemplate(
+        "Your Temporary Password",
+        `Your temporary password is: <strong>${temporaryPassword}</strong><br><br>Please use this password to log in and change it immediately for security reasons.`,
+        "Go to Login",
+        loginLink,
+      ),
+    })
   } catch (error) {
     console.error("Error sending email:", error)
+    throw error
+  }
+}
+
+export async function sendStaffNotification(staffEmails: string[], kioskDetails: string) {
+  try {
+    await resend.emails.send({
+      from: process.env.EMAIL_FROM!,
+      to: staffEmails,
+      subject: "Nouvelle Demande de Kiosque",
+      html: notifyStaffTemplate(kioskDetails),
+    })
+  } catch (error) {
+    console.error("Error sending staff notification:", error)
+    throw error
+  }
+}
+
+export async function sendClientNotification(clientEmail: string, kioskName: string, kioskAddress: string) {
+  try {
+    await resend.emails.send({
+      from: process.env.EMAIL_FROM!,
+      to: clientEmail,
+      subject: "Nouveau Kiosque Ajouté",
+      html: notifyClientTemplate(kioskName, kioskAddress),
+    })
+  } catch (error) {
+    console.error("Error sending client notification:", error)
     throw error
   }
 }

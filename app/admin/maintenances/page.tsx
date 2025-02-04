@@ -11,8 +11,6 @@ const tabs = [
   { id: 'overview', label: "Vue d'ensemble" },
   { id: 'maintenance', label: "Tickets de maintenance" },
   { id: 'planning', label: "Planification et suivi" },
-  { id: 'technicians', label: "Gestion des techniciens" },
-  { id: 'history', label: "Historique" },
 ]
 
 const TabNavigation = ({ activeTab, onTabChange }: { activeTab: string; onTabChange: Function }) => {
