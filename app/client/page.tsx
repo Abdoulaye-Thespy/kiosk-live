@@ -11,8 +11,8 @@ import MapView from '../ui/maps/maps'
 
 
 const tabs = [
-  { id: 'dashboard', label: "Vue des kiosque sur tableau" },
-  { id: 'invoices', label: "Vue des kiosque sur Map" },
+  { id: 'dashboard', label: "Vue des kiosques sur tableau" },
+  { id: 'invoices', label: "Vue des kiosques sur Map" },
 ]
 
 export default function InvoiceDashboard() {
