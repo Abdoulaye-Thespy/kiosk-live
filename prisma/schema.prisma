@@ -318,6 +318,7 @@ enum ContractStatus {
 enum RequestStatus {
   OPEN
   IN_PROGRESS
+  UNDER_REVIEW
   CLOSED
 }
 
@@ -325,6 +326,7 @@ enum RequestPriority {
   LOW
   MEDIUM
   HIGH
+  URGENT
 }
 
 enum InvoiceStatus {

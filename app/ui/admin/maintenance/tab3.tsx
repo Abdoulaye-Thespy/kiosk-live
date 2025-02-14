@@ -10,20 +10,25 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Label } from "@/components/ui/label"
-import { PlusIcon, XMarkIcon, PaperClipIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { PlusIcon, XMarkIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline"
+import { Loader2 } from "lucide-react"
 import { getTechnicians } from "@/app/actions/fetchUserStats"
 import { getKiosksForTicket } from "@/app/actions/kiosk-actions"
-import { createMaintenanceEvent } from "@/app/actions/ticketsactions"
+import { createServiceRequest, getServiceRequests } from "@/app/actions/ticketsactions"
+import type { RequestPriority, RequestStatus } from "@prisma/client"
 
-interface Event {
+interface ServiceRequest {
   id: string
-  title: string
-  kiosk: string
-  startDate: Date
-  endDate: Date
-  description: string
-  technicians: string[]
-  attachments: string[]
+  kioskId: number
+  technicians: { id: string; name: string }[]
+  problemDescription: string
+  comments?: string | null
+  status: RequestStatus
+  priority: RequestPriority
+  createdDate: Date
+  resolvedDate?: Date | null
+  attachments?: string | null
 }
 
 interface Technician {
@@ -41,15 +46,16 @@ interface Kiosk {
 
 export default function MaintenanceCalendar() {
   const [currentMonth, setCurrentMonth] = useState(new Date())
-  const [events, setEvents] = useState<Event[]>([])
-  const [isNewEventModalOpen, setIsNewEventModalOpen] = useState(false)
+  const [serviceRequests, setServiceRequests] = useState<ServiceRequest[]>([])
+  const [isNewRequestModalOpen, setIsNewRequestModalOpen] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState({
-    title: "",
-    kiosk: "",
-    startDate: "",
-    endDate: "",
-    description: "",
+    kioskId: 0,
     technicians: [] as string[],
+    problemDescription: "",
+    comments: "",
+    priority: "" as RequestPriority,
+    resolvedDate: "",
     attachments: [] as string[],
   })
   const [technicianSearch, setTechnicianSearch] = useState("")
@@ -58,19 +64,17 @@ export default function MaintenanceCalendar() {
   const [kiosks, setKiosks] = useState<Kiosk[]>([])
 
   useEffect(() => {
-    const fetchTechnicians = async () => {
-      const fetchedTechnicians = await getTechnicians()
+    const fetchData = async () => {
+      const [fetchedTechnicians, fetchedKiosks, fetchedServiceRequests] = await Promise.all([
+        getTechnicians(),
+        getKiosksForTicket(),
+        getServiceRequests(),
+      ])
       setTechnicians(fetchedTechnicians)
-    }
-    fetchTechnicians()
-  }, [])
-
-  useEffect(() => {
-    const fetchKiosks = async () => {
-      const fetchedKiosks = await getKiosksForTicket()
       setKiosks(fetchedKiosks)
+      setServiceRequests(fetchedServiceRequests)
     }
-    fetchKiosks()
+    fetchData()
   }, [])
 
   const filteredTechnicians = technicians.filter((tech) =>
@@ -85,31 +89,41 @@ export default function MaintenanceCalendar() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    if (!formData.title || !formData.kiosk || !formData.startDate || !formData.endDate) {
-      alert("Veuillez remplir tous les champs obligatoires")
-      return
-    }
+    setIsSubmitting(true)
 
     try {
-      const newEvent = await createMaintenanceEvent(formData)
-      setEvents((prevEvents) => [...prevEvents, newEvent])
+      if (!formData.kioskId || !formData.problemDescription || !formData.priority) {
+        throw new Error("Veuillez remplir tous les champs obligatoires")
+      }
+
+      const newServiceRequest = await createServiceRequest({
+        kioskId: formData.kioskId,
+        technicians: formData.technicians,
+        problemDescription: formData.problemDescription,
+        comments: formData.comments,
+        priority: formData.priority,
+        resolvedDate: formData.resolvedDate,
+        attachments: formData.attachments,
+      })
+      setServiceRequests((prevRequests) => [...prevRequests, newServiceRequest])
 
       setFormData({
-        title: "",
-        kiosk: "",
-        startDate: "",
-        endDate: "",
-        description: "",
+        kioskId: 0,
         technicians: [],
+        problemDescription: "",
+        comments: "",
+        priority: "" as RequestPriority,
+        resolvedDate: "",
         attachments: [],
       })
-      setIsNewEventModalOpen(false)
-
-      alert("L'événement a été ajouté avec succès")
+      setIsNewRequestModalOpen(false)
     } catch (error) {
-      console.error("Error creating maintenance event:", error)
-      alert("Une erreur est survenue lors de la création de l'événement")
+      console.error("Error creating service request:", error)
+      alert(
+        error instanceof Error ? error.message : "Une erreur est survenue lors de la création de la demande de service",
+      )
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -125,50 +139,51 @@ export default function MaintenanceCalendar() {
   const handleKioskSelect = (kioskId: number) => {
     setFormData((prev) => ({
       ...prev,
-      kiosk: kioskId.toString(),
+      kioskId: kioskId,
     }))
   }
 
-  const handleAddAttachment = () => {
-    const mockAttachment = `document-${Date.now()}.pdf`
-    setFormData((prev) => ({
-      ...prev,
-      attachments: [...prev.attachments, mockAttachment],
-    }))
+  const renderEventList = (day: Date) => {
+    const dayEvents = serviceRequests.filter((request) => isSameDay(new Date(request.createdDate), day))
+    return (
+      <div className="mt-1 space-y-1 max-h-20 overflow-y-auto">
+        {dayEvents.map((request) => (
+          <div
+            key={request.id}
+            className="p-1 bg-orange-100 text-orange-800 text-xs rounded cursor-pointer hover:bg-orange-200"
+            title={request.problemDescription}
+          >
+            {request.problemDescription.length > 20
+              ? `${request.problemDescription.substring(0, 20)}...`
+              : request.problemDescription}
+          </div>
+        ))}
+      </div>
+    )
   }
 
   return (
     <Card className="w-full">
       <CardContent className="p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold">Calendrier</h2>
-          <Dialog open={isNewEventModalOpen} onOpenChange={setIsNewEventModalOpen}>
+          <h2 className="text-2xl font-bold">Calendrier des demandes de service</h2>
+          <Dialog open={isNewRequestModalOpen} onOpenChange={setIsNewRequestModalOpen}>
             <DialogTrigger asChild>
               <Button className="bg-orange-500 hover:bg-orange-600 text-white">
                 <PlusIcon className="h-5 w-5 mr-2" />
-                Nouvel événement
+                Nouvelle demande
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[700px]">
               <DialogHeader className="flex flex-row items-center justify-between pb-4">
-                <DialogTitle>Nouveau ticket</DialogTitle>
-                <Button variant="ghost" size="icon" onClick={() => setIsNewEventModalOpen(false)}>
+                <DialogTitle>Nouvelle demande de service</DialogTitle>
+                <Button variant="ghost" size="icon" onClick={() => setIsNewRequestModalOpen(false)}>
                   <XMarkIcon className="h-4 w-4" />
                 </Button>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="title">Nom du ticket</Label>
-                      <Input
-                        id="title"
-                        value={formData.title}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
-                        placeholder="Type event title here..."
-                      />
-                    </div>
-
                     <div>
                       <Label>Kiosque concerné</Label>
                       <div className="relative mt-2">
@@ -198,43 +213,34 @@ export default function MaintenanceCalendar() {
                             </div>
                             <input
                               type="radio"
-                              checked={formData.kiosk === kiosk.id.toString()}
+                              checked={formData.kioskId === kiosk.id}
                               onChange={() => handleKioskSelect(kiosk.id)}
                               className="rounded-full border-gray-300"
+                              required
                             />
                           </div>
                         ))}
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="startDate">Date début</Label>
-                        <Input
-                          id="startDate"
-                          type="date"
-                          value={formData.startDate}
-                          onChange={(e) => setFormData((prev) => ({ ...prev, startDate: e.target.value }))}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="endDate">Date fin</Label>
-                        <Input
-                          id="endDate"
-                          type="date"
-                          value={formData.endDate}
-                          onChange={(e) => setFormData((prev) => ({ ...prev, endDate: e.target.value }))}
-                        />
-                      </div>
+                    <div>
+                      <Label htmlFor="problemDescription">Description du problème</Label>
+                      <Textarea
+                        id="problemDescription"
+                        value={formData.problemDescription}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, problemDescription: e.target.value }))}
+                        placeholder="Décrivez le problème..."
+                        required
+                      />
                     </div>
 
                     <div>
-                      <Label htmlFor="description">Description de la tâche</Label>
+                      <Label htmlFor="comments">Commentaires</Label>
                       <Textarea
-                        id="description"
-                        value={formData.description}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
-                        placeholder="Détails..."
+                        id="comments"
+                        value={formData.comments}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, comments: e.target.value }))}
+                        placeholder="Commentaires additionnels..."
                       />
                     </div>
                   </div>
@@ -280,29 +286,68 @@ export default function MaintenanceCalendar() {
                     </div>
 
                     <div>
-                      <Label>Pièce jointe</Label>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleAddAttachment}
-                        className="w-full mt-2 text-orange-500"
+                      <Label htmlFor="priority">Priorité</Label>
+                      <Select
+                        value={formData.priority}
+                        onValueChange={(value) =>
+                          setFormData((prev) => ({ ...prev, priority: value as RequestPriority }))
+                        }
+                        required
                       >
-                        <PlusIcon className="h-4 w-4 mr-2" />
-                        Ajouter un document en pièces jointes
-                      </Button>
-                      {formData.attachments.map((attachment, index) => (
-                        <div key={index} className="flex items-center mt-2 text-sm">
-                          <PaperClipIcon className="h-4 w-4 mr-2" />
-                          {attachment}
-                        </div>
-                      ))}
+                        <SelectTrigger id="priority">
+                          <SelectValue placeholder="Sélectionner la priorité" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="LOW">Basse</SelectItem>
+                          <SelectItem value="MEDIUM">Moyenne</SelectItem>
+                          <SelectItem value="HIGH">Haute</SelectItem>
+                          <SelectItem value="URGENT">Urgente</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="resolvedDate">Date de résolution prévue</Label>
+                      <Input
+                        id="resolvedDate"
+                        type="date"
+                        value={formData.resolvedDate}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, resolvedDate: e.target.value }))}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="attachments">Pièces jointes</Label>
+                      <Input
+                        id="attachments"
+                        type="file"
+                        multiple
+                        onChange={(e) => {
+                          const files = Array.from(e.target.files || [])
+                          setFormData((prev) => ({
+                            ...prev,
+                            attachments: files.map((file) => URL.createObjectURL(file)),
+                          }))
+                        }}
+                      />
                     </div>
                   </div>
                 </div>
 
                 <DialogFooter>
-                  <Button type="submit" className="w-full bg-orange-500 hover:bg-orange-600 text-white">
-                    Ajouter la tâche
+                  <Button
+                    type="submit"
+                    className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Création en cours...
+                      </>
+                    ) : (
+                      "Créer la demande de service"
+                    )}
                   </Button>
                 </DialogFooter>
               </form>
@@ -310,7 +355,6 @@ export default function MaintenanceCalendar() {
           </Dialog>
         </div>
 
-        {/* Calendar grid (unchanged) */}
         <div className="grid grid-cols-7 gap-2">
           {["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"].map((day) => (
             <div key={day} className="text-center font-semibold py-2">
@@ -325,16 +369,7 @@ export default function MaintenanceCalendar() {
               }`}
             >
               <div className="font-semibold">{format(day, "d")}</div>
-              {events
-                .filter((event) => isSameDay(event.startDate, day))
-                .map((event) => (
-                  <div
-                    key={event.id}
-                    className="mt-1 p-1 bg-orange-100 text-orange-800 text-xs rounded cursor-pointer hover:bg-orange-200"
-                  >
-                    {event.title}
-                  </div>
-                ))}
+              {renderEventList(day)}
             </div>
           ))}
         </div>
