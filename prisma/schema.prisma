@@ -29,7 +29,7 @@ model User {
   notifications       Notification[]
   contracts           Contract[]
   inventoryMoves      InventoryMovement[]
-  serviceRequests     ServiceRequest[]
+  serviceRequests     ServiceRequest[] @relation("TechnicianServiceRequests")
   locationHistory     LocationHistory[]
   prospects           Prospect[]
   prospectActions     ProspectAction[]
@@ -104,7 +104,7 @@ model UserKiosk {
   userId  String
   kioskId Int
 
-  user  User  @relation(fields: [userId], references: [id])
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   kiosk Kiosk @relation(fields: [kioskId], references: [id])
 
   @@unique([userId, kioskId])
@@ -146,6 +146,21 @@ model Product {
   moves       InventoryMovement[]
 }
 
+model ServiceRequest {
+  id                  String    @id @default(cuid())
+  kiosk               Kiosk     @relation(fields: [kioskId], references: [id])
+  kioskId             Int
+  technicians         User[]    @relation("TechnicianServiceRequests")
+  problemDescription  String
+  comments            String?
+  status              RequestStatus @default(OPEN)
+  priority            RequestPriority @default(MEDIUM)
+  createdDate         DateTime  @default(now())
+  resolvedDate        DateTime?
+  attachments         String?
+  updatedAt           DateTime  @updatedAt
+}
+
 model ProductCategory {
   id          String    @id @default(cuid())
   name        String
@@ -177,22 +192,6 @@ model InventoryMovement {
   createdBy         User      @relation(fields: [createdById], references: [id])
   createdById       String
   movementDate      DateTime  @default(now())
-}
-
-model ServiceRequest {
-  id                String    @id @default(cuid())
-  kiosk             Kiosk     @relation(fields: [kioskId], references: [id])
-  kioskId           Int
-  technician        User      @relation(fields: [technicianId], references: [id])
-  technicianId      String
-  problemDescription String
-  comments          String?
-  status            RequestStatus @default(OPEN)
-  priority          RequestPriority @default(MEDIUM)
-  createdDate       DateTime  @default(now())
-  resolvedDate      DateTime?
-  attachments       String?
-  updatedAt         DateTime  @updatedAt
 }
 
 model LocationHistory {

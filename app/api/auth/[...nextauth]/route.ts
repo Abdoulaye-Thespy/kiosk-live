@@ -80,6 +80,7 @@ const authOptions: NextAuthOptions = {
       if (session.user && token) {
         session.user.id = token.id as string;
         session.user.role = token.role as string;
+        session.user.name = token.name as string;
         // Update MyRole in session callback
         MyRole = token.role as string;
       }

@@ -174,7 +174,7 @@ export function AddKioskDialog() {
               </div>
 
               <div>
-                <Label htmlFor="kiosk-name">Nom du kiosque</Label>
+                <Label htmlFor="kiosk-name">Nom de l'Entreprise</Label>
                 <Input id="kiosk-name" name="kioskName" placeholder="Kiosk 639" className="w-full mt-1" />
               </div>
 

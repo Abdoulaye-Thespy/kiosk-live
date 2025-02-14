@@ -86,3 +86,17 @@ export async function fetchClients() {
   }
 }
 
+export async function getTechnicians() {
+  const technicians = await prisma.user.findMany({
+    where: {
+      role: "TECHNICIEN",
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      image: true,
+    },
+  })
+  return technicians
+}

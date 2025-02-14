@@ -1,7 +1,28 @@
-import { AuthTabs } from "@/components/auth-tabs";
-import { Store } from 'lucide-react';
+"use client"
+
+import { useEffect, useState } from "react"
+import { useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
+import { AuthTabs } from "@/components/auth-tabs"
 
 export default function Home() {
+  const { data: session, status } = useSession()
+  const router = useRouter()
+  const [isCheckingSession, setIsCheckingSession] = useState(true)
+
+  useEffect(() => {
+    if (status === "authenticated" && session?.user?.role) {
+      const role = session.user.role.toLowerCase()
+      router.push(`/${role}`)
+    } else if (status !== "loading") {
+      setIsCheckingSession(false)
+    }
+  }, [session, status, router])
+
+  if (isCheckingSession || status === "loading") {
+    return <div>Loading...</div>
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
       <div className="grid w-full max-w-5xl lg:grid-cols-2 bg-white rounded-lg shadow-lg overflow-hidden">
@@ -15,22 +36,15 @@ export default function Home() {
         >
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="w-[90%] max-w-[500px] bg-white rounded-lg p-8 shadow-lg">
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                Gestion de vos kiosque
-              </h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-2">Gestion de vos kiosque</h2>
               <p className="text-sm text-gray-600">
-                Simplifiez la gestion de vos kiosques et optimisez vos opérations au quotidien. 
-                Accédez aux statistiques pour maximiser vos résultats
+                Simplifiez la gestion de vos kiosques et optimisez vos opérations au quotidien. Accédez aux statistiques
+                pour maximiser vos résultats
               </p>
               <div className="flex justify-center mt-6">
                 <div className="flex gap-1">
                   {[1, 2, 3].map((_, i) => (
-                    <div
-                      key={i}
-                      className={`h-2 w-2 rounded-full ${
-                        i === 0 ? "bg-[#ff6b4a]" : "bg-gray-200"
-                      }`}
-                    />
+                    <div key={i} className={`h-2 w-2 rounded-full ${i === 0 ? "bg-[#ff6b4a]" : "bg-gray-200"}`} />
                   ))}
                 </div>
               </div>
@@ -42,5 +56,6 @@ export default function Home() {
         </div>
       </div>
     </div>
-  );
+  )
 }
+

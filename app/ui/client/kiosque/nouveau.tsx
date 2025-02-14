@@ -34,6 +34,7 @@ export function AddKioskDialogClient() {
     // Add the user ID to the form data
     if (session?.user?.id) {
       formData.append("userId", session.user.id)
+      formData.append("clientName", session.user.name)
     } else {
       setError("User ID not found. Please ensure you are logged in.")
       setIsSubmitting(false)
@@ -95,7 +96,7 @@ export function AddKioskDialogClient() {
       </div>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="sm:max-w-[500px] max-h-[80vh] flex flex-col">
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh] flex flex-col">
           <DialogHeader className="flex-shrink-0">
             <DialogTitle className="text-xl font-semibold">Ajouter un nouveau kiosque</DialogTitle>
           </DialogHeader>
@@ -125,14 +126,15 @@ export function AddKioskDialogClient() {
                 <Input id="kiosk-address" name="kioskAddress" placeholder="Douala, Makepe BM" className="w-full mt-1" />
               </div>
 
-              <div>
-                <Label>Coordonnées GPS(Optionelles) </Label>
-                <div className="flex gap-4 mt-1">
-                  <Input id="latitude" name="latitude" placeholder="Latitude" className="w-full" />
-                  <Input id="longitude" name="longitude" placeholder="Longitude" className="w-full" />
-                </div>
-              </div>
-
+              {/* 
+<div>
+    <Label>Coordonnées GPS(Optionelles) </Label>
+    <div className="flex gap-4 mt-1">
+        <Input id="latitude" name="latitude" placeholder="Latitude" className="w-full" />
+        <Input id="longitude" name="longitude" placeholder="Longitude" className="w-full" />
+    </div>
+</div>
+*/}
               <div>
                 <div className="flex items-center">
                   <Label>Type de kiosque</Label>

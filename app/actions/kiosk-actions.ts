@@ -1,7 +1,8 @@
 "use server"
 
-import { sendClientNotification, sendStaffNotification  } from "@/lib/email"
+import { sendClientNotification, sendStaffNotification } from "@/lib/email"
 import { KioskType, type KioskStatus, PrismaClient, Role } from "@prisma/client"
+import { get } from "http"
 
 const prisma = new PrismaClient()
 
@@ -15,6 +16,7 @@ type KioskFormData = {
   productsServices: string
   managerName: string
   managerContact: string
+  status: KioskStatus
   userId: string
 }
 
@@ -30,10 +32,12 @@ export async function addKioskByClient(formData: FormData) {
     managerName: formData.get("managerName") as string,
     managerContact: formData.get("managerContact") as string,
     userId: formData.get("userId") as string,
+    status: formData.get("status") as KioskStatus ,
   }
 
   try {
     // Validate the data (you may want to add more thorough validation)
+    console.log(formData)
     if (!kioskData.kioskName || !kioskData.clientName || !kioskData.kioskAddress || !kioskData.userId) {
       return { error: "Veuillez remplir tous les champs obligatoires." }
     }
@@ -55,11 +59,14 @@ export async function addKioskByClient(formData: FormData) {
         managerName: kioskData.managerName,
         managerContacts: kioskData.managerContact,
         status: "REQUEST",
-        users: {
-          create: {
-            userId: kioskData.userId,
-          },
-        },
+      },
+    })
+
+    // Create the UserKiosk record
+    await prisma.userKiosk.create({
+      data: {
+        userId: kioskData.userId,
+        kioskId: newKiosk.id,
       },
     })
 
@@ -74,7 +81,7 @@ export async function addKioskByClient(formData: FormData) {
 
     // Prepare kiosk details for email
     const kioskDetails = `
-      <p><strong>Nom du kiosque :</strong> ${newKiosk.kioskName}</p>
+      <p><strong>Nom de l'Entreprise :</strong> ${newKiosk.kioskName}</p>
       <p><strong>Client :</strong> ${newKiosk.clientName}</p>
       <p><strong>Adresse :</strong> ${newKiosk.kioskAddress}</p>
       <p><strong>Type :</strong> ${newKiosk.type}</p>
@@ -105,6 +112,7 @@ export async function addKioskByStaff(formData: FormData) {
     managerName: formData.get("managerName") as string,
     managerContact: formData.get("managerContact") as string,
     userId: formData.get("userId") as string,
+    status: formData.get(status) as KioskStatus,
   }
 
   try {
@@ -130,11 +138,14 @@ export async function addKioskByStaff(formData: FormData) {
         managerName: kioskData.managerName,
         managerContacts: kioskData.managerContact,
         status: "AVAILABLE",
-        users: {
-          create: {
-            userId: kioskData.userId,
-          },
-        },
+      },
+    })
+
+    // Create the UserKiosk record
+    await prisma.userKiosk.create({
+      data: {
+        userId: kioskData.userId,
+        kioskId: newKiosk.id,
       },
     })
 
@@ -331,42 +342,30 @@ export async function getUserKioskCounts(userId: string) {
   }
 }
 
-export async function updateKiosk(kioskId: number, formData: FormData) {
-  const kioskData = {
-    kioskName: formData.get("kioskName") as string,
-    clientName: formData.get("clientName") as string,
-    kioskAddress: formData.get("kioskAddress") as string,
-    latitude: formData.get("latitude") as string,
-    longitude: formData.get("longitude") as string,
-    kioskType: formData.get("kioskType") as KioskType,
-    productsServices: formData.get("productsServices") as string,
-    managerName: formData.get("managerName") as string,
-    managerContact: formData.get("managerContact") as string,
-  }
+export async function updateKiosk(kioskId: number, formData: KioskFormData) {
+  console.log("Updating kiosk:", kioskId)
+  console.log("Form data:", formData)
 
   try {
-    // Validate the data (you may want to add more thorough validation)
-    if (!kioskData.kioskName || !kioskData.clientName || !kioskData.kioskAddress) {
+    // Validate the data
+    if (!formData.kioskName || !formData.clientName || !formData.kioskAddress) {
       return { error: "Veuillez remplir tous les champs obligatoires." }
-    }
-
-    if (kioskData.kioskType.length === 0) {
-      return { error: "Veuillez sélectionner au moins un type de kiosque." }
     }
 
     // Update the kiosk
     const updatedKiosk = await prisma.kiosk.update({
       where: { id: kioskId },
       data: {
-        kioskName: kioskData.kioskName,
-        clientName: kioskData.clientName,
-        kioskAddress: kioskData.kioskAddress,
-        gpsLatitude: Number.parseFloat(kioskData.latitude) || 0,
-        gpsLongitude: Number.parseFloat(kioskData.longitude) || 0,
-        type: kioskData.kioskType,
-        productTypes: kioskData.productsServices,
-        managerName: kioskData.managerName,
-        managerContacts: kioskData.managerContact,
+        kioskName: formData.kioskName,
+        clientName: formData.clientName,
+        kioskAddress: formData.kioskAddress,
+        gpsLatitude: formData.latitude ? Number.parseFloat(formData.latitude) : undefined,
+        gpsLongitude: formData.longitude ? Number.parseFloat(formData.longitude) : undefined,
+        type: formData.kioskType,
+        productTypes: formData.productsServices,
+        managerName: formData.managerName,
+        managerContacts: formData.managerContact,
+        status: formData.status as KioskStatus,
       },
     })
 
@@ -377,3 +376,14 @@ export async function updateKiosk(kioskId: number, formData: FormData) {
   }
 }
 
+
+export async function getKiosksForTicket() {
+  const kiosks = await prisma.kiosk.findMany({
+    select: {
+      id: true,
+      kioskName: true,
+      clientName: true,
+    },
+  })
+  return kiosks
+}

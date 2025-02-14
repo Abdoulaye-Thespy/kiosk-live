@@ -1,18 +1,19 @@
-'use client'
+"use client"
 
-import React, { useState } from 'react'
-import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, isSameDay } from 'date-fns'
-import { fr } from 'date-fns/locale'
+import type React from "react"
+import { useState, useEffect } from "react"
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, isSameDay } from "date-fns"
 import { Button } from "@/components/ui/button"
-import { Calendar } from "@/components/ui/calendar"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Label } from "@/components/ui/label"
-import { ChevronLeftIcon, ChevronRightIcon, PlusIcon, XMarkIcon, PaperClipIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, XMarkIcon, PaperClipIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline"
+import { getTechnicians } from "@/app/actions/fetchUserStats"
+import { getKiosksForTicket } from "@/app/actions/kiosk-actions"
+import { createMaintenanceEvent } from "@/app/actions/ticketsactions"
 
 interface Event {
   id: string
@@ -28,8 +29,14 @@ interface Event {
 interface Technician {
   id: string
   name: string
-  avatar: string
-  role: string
+  email: string
+  image: string | null
+}
+
+interface Kiosk {
+  id: number
+  kioskName: string
+  clientName: string | null
 }
 
 export default function MaintenanceCalendar() {
@@ -37,76 +44,96 @@ export default function MaintenanceCalendar() {
   const [events, setEvents] = useState<Event[]>([])
   const [isNewEventModalOpen, setIsNewEventModalOpen] = useState(false)
   const [formData, setFormData] = useState({
-    title: '',
-    kiosk: '',
-    startDate: '',
-    endDate: '',
-    description: '',
+    title: "",
+    kiosk: "",
+    startDate: "",
+    endDate: "",
+    description: "",
     technicians: [] as string[],
-    attachments: [] as string[]
+    attachments: [] as string[],
   })
-  const [technicianSearch, setTechnicianSearch] = useState('')
+  const [technicianSearch, setTechnicianSearch] = useState("")
+  const [kioskSearch, setKioskSearch] = useState("")
+  const [technicians, setTechnicians] = useState<Technician[]>([])
+  const [kiosks, setKiosks] = useState<Kiosk[]>([])
 
-  const technicians: Technician[] = [
-    { id: '1', name: 'Elizabeth', avatar: '/placeholder.svg', role: 'Product Manager' },
-    { id: '2', name: 'Luca Heather', avatar: '/placeholder.svg', role: 'Product Manager' },
-    { id: '3', name: 'Josh Adams', avatar: '/placeholder.svg', role: 'UX/UI Designer' },
-    { id: '4', name: 'Lucas', avatar: '/placeholder.svg', role: 'UI Designer' },
-  ]
+  useEffect(() => {
+    const fetchTechnicians = async () => {
+      const fetchedTechnicians = await getTechnicians()
+      setTechnicians(fetchedTechnicians)
+    }
+    fetchTechnicians()
+  }, [])
 
-  const filteredTechnicians = technicians.filter(tech => 
-    tech.name.toLowerCase().includes(technicianSearch.toLowerCase())
+  useEffect(() => {
+    const fetchKiosks = async () => {
+      const fetchedKiosks = await getKiosksForTicket()
+      setKiosks(fetchedKiosks)
+    }
+    fetchKiosks()
+  }, [])
+
+  const filteredTechnicians = technicians.filter((tech) =>
+    tech.name.toLowerCase().includes(technicianSearch.toLowerCase()),
   )
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const filteredKiosks = kiosks.filter(
+    (kiosk) =>
+      kiosk.kioskName.toLowerCase().includes(kioskSearch.toLowerCase()) ||
+      (kiosk.clientName && kiosk.clientName.toLowerCase().includes(kioskSearch.toLowerCase())),
+  )
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!formData.title || !formData.kiosk || !formData.startDate || !formData.endDate) {
       alert("Veuillez remplir tous les champs obligatoires")
       return
     }
 
-    const newEvent: Event = {
-      id: crypto.randomUUID(),
-      title: formData.title,
-      kiosk: formData.kiosk,
-      startDate: new Date(formData.startDate),
-      endDate: new Date(formData.endDate),
-      description: formData.description,
-      technicians: formData.technicians,
-      attachments: formData.attachments
+    try {
+      const newEvent = await createMaintenanceEvent(formData)
+      setEvents((prevEvents) => [...prevEvents, newEvent])
+
+      setFormData({
+        title: "",
+        kiosk: "",
+        startDate: "",
+        endDate: "",
+        description: "",
+        technicians: [],
+        attachments: [],
+      })
+      setIsNewEventModalOpen(false)
+
+      alert("L'événement a été ajouté avec succès")
+    } catch (error) {
+      console.error("Error creating maintenance event:", error)
+      alert("Une erreur est survenue lors de la création de l'événement")
     }
-
-    setEvents(prevEvents => [...prevEvents, newEvent])
-
-    setFormData({
-      title: '',
-      kiosk: '',
-      startDate: '',
-      endDate: '',
-      description: '',
-      technicians: [],
-      attachments: []
-    })
-    setIsNewEventModalOpen(false)
-
-    alert("L'événement a été ajouté avec succès")
   }
 
   const handleTechnicianToggle = (technicianId: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       technicians: prev.technicians.includes(technicianId)
-        ? prev.technicians.filter(id => id !== technicianId)
-        : [...prev.technicians, technicianId]
+        ? prev.technicians.filter((id) => id !== technicianId)
+        : [...prev.technicians, technicianId],
+    }))
+  }
+
+  const handleKioskSelect = (kioskId: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      kiosk: kioskId.toString(),
     }))
   }
 
   const handleAddAttachment = () => {
     const mockAttachment = `document-${Date.now()}.pdf`
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      attachments: [...prev.attachments, mockAttachment]
+      attachments: [...prev.attachments, mockAttachment],
     }))
   }
 
@@ -137,26 +164,47 @@ export default function MaintenanceCalendar() {
                       <Input
                         id="title"
                         value={formData.title}
-                        onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
                         placeholder="Type event title here..."
                       />
                     </div>
 
                     <div>
-                      <Label htmlFor="kiosk">Kiosque concerné</Label>
-                      <Select
-                        value={formData.kiosk}
-                        onValueChange={(value) => setFormData(prev => ({ ...prev, kiosk: value }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Sélectionner le kiosque" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="kiosk1">Kiosk 1</SelectItem>
-                          <SelectItem value="kiosk2">Kiosk 2</SelectItem>
-                          <SelectItem value="kiosk3">Kiosk 3</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <Label>Kiosque concerné</Label>
+                      <div className="relative mt-2">
+                        <Input
+                          type="text"
+                          placeholder="Recherche..."
+                          value={kioskSearch}
+                          onChange={(e) => setKioskSearch(e.target.value)}
+                          className="pl-8"
+                        />
+                        <MagnifyingGlassIcon className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      </div>
+                      <div className="mt-2 space-y-2 max-h-40 overflow-y-auto">
+                        {filteredKiosks.map((kiosk) => (
+                          <div
+                            key={kiosk.id}
+                            className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg"
+                          >
+                            <div className="flex items-center space-x-3">
+                              <Avatar className="h-8 w-8">
+                                <AvatarFallback>{kiosk.kioskName[0]}</AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="text-sm font-medium">{kiosk.kioskName}</p>
+                                <p className="text-xs text-gray-500">{kiosk.clientName}</p>
+                              </div>
+                            </div>
+                            <input
+                              type="radio"
+                              checked={formData.kiosk === kiosk.id.toString()}
+                              onChange={() => handleKioskSelect(kiosk.id)}
+                              className="rounded-full border-gray-300"
+                            />
+                          </div>
+                        ))}
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
@@ -166,7 +214,7 @@ export default function MaintenanceCalendar() {
                           id="startDate"
                           type="date"
                           value={formData.startDate}
-                          onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
+                          onChange={(e) => setFormData((prev) => ({ ...prev, startDate: e.target.value }))}
                         />
                       </div>
                       <div>
@@ -175,7 +223,7 @@ export default function MaintenanceCalendar() {
                           id="endDate"
                           type="date"
                           value={formData.endDate}
-                          onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
+                          onChange={(e) => setFormData((prev) => ({ ...prev, endDate: e.target.value }))}
                         />
                       </div>
                     </div>
@@ -185,7 +233,7 @@ export default function MaintenanceCalendar() {
                       <Textarea
                         id="description"
                         value={formData.description}
-                        onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
                         placeholder="Détails..."
                       />
                     </div>
@@ -206,15 +254,18 @@ export default function MaintenanceCalendar() {
                       </div>
                       <div className="mt-2 space-y-2 max-h-40 overflow-y-auto">
                         {filteredTechnicians.map((tech) => (
-                          <div key={tech.id} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg">
+                          <div
+                            key={tech.id}
+                            className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg"
+                          >
                             <div className="flex items-center space-x-3">
                               <Avatar className="h-8 w-8">
-                                <AvatarImage src={tech.avatar} />
+                                <AvatarImage src={tech.image || undefined} />
                                 <AvatarFallback>{tech.name[0]}</AvatarFallback>
                               </Avatar>
                               <div>
                                 <p className="text-sm font-medium">{tech.name}</p>
-                                <p className="text-xs text-gray-500">{tech.role}</p>
+                                <p className="text-xs text-gray-500">{tech.email}</p>
                               </div>
                             </div>
                             <input
@@ -250,10 +301,7 @@ export default function MaintenanceCalendar() {
                 </div>
 
                 <DialogFooter>
-                  <Button
-                    type="submit"
-                    className="w-full bg-orange-500 hover:bg-orange-600 text-white"
-                  >
+                  <Button type="submit" className="w-full bg-orange-500 hover:bg-orange-600 text-white">
                     Ajouter la tâche
                   </Button>
                 </DialogFooter>
@@ -262,8 +310,9 @@ export default function MaintenanceCalendar() {
           </Dialog>
         </div>
 
+        {/* Calendar grid (unchanged) */}
         <div className="grid grid-cols-7 gap-2">
-          {['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'].map((day) => (
+          {["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"].map((day) => (
             <div key={day} className="text-center font-semibold py-2">
               {day}
             </div>
@@ -272,17 +321,13 @@ export default function MaintenanceCalendar() {
             <div
               key={day.toString()}
               className={`min-h-[100px] p-2 border ${
-                !isSameMonth(day, currentMonth)
-                  ? 'bg-gray-100'
-                  : isToday(day)
-                  ? 'bg-blue-100'
-                  : ''
+                !isSameMonth(day, currentMonth) ? "bg-gray-100" : isToday(day) ? "bg-blue-100" : ""
               }`}
             >
-              <div className="font-semibold">{format(day, 'd')}</div>
+              <div className="font-semibold">{format(day, "d")}</div>
               {events
-                .filter(event => isSameDay(event.startDate, day))
-                .map(event => (
+                .filter((event) => isSameDay(event.startDate, day))
+                .map((event) => (
                   <div
                     key={event.id}
                     className="mt-1 p-1 bg-orange-100 text-orange-800 text-xs rounded cursor-pointer hover:bg-orange-200"
@@ -297,3 +342,4 @@ export default function MaintenanceCalendar() {
     </Card>
   )
 }
+

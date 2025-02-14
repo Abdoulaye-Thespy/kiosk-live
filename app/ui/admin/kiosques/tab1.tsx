@@ -15,7 +15,7 @@ import { fr } from "date-fns/locale"
 import { MoreHorizontal, RotateCcw, Filter } from "lucide-react"
 import { getKiosks } from "@/app/actions/kiosk-actions"
 import type { KioskType } from "@prisma/client"
-import { AddKioskDialogAdmin } from "./add-kiosk-dialog"
+import { UpdateKioskDialogAdmin } from "./modifykiok"
 
 interface Kiosk {
   id: number
@@ -215,8 +215,8 @@ export default function KioskTable() {
               <TableHead className="w-[50px]">
                 <Checkbox checked={selectedIds.length === kiosks.length} onCheckedChange={handleSelectAll} />
               </TableHead>
-              <TableHead>N° kiosque</TableHead>
-              <TableHead>Responsable</TableHead>
+              <TableHead>Nom de l'Entreprise</TableHead>
+              <TableHead>Gestionnaire</TableHead>
               <TableHead>Client</TableHead>
               <TableHead>Adresse</TableHead>
               <TableHead>Statut</TableHead>
@@ -315,7 +315,7 @@ export default function KioskTable() {
           </Button>
         </div>
       </div>
-      <AddKioskDialogAdmin
+      <UpdateKioskDialogAdmin
         isOpen={isModifyDialogOpen}
         onOpenChange={setIsModifyDialogOpen}
         kiosk={selectedKiosk}
