@@ -9,7 +9,6 @@ import TabThreeMaintenance from '@/app/ui/admin/maintenance/tab3'
 
 const tabs = [
   { id: 'overview', label: "Vue d'ensemble" },
-  { id: 'maintenance', label: "Tickets de maintenance" },
   { id: 'planning', label: "Planification et suivi" },
 ]
 
