@@ -19,8 +19,8 @@ import styles from '@/app/ui/dashboard.module.css';
 const metrics = [
   { title: "Kiosques en maintenance", value: "366", subValue: "24", subLabel: "à planifier", trend: "up", color: "text-emerald-500" },
   { title: "Ticket en maintenance", value: "3,455", trend: "up", trendValue: "9.1%", color: "text-emerald-500" },
-  { title: "Temps moyen de résolution", value: "48 heures", subLabel: "ce dernier mois" },
-  { title: "Coût moyen de maintenance", value: "12 500 Fcfa", subLabel: "ce dernier mois" },
+  { title: "Tickets Ouverts", value: "4", subLabel: "ce dernier mois" },
+  { title: "Tickets Complets", value: "12", subLabel: "ce dernier mois" },
 ]
 
 const tickets = [
