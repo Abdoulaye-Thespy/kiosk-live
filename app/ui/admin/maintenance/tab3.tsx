@@ -17,6 +17,8 @@ import { getTechnicians } from "@/app/actions/fetchUserStats"
 import { getKiosksForTicket } from "@/app/actions/kiosk-actions"
 import { createServiceRequest, getServiceRequests } from "@/app/actions/ticketsactions"
 import type { RequestPriority, RequestStatus } from "@prisma/client"
+import { DialogClose } from "@/components/ui/dialog"
+import { Badge } from "@/components/ui/badge"
 
 interface ServiceRequest {
   id: string
@@ -62,6 +64,8 @@ export default function MaintenanceCalendar() {
   const [kioskSearch, setKioskSearch] = useState("")
   const [technicians, setTechnicians] = useState<Technician[]>([])
   const [kiosks, setKiosks] = useState<Kiosk[]>([])
+  const [selectedTicket, setSelectedTicket] = useState<ServiceRequest | null>(null)
+  const [isTicketDialogOpen, setIsTicketDialogOpen] = useState(false)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -144,7 +148,7 @@ export default function MaintenanceCalendar() {
   }
 
   const renderEventList = (day: Date) => {
-    const dayEvents = serviceRequests.filter((request) => isSameDay(new Date(request.resolvedDate), day))
+    const dayEvents = serviceRequests.filter((request) => isSameDay(new Date(request.createdDate), day))
     return (
       <div className="mt-1 space-y-1 max-h-20 overflow-y-auto">
         {dayEvents.map((request) => (
@@ -152,6 +156,10 @@ export default function MaintenanceCalendar() {
             key={request.id}
             className="p-1 bg-orange-100 text-orange-800 text-xs rounded cursor-pointer hover:bg-orange-200"
             title={request.problemDescription}
+            onClick={() => {
+              setSelectedTicket(request)
+              setIsTicketDialogOpen(true)
+            }}
           >
             {request.problemDescription.length > 20
               ? `${request.problemDescription.substring(0, 20)}...`
@@ -373,6 +381,82 @@ export default function MaintenanceCalendar() {
             </div>
           ))}
         </div>
+        <Dialog open={isTicketDialogOpen} onOpenChange={setIsTicketDialogOpen}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Détails de la demande de service</DialogTitle>
+            </DialogHeader>
+            {selectedTicket && (
+              <div className="space-y-4">
+                <div>
+                  <Label className="font-semibold">ID de la demande</Label>
+                  <p>{selectedTicket.id}</p>
+                </div>
+                <div>
+                  <Label className="font-semibold">Kiosque</Label>
+                  <p>{kiosks.find((k) => k.id === selectedTicket.kioskId)?.kioskName || "Non spécifié"}</p>
+                </div>
+                <div>
+                  <Label className="font-semibold">Description du problème</Label>
+                  <p>{selectedTicket.problemDescription}</p>
+                </div>
+                <div>
+                  <Label className="font-semibold">Commentaires</Label>
+                  <p>{selectedTicket.comments || "Aucun commentaire"}</p>
+                </div>
+                <div>
+                  <Label className="font-semibold">Statut</Label>
+                  <Badge
+                    variant={
+                      selectedTicket.status === "URGENT"
+                        ? "destructive"
+                        : selectedTicket.status === "IN_PROGRESS"
+                          ? "default"
+                          : "secondary"
+                    }
+                  >
+                    {selectedTicket.status}
+                  </Badge>
+                </div>
+                <div>
+                  <Label className="font-semibold">Priorité</Label>
+                  <Badge
+                    variant={
+                      selectedTicket.priority === "HIGH"
+                        ? "default"
+                        : selectedTicket.priority === "MEDIUM"
+                          ? "warning"
+                          : "outline"
+                    }
+                  >
+                    {selectedTicket.priority}
+                  </Badge>
+                </div>
+                <div>
+                  <Label className="font-semibold">Date de création</Label>
+                  <p>{format(new Date(selectedTicket.createdDate), "dd/MM/yyyy HH:mm")}</p>
+                </div>
+                <div>
+                  <Label className="font-semibold">Date de résolution prévue</Label>
+                  <p>
+                    {selectedTicket.resolvedDate
+                      ? format(new Date(selectedTicket.resolvedDate), "dd/MM/yyyy HH:mm")
+                      : "Non spécifiée"}
+                  </p>
+                </div>
+                <div>
+                  <Label className="font-semibold">Techniciens assignés</Label>
+                  <p>{selectedTicket.technicians.map((tech) => tech.name).join(", ") || "Aucun technicien assigné"}</p>
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button className="bg-orange-500 hover:bg-orange-600 text-white">Fermer</Button>
+              </DialogClose>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   )
