@@ -38,7 +38,7 @@ interface Ticket {
   priority: RequestPriority
 }
 
-export default function MaintenanceDashboard() {
+export default function MaintenanceDashboardTechnicien() {
   const [metrics, setMetrics] = useState<Metric[]>([])
   const [tickets, setTickets] = useState<Ticket[]>([])
   const [selectedTickets, setSelectedTickets] = useState<string[]>([])

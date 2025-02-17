@@ -89,9 +89,9 @@ const linksComptable = [
 ];
 
 const linksTechnicien = [
-  { name: 'Mes tâches', href: '/technicien', icon: HomeIcon },
+  { name: 'Kiosques', href: '/technicien', icon: HomeIcon },
   {
-    name: 'Historique',
+    name: 'Mes Tâches',
     href: '/technicien/historique',
     icon: UserGroupIcon,
   },

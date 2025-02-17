@@ -157,3 +157,75 @@ export async function deleteTickets(ticketIds: string[]) {
   })
 }
 
+
+
+export async function getTechnicianMaintenanceTickets({
+  technicianId,
+  page = 1,
+  limit = 10,
+  searchTerm = "",
+  status,
+  startDate,
+  endDate,
+}: {
+  technicianId: string
+  page?: number
+  limit?: number
+  searchTerm?: string
+  status?: RequestStatus
+  startDate?: Date
+  endDate?: Date
+}) {
+  const where: any = {
+    technicians: {
+      some: {
+        id: technicianId,
+      },
+    },
+  }
+
+  if (searchTerm) {
+    where.OR = [
+      { id: { contains: searchTerm } },
+      { kiosk: { kioskName: { contains: searchTerm } } },
+      { problemDescription: { contains: searchTerm } },
+    ]
+  }
+
+  if (status) {
+    where.status = status
+  }
+
+  if (startDate) {
+    where.createdDate = { gte: startDate }
+  }
+
+  if (endDate) {
+    where.createdDate = { ...where.createdDate, lte: endDate }
+  }
+
+  try {
+    const [tickets, totalCount] = await Promise.all([
+      prisma.serviceRequest.findMany({
+        where,
+        include: {
+          kiosk: true,
+          technicians: true,
+        },
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { createdDate: "desc" },
+      }),
+      prisma.serviceRequest.count({ where }),
+    ])
+
+    return {
+      tickets,
+      totalPages: Math.ceil(totalCount / limit),
+      totalCount,
+    }
+  } catch (error) {
+    console.error("Error fetching technician's maintenance tickets:", error)
+    throw new Error("Failed to fetch technician's maintenance tickets")
+  }
+} 

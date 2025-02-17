@@ -8,8 +8,8 @@ import TabTwoMaintenance from '@/app/ui/admin/maintenance/tab2'
 import TabThreeMaintenance from '@/app/ui/admin/maintenance/tab3'
 
 const tabs = [
-  { id: 'overview', label: "Vue d'ensemble" },
-  { id: 'planning', label: "Planification et suivi" },
+  { id: 'overview', label: "Vue en Liste" },
+  { id: 'planning', label: "Vue sur Calendrier" },
 ]
 
 const TabNavigation = ({ activeTab, onTabChange }: { activeTab: string; onTabChange: Function }) => {

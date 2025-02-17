@@ -1,213 +1,74 @@
 'use client'
 
-import { useState } from "react"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { MoreHorizontal, TicketIcon } from 'lucide-react'
-import Header from "@/app/ui/header"
-
-interface Ticket {
-  id: string
-  kiosk: string
-  creationDate: string
-  resolutionDate: string
-  technician: string
-  type: "Déplacement" | "Maintenance"
-  priority: "Bas" | "Urgent" | "Normal"
-}
-
-const tickets: Ticket[] = [
-  {
-    id: "1345",
-    kiosk: "Kiosk_1345",
-    creationDate: "01/02/2024",
-    resolutionDate: "01/02/2024",
-    technician: "Alain NGONO",
-    type: "Déplacement",
-    priority: "Bas"
-  },
-  {
-    id: "1339",
-    kiosk: "Kiosk_1368",
-    creationDate: "01/02/2024",
-    resolutionDate: "01/02/2024",
-    technician: "Thierry NTAMACK",
-    type: "Déplacement",
-    priority: "Urgent"
-  },
-  {
-    id: "1340",
-    kiosk: "Kiosk_1368",
-    creationDate: "01/02/2024",
-    resolutionDate: "01/02/2024",
-    technician: "Boris ADIOGO",
-    type: "Maintenance",
-    priority: "Normal"
-  },
-  {
-    id: "1346",
-    kiosk: "Kiosk_1358",
-    creationDate: "01/02/2024",
-    resolutionDate: "01/02/2024",
-    technician: "Bruno AYOLO",
-    type: "Déplacement",
-    priority: "Bas"
-  },
-  {
-    id: "1332",
-    kiosk: "Kiosk_1358",
-    creationDate: "01/02/2024",
-    resolutionDate: "01/02/2024",
-    technician: "Alain NGONO",
-    type: "Maintenance",
-    priority: "Bas"
-  },
-  {
-    id: "1333",
-    kiosk: "Kiosk_195",
-    creationDate: "01/02/2024",
-    resolutionDate: "01/02/2024",
-    technician: "Thierry NTAMACK",
-    type: "Déplacement",
-    priority: "Urgent"
-  },
-  {
-    id: "1342",
-    kiosk: "Kiosk_195",
-    creationDate: "01/02/2024",
-    resolutionDate: "01/02/2024",
-    technician: "Boris ADIOGO",
-    type: "Maintenance",
-    priority: "Urgent"
-  },
-  {
-    id: "1340",
-    kiosk: "Kiosk_9545",
-    creationDate: "01/02/2024",
-    resolutionDate: "01/02/2024",
-    technician: "Thierry NTAMACK",
-    type: "Maintenance",
-    priority: "Normal"
-  },
-  {
-    id: "1344",
-    kiosk: "Jean Dupont",
-    creationDate: "01/02/2024",
-    resolutionDate: "01/02/2024",
-    technician: "Bruno AYOLO",
-    type: "Déplacement",
-    priority: "Normal"
-  },
-  {
-    id: "1344",
-    kiosk: "Jean Dupont",
-    creationDate: "01/02/2024",
-    resolutionDate: "01/02/2024",
-    technician: "Bruno AYOLO",
-    type: "Maintenance",
-    priority: "Normal"
-  }
+import React, { useState } from 'react'
+import { cn } from "@/lib/utils"
+import Header from '@/app/ui/header'
+import MaintenanceCalendarTechnicien from '@/app/ui/technicien/historique/tab3'
+import MaintenanceDashboardTechnicien from '@/app/ui/technicien/historique/tab1'
+const tabs = [
+  { id: 'overview', label: "Vue en Liste" },
+  { id: 'planning', label: "Vue sur Calendrier" },
 ]
 
-export default function TicketTable() {
-  const [currentPage, setCurrentPage] = useState(1)
-  const [searchTerm, setSearchTerm] = useState("")
+const TabNavigation = ({ activeTab, onTabChange }: { activeTab: string; onTabChange: Function }) => {
+  return (
+    <nav className="flex space-x-1 border-b border-gray-200">
+      {tabs.map((tab) => (
+        <button
+          key={tab.id}
+          onClick={() => onTabChange(tab.id)}
+          className={cn(
+            "px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 focus:outline-none",
+            activeTab === tab.id && "border-b-2 border-orange-500 text-orange-600"
+          )}
+        >
+          {tab.label}
+        </button>
+      ))}
+    </nav>
+  )
+}
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "Urgent":
-        return "bg-red-100 text-red-800"
-      case "Normal":
-        return "bg-green-100 text-green-800"
-      case "Bas":
-        return "bg-orange-100 text-orange-800"
-      default:
-        return "bg-gray-100 text-gray-800"
-    }
-  }
+export default function MaintenanceManagement() {
+  const [activeTab, setActiveTab] = useState('overview')
 
   return (
-    <div className="space-y-4">
-      <Header title="Historique" />
-      <div className="flex items-center justify-between">
-        <div className="relative">
-          <Input
-            placeholder="Rechercher"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-[250px]"
-          />
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon">
-            <MoreHorizontal className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>ID ticket</TableHead>
-              <TableHead>Kiosque</TableHead>
-              <TableHead>Date création</TableHead>
-              <TableHead>Date résolution</TableHead>
-              <TableHead>Technicien</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>État</TableHead>
-              <TableHead className="w-[50px]"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {tickets.map((ticket, index) => (
-              <TableRow key={`${ticket.id}-${index}`}>
-                <TableCell className="flex items-center gap-2">
-                  <TicketIcon className="h-4 w-4 text-gray-500" />
-                  {ticket.id}
-                </TableCell>
-                <TableCell>{ticket.kiosk}</TableCell>
-                <TableCell>{ticket.creationDate}</TableCell>
-                <TableCell>{ticket.resolutionDate}</TableCell>
-                <TableCell>{ticket.technician}</TableCell>
-                <TableCell>{ticket.type}</TableCell>
-                <TableCell>
-                  <Badge className={getPriorityColor(ticket.priority)}>
-                    {ticket.priority}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Button variant="ghost" size="icon">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-
-      <div className="flex items-center justify-between px-2">
-        <p className="text-sm text-muted-foreground">
-          Page {currentPage} sur 34
-        </p>
-        <div className="flex items-center space-x-2">
-          <Button variant="outline" size="icon" disabled>
-            &lt;
-          </Button>
-          <Button variant="outline" size="icon" className="bg-orange-500 text-white hover:bg-orange-600">
-            1
-          </Button>
-          <Button variant="outline" size="icon">2</Button>
-          <Button variant="outline" size="icon">3</Button>
-          <Button variant="outline" size="icon">...</Button>
-          <Button variant="outline" size="icon">34</Button>
-          <Button variant="outline" size="icon">&gt;</Button>
-        </div>
+    <div className="container mx-auto p-4">
+      <Header title='Factures et Paiements'/>
+      <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+      
+      <div className="mt-4">
+        {activeTab === 'overview' && (
+          <div>
+            <h2 className="text-2xl font-bold mb-4">Vue d'ensemble</h2>
+            <MaintenanceDashboardTechnicien />
+          </div>
+        )}
+        {activeTab === 'maintenance' && (
+          <div>
+            <h2 className="text-2xl font-bold mb-4">Tickets de maintenance</h2>
+            <MaintenanceCalendarTechnicien />
+          </div>
+        )}
+        {activeTab === 'planning' && (
+          <div>
+            <h2 className="text-2xl font-bold mb-4">Planification et suivi</h2>
+            <MaintenanceCalendarTechnicien />
+          </div>
+        )}
+        {activeTab === 'technicians' && (
+          <div>
+            <h2 className="text-2xl font-bold mb-4">Gestion des techniciens</h2>
+            {/* Insert Technician Management component here */}
+          </div>
+        )}
+        {activeTab === 'history' && (
+          <div>
+            <h2 className="text-2xl font-bold mb-4">Historique</h2>
+            {/* Insert History component here */}
+          </div>
+        )}
       </div>
     </div>
   )
 }
-

@@ -3,9 +3,9 @@
 import React, { useState } from 'react'
 import { Button } from "@/components/ui/button"
 import Link from 'next/link'
-import { ArrowDownTrayIcon } from "@heroicons/react/24/outline"
-import KioskTab1 from '@/app/ui/admin/kiosques/tab1'
-import KioskTab2 from '@/app/ui/admin/kiosques/tab2'
+import { UserPlusIcon } from "@heroicons/react/24/outline"
+import TabOneFactureIntervention from '@/app/ui/responsable/tab1'
+import InterventionTableTab2Responsable from '@/app/ui/responsable/tab2'
 import Header from '@/app/ui/header'
 
 
@@ -19,7 +19,7 @@ export default function InvoiceDashboard() {
 
   return (
     <div className="container mx-auto p-4">
-      <Header title='Kiosques'/>
+      <Header title='Interventions'/>
       <div className="flex justify-between items-center mb-6 mt-6">
         <nav className="flex space-x-1 border-b border-gray-200">
           {tabs.map((tab) => (
@@ -34,12 +34,18 @@ export default function InvoiceDashboard() {
             </button>
           ))}
         </nav>
+        <Link href="/responsable/interventions/new">
+          <Button className="bg-orange-500 hover:bg-orange-600 text-white inline-flex items-center px-4 py-2 rounded-lg">
+            <UserPlusIcon className="mr-2 h-4 w-4" />
+            Ajouter une intervention
+          </Button>
+        </Link>
       </div>
       
       <div className="mt-4">
-        {activeTab === 'dashboard' && <KioskTab1 />}
+        {activeTab === 'dashboard' && <TabOneFactureIntervention />}
         {activeTab === 'invoices' && (
-           <KioskTab2 />
+           <InterventionTableTab2Responsable />
         )}
       </div>
     </div>
