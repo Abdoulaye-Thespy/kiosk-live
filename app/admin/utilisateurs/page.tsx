@@ -144,10 +144,10 @@ export default function UserManagement() {
     }
   }
 
-  const handleDelete = async () => {
+  const handleDelete = async (userId: number) => {
     if (window.confirm("Are you sure you want to delete the selected users?")) {
       try {
-        const response = await fetch("/api/users", {
+        const response = await fetch(`/api/users?id=${userId}`, {
           method: "DELETE",
           headers: {
             "Content-Type": "application/json",
@@ -155,8 +155,11 @@ export default function UserManagement() {
           body: JSON.stringify({ userIds: selectedUsers }),
         })
         if (response.ok) {
-          setUsers(users.filter((user) => !selectedUsers.includes(user.id)))
+          const updatedUsers = users.filter(user => user.id !== userId);
+          console.log(updatedUsers);
+          setUsers(updatedUsers)
           setSelectedUsers([])
+          setTotalUsers(updatedUsers.length)
         } else {
           throw new Error("Failed to delete users")
         }
@@ -236,7 +239,9 @@ export default function UserManagement() {
     setIsSubmitting(true)
     try {
       if (isEditing) {
-        const response = await fetch(`/api/users/${formData.id}`, {
+        const userId=formData.id
+        console.log(userId)
+        const response = await fetch(`/api/users/${userId}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
@@ -447,25 +452,29 @@ export default function UserManagement() {
           </div>
         </div>
         <div>
-          {selectedUsers.length > 0 && (
-            <Button
-              onClick={handleDelete}
-              className="bg-white border border-gray-500 text-black-500 font-medium py-2 px-4 rounded inline-flex items-center"
-            >
-              <TrashIcon className="h-4 w-4" />
-              Supprimer
-            </Button>
-          )}
+{/*
+{selectedUsers.length === 1 && (
+  <Button
+    onClick={() => handleDelete(user.id)}
+    className="bg-white border border-gray-500 text-black-500 font-medium py-2 px-4 rounded inline-flex items-center"
+  >
+    <TrashIcon className="h-4 w-4" />
+    Supprimer
+  </Button>
+)}
+*/}
 
-          {selectedUsers.length === 1 && (
-            <Button
-              className="bg-white border border-gray-500 text-black-500 font-medium py-2 px-4 rounded inline-flex items-center ml-4"
-              onClick={() => openModal(users.find((user) => user.id === selectedUsers[0]))}
-            >
-              <PencilIcon className="h-4 w-4" />
-              Modifier
-            </Button>
-          )}
+{/*
+{selectedUsers.length === 1 && (
+  <Button
+    className="bg-white border border-gray-500 text-black-500 font-medium py-2 px-4 rounded inline-flex items-center ml-4"
+    onClick={() => openModal(users.find((user) => user.id === selectedUsers[0]))}
+  >
+    <PencilIcon className="h-4 w-4" />
+    Modifier
+  </Button>
+)}
+*/}
 
           {selectedUsers.length === 0 && (
             <div>
@@ -594,7 +603,7 @@ export default function UserManagement() {
                 </TableCell>
                 <TableCell className="font-medium">{user.phone}</TableCell>
                 <TableCell className="font-medium">
-                  4444
+                {new Date(user.createdAt).toLocaleDateString()}
                 </TableCell>
                 <TableCell>
                   <span
@@ -622,7 +631,7 @@ export default function UserManagement() {
                           <PencilIcon className="h-4 w-4 mr-2" />
                           Modifier
                         </Button>
-                        <Button variant="ghost" onClick={() => handleDelete()}>
+                        <Button variant="ghost" onClick={() => handleDelete(user.id)}>
                           <TrashIcon className="h-4 w-4 mr-2" />
                           Supprimer
                         </Button>
@@ -665,4 +674,3 @@ export default function UserManagement() {
     </div>
   )
 }
-

@@ -1,6 +1,5 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import KioskMetrics from "@/app/ui/admin/kiosques/metrics"
@@ -13,9 +12,9 @@ import { Calendar } from "@/components/ui/calendar"
 import { format } from "date-fns"
 import { fr } from "date-fns/locale"
 import { MoreHorizontal, RotateCcw, Filter } from "lucide-react"
-import { getKiosks } from "@/app/actions/kiosk-actions"
 import type { KioskType } from "@prisma/client"
 import { UpdateKioskDialogAdmin } from "./modifykiok"
+import { useState } from "react"
 
 interface Kiosk {
   id: number
@@ -29,32 +28,41 @@ interface Kiosk {
   compartment: string
 }
 
-export default function KioskTable() {
-  const [currentPage, setCurrentPage] = useState(1)
+interface KioskTab1Props {
+  kiosks: Kiosk[]
+  totalPages: number
+  currentPage: number
+  searchTerm: string
+  filterStatus: string
+  filterDate: Date | undefined
+  onSearch: (term: string) => void
+  onFilterStatus: (status: string) => void
+  onFilterDate: (date: Date | undefined) => void
+  onPageChange: (page: number) => void
+  onKioskUpdate: (kiosk: Kiosk) => void
+  onKioskDelete: (kioskId: number) => void
+  onRefresh: () => void
+}
+
+export default function KioskTab1({
+  kiosks,
+  totalPages,
+  currentPage,
+  searchTerm,
+  filterStatus,
+  filterDate,
+  onSearch,
+  onFilterStatus,
+  onFilterDate,
+  onPageChange,
+  onKioskUpdate,
+  onKioskDelete,
+  onRefresh,
+}: KioskTab1Props) {
   const [selectedIds, setSelectedIds] = useState<number[]>([])
-  const [searchTerm, setSearchTerm] = useState("")
   const [isFilterOpen, setIsFilterOpen] = useState(false)
-  const [filterStatus, setFilterStatus] = useState("")
-  const [filterDate, setFilterDate] = useState<Date | undefined>(undefined)
-  const [kiosks, setKiosks] = useState<Kiosk[]>([])
-  const [totalPages, setTotalPages] = useState(1)
   const [isModifyDialogOpen, setIsModifyDialogOpen] = useState(false)
   const [selectedKiosk, setSelectedKiosk] = useState<Kiosk | null>(null)
-
-  useEffect(() => {
-    fetchKiosks()
-  }, [currentPage, searchTerm, filterStatus, filterDate]) //This line was flagged as needing fewer dependencies
-
-  const fetchKiosks = async () => {
-    const result = await getKiosks({
-      page: currentPage,
-      searchTerm,
-      status: filterStatus as any,
-      date: filterDate,
-    })
-    setKiosks(result.kiosks)
-    setTotalPages(result.totalPages)
-  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -79,13 +87,13 @@ export default function KioskTable() {
   }
 
   const resetFilters = () => {
-    setFilterStatus("")
-    setFilterDate(undefined)
+    onFilterStatus("")
+    onFilterDate(undefined)
   }
 
   const applyFilters = () => {
-    setCurrentPage(1)
-    fetchKiosks()
+    onPageChange(1)
+    onRefresh()
     setIsFilterOpen(false)
   }
 
@@ -95,10 +103,9 @@ export default function KioskTable() {
   }
 
   const handleDelete = (kioskId: number) => {
-    // Implement delete functionality here
-    console.log("Delete kiosk:", kioskId)
-    // You might want to show a confirmation dialog before deleting
-    // and then call an API to delete the kiosk
+    if (window.confirm("Are you sure you want to delete this kiosk?")) {
+      onKioskDelete(kioskId)
+    }
   }
 
   const getStatusTranslation = (status: string) => {
@@ -141,15 +148,15 @@ export default function KioskTable() {
             placeholder="Rechercher..."
             className="pl-8"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => onSearch(e.target.value)}
           />
         </div>
-        <Select defaultValue="all" onValueChange={(value) => setFilterStatus(value)}>
+        <Select defaultValue="AVAILABLE" onValueChange={onFilterStatus}>
           <SelectTrigger className="w-[200px]">
             <SelectValue placeholder="TOUS LES KIOSQUES" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">TOUS LES KIOSQUES</SelectItem>
+            <SelectItem value="ALL">TOUS LES KIOSQUES</SelectItem>
             <SelectItem value="AVAILABLE">En activité</SelectItem>
             <SelectItem value="UNDER_MAINTENANCE">En maintenance</SelectItem>
             <SelectItem value="REQUEST">En attente</SelectItem>
@@ -157,7 +164,7 @@ export default function KioskTable() {
           </SelectContent>
         </Select>
         <div className="ml-auto flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={fetchKiosks}>
+          <Button variant="outline" size="icon" onClick={onRefresh}>
             <RotateCcw className="h-4 w-4" />
           </Button>
           <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
@@ -171,11 +178,12 @@ export default function KioskTable() {
                 <h3 className="font-medium text-lg">Filtres</h3>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Statut</label>
-                  <Select value={filterStatus} onValueChange={setFilterStatus}>
+                  <Select value={filterStatus} onValueChange={onFilterStatus}>
                     <SelectTrigger>
                       <SelectValue placeholder="Sélectionner le statut" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="ALL">Tous</SelectItem>
                       <SelectItem value="AVAILABLE">En activité</SelectItem>
                       <SelectItem value="UNDER_MAINTENANCE">En maintenance</SelectItem>
                       <SelectItem value="REQUEST">En attente</SelectItem>
@@ -192,7 +200,7 @@ export default function KioskTable() {
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar mode="single" selected={filterDate} onSelect={setFilterDate} initialFocus />
+                      <Calendar mode="single" selected={filterDate} onSelect={onFilterDate} initialFocus />
                     </PopoverContent>
                   </Popover>
                 </div>
@@ -285,7 +293,7 @@ export default function KioskTable() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+            onClick={() => onPageChange(Math.max(1, currentPage - 1))}
             disabled={currentPage === 1}
           >
             Previous
@@ -296,7 +304,7 @@ export default function KioskTable() {
               variant={currentPage === page ? "default" : "outline"}
               size="sm"
               onClick={() => {
-                if (typeof page === "number") setCurrentPage(page)
+                if (typeof page === "number") onPageChange(page)
               }}
               className={`${
                 typeof page !== "number" ? "pointer-events-none" : ""
@@ -308,7 +316,7 @@ export default function KioskTable() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+            onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
             disabled={currentPage === totalPages}
           >
             Next
@@ -317,11 +325,12 @@ export default function KioskTable() {
       </div>
       <UpdateKioskDialogAdmin
         isOpen={isModifyDialogOpen}
+        kiosks={kiosks}
         onOpenChange={setIsModifyDialogOpen}
         kiosk={selectedKiosk}
-        onSuccess={() => {
+        onSuccess={(updatedKiosk) => {
           setIsModifyDialogOpen(false)
-          fetchKiosks()
+          onKioskUpdate(updatedKiosk)
         }}
       />
     </div>

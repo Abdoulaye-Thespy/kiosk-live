@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { InfoIcon, Loader2, CheckCircle2, XCircle, Search } from "lucide-react"
+import { Loader2, CheckCircle2, XCircle } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -32,17 +32,24 @@ interface Kiosk {
   managerName: string
   managerContact: string
   userId: string
-  status: "REQUEST" | "LOCALIZING" | "AVAILABLE" | "UNDER_MAINTENANCE" // Add status field
+  status: "REQUEST" | "LOCALIZING" | "AVAILABLE" | "UNDER_MAINTENANCE"
 }
 
-interface AddKioskDialogAdminProps {
+interface UpdateKioskDialogAdminProps {
   isOpen: boolean
   onOpenChange: (open: boolean) => void
-  kiosk?: Kiosk | null
-  onSuccess: () => void
+  kiosk: Kiosk | null
+  kiosks: Kiosk[]
+  onSuccess: (updatedKiosk: Kiosk) => void
 }
 
-export function UpdateKioskDialogAdmin({ isOpen, onOpenChange, kiosk, onSuccess }: AddKioskDialogAdminProps) {
+export function UpdateKioskDialogAdmin({
+  isOpen,
+  onOpenChange,
+  kiosk,
+  kiosks,
+  onSuccess,
+}: UpdateKioskDialogAdminProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
@@ -61,7 +68,7 @@ export function UpdateKioskDialogAdmin({ isOpen, onOpenChange, kiosk, onSuccess 
     managerName: "",
     managerContact: "",
     userId: "",
-    status: "REQUEST", // Add default status
+    status: "REQUEST",
   })
 
   useEffect(() => {
@@ -79,7 +86,7 @@ export function UpdateKioskDialogAdmin({ isOpen, onOpenChange, kiosk, onSuccess 
         managerName: "",
         managerContact: "",
         userId: "",
-        status: "REQUEST", // Add default status
+        status: "REQUEST",
       })
     }
   }, [kiosk])
@@ -96,10 +103,11 @@ export function UpdateKioskDialogAdmin({ isOpen, onOpenChange, kiosk, onSuccess 
         setError(result.error)
       } else {
         setSuccess("Le kiosque a été modifié avec succès.")
+        const updatedKiosk = { ...kiosk, ...formData }
+        onSuccess(updatedKiosk)
         setTimeout(() => {
           onOpenChange(false)
-          router.refresh() // Refresh the page to show the new kiosk
-        }, 2000) // Close the dialog and refresh after 2 seconds
+        }, 2000) // Close the dialog after 2 seconds
       }
     } catch (err) {
       setError("Une erreur est survenue lors de la modification du kiosque.")
@@ -115,20 +123,20 @@ export function UpdateKioskDialogAdmin({ isOpen, onOpenChange, kiosk, onSuccess 
           <DialogTitle className="text-xl font-semibold">Modifier le kiosque</DialogTitle>
         </DialogHeader>
         <ScrollArea className="flex-grow overflow-auto">
-             {error && (
-              <Alert variant="destructive" className="mb-4">
-                <XCircle className="h-4 w-4" />
-                <AlertTitle>Erreur</AlertTitle>
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-            {success && (
-              <Alert variant="default" className="mb-4 bg-green-50 border-green-200">
-                <CheckCircle2 className="h-4 w-4 text-green-600" />
-                <AlertTitle className="text-green-800">Succès</AlertTitle>
-                <AlertDescription className="text-green-700">{success}</AlertDescription>
-              </Alert>
-            )}
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <XCircle className="h-4 w-4" />
+              <AlertTitle>Erreur</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          {success && (
+            <Alert variant="default" className="mb-4 bg-green-50 border-green-200">
+              <CheckCircle2 className="h-4 w-4 text-green-600" />
+              <AlertTitle className="text-green-800">Succès</AlertTitle>
+              <AlertDescription className="text-green-700">{success}</AlertDescription>
+            </Alert>
+          )}
           <form id="kiosk-form" onSubmit={handleSubmit} className="space-y-3 pr-4">
             <div>
               <Label htmlFor="kiosk-name">Nom du kiosque</Label>
