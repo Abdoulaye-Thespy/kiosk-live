@@ -101,9 +101,10 @@ export async function addKioskByClient(formData: FormData) {
 }
 
 export async function addKioskByStaff(formData: FormData) {
+  console.log("Here is form data ", formData);
   const kioskData: KioskFormData = {
-    kioskName: formData.get("kioskName") as string,
     clientName: formData.get("clientName") as string,
+    kioskName: formData.get("kioskName") as string,
     kioskAddress: formData.get("kioskAddress") as string,
     latitude: formData.get("latitude") as string,
     longitude: formData.get("longitude") as string,
@@ -112,8 +113,9 @@ export async function addKioskByStaff(formData: FormData) {
     managerName: formData.get("managerName") as string,
     managerContact: formData.get("managerContact") as string,
     userId: formData.get("userId") as string,
-    status: formData.get(status) as KioskStatus,
+    status: formData.get("status") as KioskStatus,
   }
+
 
   try {
     // Validate the data (you may want to add more thorough validation)

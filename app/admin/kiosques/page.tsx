@@ -93,7 +93,7 @@ export default function InvoiceDashboard() {
             </button>
           ))}
         </nav>
-        <AddKioskDialog onKioskAdded={fetchKiosks} />
+        <AddKioskDialog />
       </div>
 
       <div className="mt-4">
