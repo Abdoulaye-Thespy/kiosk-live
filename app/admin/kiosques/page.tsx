@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import KioskTab1 from "@/app/ui/admin/kiosques/tab1"
 import KioskTab2 from "@/app/ui/admin/kiosques/tab2"
 import { AddKioskDialog } from "@/app/ui/admin/kiosques/nouveau"
@@ -34,20 +34,21 @@ export default function InvoiceDashboard() {
   const [filterStatus, setFilterStatus] = useState("")
   const [filterDate, setFilterDate] = useState<Date | undefined>(undefined)
 
-  useEffect(() => {
-    fetchKiosks()
-  }, [currentPage, searchTerm, filterStatus, filterDate])
-
-  const fetchKiosks = async () => {
+  const fetchKiosks = useCallback(async () => {
     const result = await getKiosks({
       page: currentPage,
       searchTerm,
       status: filterStatus as any,
       date: filterDate,
     })
+    console.log(result.kiosks)
     setKiosks(result.kiosks)
     setTotalPages(result.totalPages)
-  }
+  }, [currentPage, searchTerm, filterStatus, filterDate])
+
+  useEffect(() => {
+    fetchKiosks()
+  }, [fetchKiosks])
 
   const handleSearch = (term: string) => {
     setSearchTerm(term)
@@ -76,6 +77,11 @@ export default function InvoiceDashboard() {
     setKiosks(kiosks.filter((kiosk) => kiosk.id !== kioskId))
   }
 
+  const handleKioskAdd = (newKiosk: Kiosk) => {
+    setKiosks((prevKiosks) => [newKiosk, ...prevKiosks])
+    fetchKiosks() // Refresh the list to ensure we have the latest data
+  }
+
   return (
     <div className="container mx-auto p-4">
       <Header title="Kiosques" />
@@ -93,7 +99,7 @@ export default function InvoiceDashboard() {
             </button>
           ))}
         </nav>
-        <AddKioskDialog />
+        <AddKioskDialog kiosks={kiosks} onKioskAdded={handleKioskAdd} />
       </div>
 
       <div className="mt-4">

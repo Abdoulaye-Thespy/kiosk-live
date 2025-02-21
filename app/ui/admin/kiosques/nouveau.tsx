@@ -41,9 +41,10 @@ interface Kiosk {
 
 interface AddKioskDialogProps {
   kiosks: Kiosk[]
+  onKioskAdd: (kiosk: Kiosk) => void
 }
 
-export function AddKioskDialog({ kiosks }: AddKioskDialogProps) {
+export function AddKioskDialog({ kiosks, onKioskAdd }: AddKioskDialogProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -119,8 +120,6 @@ export function AddKioskDialog({ kiosks }: AddKioskDialogProps) {
     submitData.append("userId", selectedClientId)
     submitData.append("clientName", selectedClientName)
 
-    console.log(formData)
-
     try {
       const result = await addKioskByStaff(submitData)
       if (result.error) {
@@ -130,10 +129,12 @@ export function AddKioskDialog({ kiosks }: AddKioskDialogProps) {
 
 
         // Reset the form data
+
+        onKioskAdd(result.kiosk)
+
         setFormData(initialFormData)
         setSelectedClientId("")
         setSelectedClientName("")
-
         setSuccess("Le kiosque a été ajouté avec succès.")
         setTimeout(() => {
           setIsOpen(false)

@@ -15,7 +15,7 @@ type KioskFormData = {
   kioskType: KioskType
   productsServices: string
   managerName: string
-  managerContact: string
+  managerContacts: string
   status: KioskStatus
   userId: string
 }
@@ -30,7 +30,7 @@ export async function addKioskByClient(formData: FormData) {
     kioskType: formData.get("kioskType") as KioskType,
     productsServices: formData.get("productsServices") as string,
     managerName: formData.get("managerName") as string,
-    managerContact: formData.get("managerContact") as string,
+    managerContacts: formData.get("managerContact") as string,
     userId: formData.get("userId") as string,
     status: formData.get("status") as KioskStatus ,
   }
@@ -57,7 +57,7 @@ export async function addKioskByClient(formData: FormData) {
         type: kioskData.kioskType,
         productTypes: kioskData.productsServices,
         managerName: kioskData.managerName,
-        managerContacts: kioskData.managerContact,
+        managerContacts: kioskData.managerContacts,
         status: "REQUEST",
       },
     })
@@ -111,7 +111,7 @@ export async function addKioskByStaff(formData: FormData) {
     kioskType: formData.get("kioskType") as KioskType,
     productsServices: formData.get("productsServices") as string,
     managerName: formData.get("managerName") as string,
-    managerContact: formData.get("managerContact") as string,
+    managerContacts: formData.get("managerContact") as string,
     userId: formData.get("userId") as string,
     status: formData.get("status") as KioskStatus,
   }
@@ -366,7 +366,7 @@ export async function updateKiosk(kioskId: number, formData: KioskFormData) {
         type: formData.kioskType,
         productTypes: formData.productsServices,
         managerName: formData.managerName,
-        managerContacts: formData.managerContact,
+        managerContacts: formData.managerContacts,
         status: formData.status as KioskStatus,
       },
     })
@@ -388,4 +388,42 @@ export async function getKiosksForTicket() {
     },
   })
   return kiosks
+}
+
+export async function getUserServiceRequests(userId: string) {
+  try {
+    const serviceRequests = await prisma.serviceRequest.findMany({
+      where: {
+        OR: [
+          {
+            technicians: {
+              some: {
+                id: userId,
+              },
+            },
+          },
+          {
+            kiosk: {
+              users: {
+                some: {
+                  userId: userId,
+                },
+              },
+            },
+          },
+        ],
+      },
+      include: {
+        kiosk: true,
+        technicians: true,
+      },
+      orderBy: {
+        createdDate: "desc",
+      },
+    })
+    return serviceRequests
+  } catch (error) {
+    console.error("Error fetching user service requests:", error)
+    throw new Error("Failed to fetch user service requests")
+  }
 }

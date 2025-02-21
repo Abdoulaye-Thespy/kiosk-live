@@ -30,7 +30,8 @@ interface Kiosk {
   kioskType: string
   productsServices: string
   managerName: string
-  managerContact: string
+  managerContacts: string
+  productTypes: string
   userId: string
   status: "REQUEST" | "LOCALIZING" | "AVAILABLE" | "UNDER_MAINTENANCE"
 }
@@ -66,13 +67,15 @@ export function UpdateKioskDialogAdmin({
     kioskType: "",
     productsServices: "",
     managerName: "",
-    managerContact: "",
+    managerContacts: "",
+    productTypes:"",
     userId: "",
     status: "REQUEST",
   })
 
   useEffect(() => {
     if (kiosk) {
+      console.log(kiosk)
       setFormData(kiosk)
     } else {
       setFormData({
@@ -84,7 +87,8 @@ export function UpdateKioskDialogAdmin({
         kioskType: "",
         productsServices: "",
         managerName: "",
-        managerContact: "",
+        managerContacts: "",
+        productTypes:"",
         userId: "",
         status: "REQUEST",
       })
@@ -96,6 +100,7 @@ export function UpdateKioskDialogAdmin({
     setIsSubmitting(true)
     setError(null)
     setSuccess(null)
+    console.log(formData);
 
     try {
       const result = await updateKiosk(kiosk.id, formData)
@@ -139,7 +144,7 @@ export function UpdateKioskDialogAdmin({
           )}
           <form id="kiosk-form" onSubmit={handleSubmit} className="space-y-3 pr-4">
             <div>
-              <Label htmlFor="kiosk-name">Nom du kiosque</Label>
+              <Label htmlFor="kiosk-name">Nom de l'Entreprise</Label>
               <Input
                 id="kiosk-name"
                 type="text"
@@ -213,8 +218,8 @@ export function UpdateKioskDialogAdmin({
                 id="products-services"
                 type="text"
                 placeholder="Produits/Services"
-                value={formData.productsServices || ""}
-                onChange={(e) => setFormData({ ...formData, productsServices: e.target.value })}
+                value={formData.productTypes || ""}
+                onChange={(e) => setFormData({ ...formData, productTypes: e.target.value })}
               />
             </div>
             <div>
@@ -233,8 +238,8 @@ export function UpdateKioskDialogAdmin({
                 id="manager-contact"
                 type="text"
                 placeholder="Contact du responsable"
-                value={formData.managerContact || ""}
-                onChange={(e) => setFormData({ ...formData, managerContact: e.target.value })}
+                value={formData.managerContacts || ""}
+                onChange={(e) => setFormData({ ...formData, managerContacts: e.target.value })}
               />
             </div>
 

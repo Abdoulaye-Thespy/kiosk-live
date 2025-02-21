@@ -92,7 +92,7 @@ const linksTechnicien = [
   { name: 'Kiosques', href: '/technicien', icon: HomeIcon },
   {
     name: 'Mes Tâches',
-    href: '/technicien/historique',
+    href: '/technicien/taches',
     icon: UserGroupIcon,
   },
   { name: 'documentation', 
