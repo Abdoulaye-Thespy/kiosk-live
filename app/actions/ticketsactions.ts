@@ -14,7 +14,6 @@ export async function createServiceRequest(formData: {
   attachments?: string[]
 }) {
 
-  console.log(formData);
   try {
     const newServiceRequest = await prisma.serviceRequest.create({
       data: {
@@ -44,12 +43,22 @@ export async function createServiceRequest(formData: {
   }
 }
 
+
 export async function getServiceRequests() {
   try {
     const serviceRequests = await prisma.serviceRequest.findMany({
       include: {
-        kiosk: true,
-        technicians: true,
+        technicians: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          }
+        },
+        kiosk: true
+      },
+      orderBy: {
+        createdDate: 'desc',
       },
     })
     return serviceRequests
@@ -58,7 +67,6 @@ export async function getServiceRequests() {
     throw new Error("Failed to fetch service requests")
   }
 }
-
 
 export async function getMaintenanceMetrics() {
   const totalKiosks = await prisma.kiosk.count({
@@ -229,3 +237,72 @@ export async function getTechnicianMaintenanceTickets({
     throw new Error("Failed to fetch technician's maintenance tickets")
   }
 } 
+
+export async function getMaintenanceTicketsForUser({
+  page = 1,
+  limit = 10,
+  searchTerm = "",
+  status,
+  startDate,
+  endDate,
+  userId, // New parameter for user ID
+}: {
+  page?: number
+  limit?: number
+  searchTerm?: string
+  status?: RequestStatus
+  startDate?: Date
+  endDate?: Date
+  userId?: string // Type for user ID
+}) {
+  const where: any = {}
+
+  // Filter by search term
+  if (searchTerm) {
+    where.OR = [
+      { id: { contains: searchTerm } },
+      { kiosk: { kioskName: { contains: searchTerm } } },
+      { technicians: { some: { name: { contains: searchTerm } } } },
+    ]
+  }
+
+  // Filter by status
+  if (status) {
+    where.status = status
+  }
+
+  // Filter by date range
+  if (startDate) {
+    where.createdDate = { gte: startDate }
+  }
+
+  if (endDate) {
+    where.createdDate = { ...where.createdDate, lte: endDate }
+  }
+
+  // Filter by user ID
+  if (userId) {
+    where.id = userId
+  }
+
+  // Fetch tickets and total count
+  const [tickets, totalCount] = await Promise.all([
+    prisma.serviceRequest.findMany({
+      where,
+      include: {
+        kiosk: true,
+        technicians: true,
+      },
+      skip: (page - 1) * limit,
+      take: limit,
+      orderBy: { createdDate: "desc" },
+    }),
+    prisma.serviceRequest.count({ where }),
+  ])
+
+  return {
+    tickets,
+    totalPages: Math.ceil(totalCount / limit),
+    totalCount,
+  }
+}

@@ -16,18 +16,7 @@ import type { KioskType } from "@prisma/client"
 import { UpdateKioskDialogAdmin } from "./modifykiok"
 import { useState } from "react"
 
-interface Kiosk {
-  id: number
-  kioskName: string
-  managerName: string
-  clientName: string
-  kioskAddress: string
-  status: KioskType
-  averageMonthlyRevenue: number
-  managerContacts: string
-  type: string
-  compartment: string
-}
+import { type Kiosk } from "@prisma/client"
 
 interface KioskTab1Props {
   kiosks: Kiosk[]

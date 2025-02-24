@@ -24,27 +24,14 @@ interface Client {
   email: string
 }
 
-interface Kiosk {
-  id: number
-  kioskName: string
-  clientName: string
-  kioskAddress: string
-  latitude: string
-  longitude: string
-  kioskType: KioskType
-  productsServices: string
-  managerName: string
-  managerContact: string
-  status: KioskStatus
-  userId: string
-}
+import { type Kiosk } from "@prisma/client"
 
 interface AddKioskDialogProps {
   kiosks: Kiosk[]
-  onKioskAdd: (kiosk: Kiosk) => void
+  onSuccess: (addedKiosk: Kiosk) => void
 }
 
-export function AddKioskDialog({ kiosks, onKioskAdd }: AddKioskDialogProps) {
+export function AddKioskDialog({ kiosks, onSuccess }: AddKioskDialogProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -130,10 +117,9 @@ export function AddKioskDialog({ kiosks, onKioskAdd }: AddKioskDialogProps) {
 
         // Reset the form data
 
-        const kioskAdded = result.kiosk;
-
-        console.log("This is the kiosk that was added", kioskAdded)
+        const addedKiosk = result.kiosk;
         // onKioskAdd(kioskAdded)
+        onSuccess(addedKiosk)
 
         setFormData(initialFormData)
         setSelectedClientId("")

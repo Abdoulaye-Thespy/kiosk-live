@@ -6,24 +6,14 @@ import KioskTab2 from "@/app/ui/admin/kiosques/tab2"
 import { AddKioskDialog } from "@/app/ui/admin/kiosques/nouveau"
 import Header from "@/app/ui/header"
 import { getKiosks } from "@/app/actions/kiosk-actions"
-import type { KioskType } from "@prisma/client"
 
 const tabs = [
   { id: "dashboard", label: "Vue des kiosque sur tableau" },
   { id: "invoices", label: "Vue des kiosque sur Map" },
 ]
 
-interface Kiosk {
-  id: number
-  kioskName: string
-  managerName: string
-  clientName: string
-  kioskAddress: string
-  status: KioskType
-  averageMonthlyRevenue: number
-  type: string
-  compartment: string
-}
+
+import { type Kiosk } from "@prisma/client"
 
 export default function InvoiceDashboard() {
   const [activeTab, setActiveTab] = useState("dashboard")
@@ -78,6 +68,7 @@ export default function InvoiceDashboard() {
   }
 
   const handleKioskAdd = (newKiosk: Kiosk) => {
+  console.log("handlign kiosk add")
     setKiosks((prevKiosks) => [newKiosk, ...prevKiosks])
     fetchKiosks() // Refresh the list to ensure we have the latest data
   }
@@ -99,7 +90,11 @@ export default function InvoiceDashboard() {
             </button>
           ))}
         </nav>
-        <AddKioskDialog kiosks={kiosks} onKioskAdded={handleKioskAdd} />
+        <AddKioskDialog kiosks={kiosks} 
+        onSuccess={(addedKiosk) => {
+          handleKioskAdd(addedKiosk)
+        }}
+        />
       </div>
 
       <div className="mt-4">

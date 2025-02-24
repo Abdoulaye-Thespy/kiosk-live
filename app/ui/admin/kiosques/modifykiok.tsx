@@ -19,22 +19,7 @@ interface User {
   name: string
   email: string
 }
-
-interface Kiosk {
-  id: number
-  kioskName: string
-  clientName: string
-  kioskAddress: string
-  latitude: string
-  longitude: string
-  kioskType: string
-  productsServices: string
-  managerName: string
-  managerContacts: string
-  productTypes: string
-  userId: string
-  status: "REQUEST" | "LOCALIZING" | "AVAILABLE" | "UNDER_MAINTENANCE"
-}
+import { type Kiosk } from "@prisma/client"
 
 interface UpdateKioskDialogAdminProps {
   isOpen: boolean

@@ -13,14 +13,12 @@ import { DialogClose } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { ServiceRequestForm } from "./ServiceRequestForm"
 
-interface ServiceRequest {
-  id: string
-  kioskId: string
-  problemDescription: string
-  priority: "High" | "Medium" | "Low"
-  technicianId: string
-  resolvedDate: string
-  status: "Open" | "In Progress" | "Resolved"
+import { type Kiosk, User, ServiceRequest as PrismaServiceRequest } from "@prisma/client"
+
+// Define the extended types with relations
+type ServiceRequestWithRelations = PrismaServiceRequest & {
+  technicians: User[]
+  kiosk: Kiosk
 }
 
 interface Technician {
@@ -29,19 +27,13 @@ interface Technician {
   email: string
 }
 
-interface Kiosk {
-  id: string
-  name: string
-  location: string
-}
-
 export default function MaintenanceCalendar() {
   const [currentMonth, setCurrentMonth] = useState(new Date())
-  const [serviceRequests, setServiceRequests] = useState<ServiceRequest[]>([])
+  const [serviceRequests, setServiceRequests] = useState<ServiceRequestWithRelations[]>([])
   const [isNewRequestModalOpen, setIsNewRequestModalOpen] = useState(false)
   const [technicians, setTechnicians] = useState<Technician[]>([])
   const [kiosks, setKiosks] = useState<Kiosk[]>([])
-  const [selectedTicket, setSelectedTicket] = useState<ServiceRequest | null>(null)
+  const [selectedTicket, setSelectedTicket] = useState<ServiceRequestWithRelations | null>(null)
   const [isTicketDialogOpen, setIsTicketDialogOpen] = useState(false)
 
   useEffect(() => {
@@ -70,7 +62,9 @@ export default function MaintenanceCalendar() {
   }
 
   const renderEventList = (day: Date) => {
-    const dayEvents = serviceRequests.filter((request) => isSameDay(new Date(request.resolvedDate), day))
+    const dayEvents = serviceRequests.filter((request) => 
+      request.resolvedDate ? isSameDay(new Date(request.resolvedDate), day) : false
+    )
     return (
       <div className="mt-1 space-y-1 max-h-20 overflow-y-auto">
         {dayEvents.map((request) => (
@@ -90,6 +84,32 @@ export default function MaintenanceCalendar() {
         ))}
       </div>
     )
+  }
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'HIGH':
+        return 'bg-red-500'
+      case 'MEDIUM':
+        return 'bg-yellow-500'
+      case 'LOW':
+        return 'bg-green-500'
+      default:
+        return 'bg-gray-500'
+    }
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'OPEN':
+        return 'bg-gray-500'
+      case 'IN_PROGRESS':
+        return 'bg-blue-500'
+      case 'RESOLVED':
+        return 'bg-green-500'
+      default:
+        return 'bg-gray-500'
+    }
   }
 
   return (
@@ -135,41 +155,83 @@ export default function MaintenanceCalendar() {
 
         <Dialog open={isTicketDialogOpen} onOpenChange={setIsTicketDialogOpen}>
           <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle>Détails de la demande de service</DialogTitle>
+            <DialogHeader className="border-b pb-4">
+              <DialogTitle className="text-xl font-semibold text-orange-700">
+                Détails de la demande de service
+              </DialogTitle>
             </DialogHeader>
             {selectedTicket && (
-              <div className="space-y-4">
-                <Label>Description du problème:</Label>
-                <p>{selectedTicket.problemDescription}</p>
+              <div className="space-y-6 py-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-orange-700">Description du problème</Label>
+                  <p className="text-gray-700 bg-orange-50 p-3 rounded-md whitespace-pre-wrap">
+                    {selectedTicket.problemDescription}
+                  </p>
+                </div>
 
-                <Label>Priorité:</Label>
-                <Badge
-                  className={`bg-${selectedTicket.priority === "High" ? "red" : selectedTicket.priority === "Medium" ? "yellow" : "green"}-500`}
-                >
-                  {selectedTicket.priority}
-                </Badge>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-orange-700">Priorité</Label>
+                    <Badge className={`${getPriorityColor(selectedTicket.priority)} text-white`}>
+                      {selectedTicket.priority}
+                    </Badge>
+                  </div>
 
-                <Label>Technicien assigné:</Label>
-                <p>{technicians.find((technician) => technician.id === selectedTicket.technicianId)?.name}</p>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-orange-700">Statut</Label>
+                    <Badge className={`${getStatusColor(selectedTicket.status)} text-white`}>
+                      {selectedTicket.status}
+                    </Badge>
+                  </div>
+                </div>
 
-                <Label>Kiosque:</Label>
-                <p>{kiosks.find((kiosk) => kiosk.id === selectedTicket.kioskId)?.name}</p>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-orange-700">Technicien(e)(s) assigné(e)(s)</Label>
+                  <div className="bg-orange-50 p-3 rounded-md">
+                    {selectedTicket.technicians.length > 0 ? (
+                      selectedTicket.technicians.map((technician, index) => (
+                        <span key={technician.id} className="text-gray-700">
+                          {technician.name}
+                          {index < selectedTicket.technicians.length - 1 ? ", " : ""}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-gray-500">Aucun technicien assigné</span>
+                    )}
+                  </div>
+                </div>
 
-                <Label>Date de résolution:</Label>
-                <p>{format(new Date(selectedTicket.resolvedDate), "PPP")}</p>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-orange-700">Kiosque</Label>
+                  <p className="text-gray-700 bg-orange-50 p-3 rounded-md">
+                    {selectedTicket.kiosk.kioskName}
+                  </p>
+                </div>
 
-                <Label>Statut:</Label>
-                <Badge
-                  className={`bg-${selectedTicket.status === "Open" ? "gray" : selectedTicket.status === "In Progress" ? "blue" : "green"}-500`}
-                >
-                  {selectedTicket.status}
-                </Badge>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-orange-700">Date de résolution</Label>
+                  <p className="text-gray-700 bg-orange-50 p-3 rounded-md">
+                    {selectedTicket.resolvedDate 
+                      ? format(new Date(selectedTicket.resolvedDate), "PPP")
+                      : "Non résolu"}
+                  </p>
+                </div>
+
+                {selectedTicket.comments && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-orange-700">Commentaires</Label>
+                    <p className="text-gray-700 bg-orange-50 p-3 rounded-md whitespace-pre-wrap">
+                      {selectedTicket.comments}
+                    </p>
+                  </div>
+                )}
               </div>
             )}
-            <DialogFooter>
+            <DialogFooter className="border-t pt-4">
               <DialogClose asChild>
-                <Button className="bg-orange-500 hover:bg-orange-600 text-white">Fermer</Button>
+                <Button className="bg-orange-500 hover:bg-orange-600 text-white px-6">
+                  Fermer
+                </Button>
               </DialogClose>
             </DialogFooter>
           </DialogContent>
@@ -178,4 +240,3 @@ export default function MaintenanceCalendar() {
     </Card>
   )
 }
-

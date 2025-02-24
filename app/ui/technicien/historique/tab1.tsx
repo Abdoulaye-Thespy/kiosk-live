@@ -15,8 +15,10 @@ import { FunnelIcon, ArrowsUpDownIcon } from "@heroicons/react/24/solid"
 import { format } from "date-fns"
 import { fr } from "date-fns/locale"
 import styles from "@/app/ui/dashboard.module.css"
-import { getMaintenanceMetrics, getMaintenanceTickets, deleteTickets } from "@/app/actions/ticketsactions"
+import { getMaintenanceMetrics, deleteTickets } from "@/app/actions/ticketsactions"
 import type { RequestStatus, RequestPriority } from "@prisma/client"
+import { useSession } from "next-auth/react"
+import { getTechnicianMaintenanceTickets } from "@/app/actions/ticketsactions" // Import useSession
 
 interface Metric {
   title: string
@@ -36,6 +38,7 @@ interface Ticket {
   technicians: { name: string }[]
   status: RequestStatus
   priority: RequestPriority
+  problemDescription: string
 }
 
 export default function MaintenanceDashboardTechnicien() {
@@ -52,6 +55,9 @@ export default function MaintenanceDashboardTechnicien() {
   const [isEndDateOpen, setIsEndDateOpen] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
+
+  const { data: session } = useSession() // Get session data
+  const userId = session?.user?.id // Assume user ID is stored in session.user.id
 
   useEffect(() => {
     fetchMetrics()
@@ -82,20 +88,24 @@ export default function MaintenanceDashboardTechnicien() {
   }
 
   const fetchTickets = async () => {
-    const { tickets: fetchedTickets, totalPages: pages } = await getMaintenanceTickets({
-      page: currentPage,
-      searchTerm,
-      status: filterStatus === "ALL" ? undefined : filterStatus || undefined,
-      startDate: filterStartDate,
-      endDate: filterEndDate,
-    })
-    setTickets(fetchedTickets)
-    setTotalPages(pages)
+    if (session?.user?.id) {
+      const fetchedServiceRequests = await getTechnicianMaintenanceTickets({
+        technicianId: session.user.id,
+        page: currentPage,
+        limit: 10, // Adjust this value as needed
+        searchTerm,
+        status: filterStatus === "ALL" ? undefined : filterStatus || undefined,
+        startDate: filterStartDate,
+        endDate: filterEndDate,
+      })
+      setTickets(fetchedServiceRequests.tickets)
+      setTotalPages(fetchedServiceRequests.totalPages)
+    }
   }
 
   useEffect(() => {
     fetchTickets()
-  }, [searchTerm, filterStatus, filterStartDate, filterEndDate]) //Corrected useEffect dependency array
+  }, [session, currentPage, searchTerm, filterStatus, filterStartDate, filterEndDate])
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -296,7 +306,7 @@ export default function MaintenanceDashboardTechnicien() {
             <TableHead className="w-[100px]">ID ticket</TableHead>
             <TableHead>Kiosque</TableHead>
             <TableHead>Date création</TableHead>
-            <TableHead>Date résolution</TableHead>
+            <TableHead>Délai</TableHead>
             <TableHead>Technicien</TableHead>
             <TableHead>Etat</TableHead>
             <TableHead>Priorité</TableHead>

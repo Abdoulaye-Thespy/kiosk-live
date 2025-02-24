@@ -167,10 +167,6 @@ export default function MaintenanceCalendarTechnicien() {
           <h2 className="text-2xl font-bold">Calendrier des demandes de service</h2>
           <Dialog open={isNewRequestModalOpen} onOpenChange={setIsNewRequestModalOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-orange-500 hover:bg-orange-600 text-white">
-                <PlusIcon className="h-5 w-5 mr-2" />
-                Nouvelle demande
-              </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[700px]">
               <DialogHeader className="flex flex-row items-center justify-between pb-4">
@@ -335,10 +331,6 @@ export default function MaintenanceCalendarTechnicien() {
             </DialogHeader>
             {selectedTicket && (
               <div className="space-y-4">
-                <div>
-                  <Label className="font-semibold">ID de la demande</Label>
-                  <p>{selectedTicket.id}</p>
-                </div>
                 <div>
                   <Label className="font-semibold">Kiosque</Label>
                   <p>{kiosks.find((k) => k.id === selectedTicket.kioskId)?.kioskName || "Non spécifié"}</p>
