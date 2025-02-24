@@ -60,9 +60,9 @@ export function AddKioskDialog({ kiosks, onKioskAdd }: AddKioskDialogProps) {
     latitude: "",
     longitude: "",
     kioskType: "",
-    productsServices: "",
+    productTypes: "",
     managerName: "",
-    managerContact: "",
+    managerContacts: "",
   }
 
   const [formData, setFormData] = useState(initialFormData)
@@ -130,7 +130,10 @@ export function AddKioskDialog({ kiosks, onKioskAdd }: AddKioskDialogProps) {
 
         // Reset the form data
 
-        onKioskAdd(result.kiosk)
+        const kioskAdded = result.kiosk;
+
+        console.log("This is the kiosk that was added", kioskAdded)
+        // onKioskAdd(kioskAdded)
 
         setFormData(initialFormData)
         setSelectedClientId("")
@@ -351,8 +354,8 @@ export function AddKioskDialog({ kiosks, onKioskAdd }: AddKioskDialogProps) {
                 <Label htmlFor="products-services">Type de produits et services offerts</Label>
                 <Input
                   id="products-services"
-                  name="productsServices"
-                  value={formData.productsServices}
+                  name="productTypes"
+                  value={formData.productTypes}
                   onChange={handleChange}
                   placeholder="Produits et services (optionnel)"
                   className="w-full mt-1"
@@ -375,8 +378,8 @@ export function AddKioskDialog({ kiosks, onKioskAdd }: AddKioskDialogProps) {
                 <Label htmlFor="manager-contact">Coordonnées du gestionnaire</Label>
                 <Input
                   id="manager-contact"
-                  name="managerContact"
-                  value={formData.managerContact}
+                  name="managerContacts"
+                  value={formData.managerContacts}
                   onChange={handleChange}
                   placeholder="+237 123 456 789 (optionnel)"
                   className="w-full mt-1"

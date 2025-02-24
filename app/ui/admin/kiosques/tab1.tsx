@@ -41,7 +41,6 @@ interface KioskTab1Props {
   onFilterDate: (date: Date | undefined) => void
   onPageChange: (page: number) => void
   onKioskUpdate: (kiosk: Kiosk) => void
-  onKioskAdd: (kiosk: Kiosk) => void
   onKioskDelete: (kioskId: number) => void
   onRefresh: () => void
 }

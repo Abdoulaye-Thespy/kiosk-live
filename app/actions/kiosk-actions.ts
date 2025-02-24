@@ -12,12 +12,13 @@ type KioskFormData = {
   kioskAddress: string
   latitude: string
   longitude: string
+  productTypes: string
   kioskType: KioskType
-  productsServices: string
   managerName: string
   managerContacts: string
   status: KioskStatus
   userId: string
+
 }
 
 export async function addKioskByClient(formData: FormData) {
@@ -28,7 +29,7 @@ export async function addKioskByClient(formData: FormData) {
     latitude: formData.get("latitude") as string,
     longitude: formData.get("longitude") as string,
     kioskType: formData.get("kioskType") as KioskType,
-    productsServices: formData.get("productsServices") as string,
+    productTypes: formData.get("productTypes") as string,
     managerName: formData.get("managerName") as string,
     managerContacts: formData.get("managerContact") as string,
     userId: formData.get("userId") as string,
@@ -109,9 +110,9 @@ export async function addKioskByStaff(formData: FormData) {
     latitude: formData.get("latitude") as string,
     longitude: formData.get("longitude") as string,
     kioskType: formData.get("kioskType") as KioskType,
-    productsServices: formData.get("productsServices") as string,
+    productTypes: formData.get("productTypes") as string,
     managerName: formData.get("managerName") as string,
-    managerContacts: formData.get("managerContact") as string,
+    managerContacts: formData.get("managerContacts") as string,
     userId: formData.get("userId") as string,
     status: formData.get("status") as KioskStatus,
   }
@@ -136,9 +137,9 @@ export async function addKioskByStaff(formData: FormData) {
         gpsLatitude: Number.parseFloat(kioskData.latitude) || 0,
         gpsLongitude: Number.parseFloat(kioskData.longitude) || 0,
         type: kioskData.kioskType,
-        productTypes: kioskData.productsServices,
+        productTypes: kioskData.productTypes,
         managerName: kioskData.managerName,
-        managerContacts: kioskData.managerContact,
+        managerContacts: kioskData.managerContacts,
         status: "AVAILABLE",
       },
     })
@@ -345,8 +346,6 @@ export async function getUserKioskCounts(userId: string) {
 }
 
 export async function updateKiosk(kioskId: number, formData: KioskFormData) {
-  console.log("Updating kiosk:", kioskId)
-  console.log("Form data:", formData)
 
   try {
     // Validate the data
@@ -364,7 +363,7 @@ export async function updateKiosk(kioskId: number, formData: KioskFormData) {
         gpsLatitude: formData.latitude ? Number.parseFloat(formData.latitude) : undefined,
         gpsLongitude: formData.longitude ? Number.parseFloat(formData.longitude) : undefined,
         type: formData.kioskType,
-        productTypes: formData.productsServices,
+        productTypes: formData.productTypes,
         managerName: formData.managerName,
         managerContacts: formData.managerContacts,
         status: formData.status as KioskStatus,
