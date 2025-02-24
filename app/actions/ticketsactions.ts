@@ -306,3 +306,89 @@ export async function getMaintenanceTicketsForUser({
     totalCount,
   }
 }
+
+export async function getClientServiceRequests({
+  userId,
+  page = 1,
+  limit = 10,
+  searchTerm = "",
+  status,
+  startDate,
+  endDate,
+}: {
+  userId: string
+  page?: number
+  limit?: number
+  searchTerm?: string
+  status?: RequestStatus
+  startDate?: Date
+  endDate?: Date
+}) {
+  try {
+    // First, get the kiosk IDs associated with the user
+    const userKiosks = await prisma.userKiosk.findMany({
+      where: { userId: userId },
+      select: { kioskId: true },
+    })
+
+    const kioskIds = userKiosks.map((uk) => uk.kioskId)
+
+    // Prepare the where clause for the service requests query
+    const where: any = {
+      kioskId: { in: kioskIds },
+    }
+
+    if (searchTerm) {
+      where.OR = [
+        { id: { contains: searchTerm } },
+        { problemDescription: { contains: searchTerm } },
+        { kiosk: { kioskName: { contains: searchTerm } } },
+        { technicians: { some: { name: { contains: searchTerm } } } },
+      ]
+    }
+
+    if (status) {
+      where.status = status
+    }
+
+    if (startDate) {
+      where.createdDate = { gte: startDate }
+    }
+
+    if (endDate) {
+      where.createdDate = endDate ? { ...where.createdDate, lte: endDate } : where.createdDate
+    }
+
+    // Fetch service requests
+    const [serviceRequests, totalCount] = await Promise.all([
+      prisma.serviceRequest.findMany({
+        where,
+        include: {
+          technicians: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+          kiosk: true,
+        },
+        orderBy: {
+          createdDate: "desc",
+        },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.serviceRequest.count({ where }),
+    ])
+
+    return {
+      serviceRequests,
+      totalPages: Math.ceil(totalCount / limit),
+      totalCount,
+    }
+  } catch (error) {
+    console.error("Error fetching user's service requests:", error)
+    throw new Error("Failed to fetch user's service requests")
+  }
+}

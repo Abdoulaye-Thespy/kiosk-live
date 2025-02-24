@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -15,8 +15,9 @@ import { FunnelIcon, ArrowsUpDownIcon } from "@heroicons/react/24/solid"
 import { format } from "date-fns"
 import { fr } from "date-fns/locale"
 import styles from "@/app/ui/dashboard.module.css"
-import { getMaintenanceMetrics, getMaintenanceTickets, deleteTickets } from "@/app/actions/ticketsactions"
+import { getMaintenanceMetrics, getClientServiceRequests, deleteTickets } from "@/app/actions/ticketsactions"
 import type { RequestStatus, RequestPriority } from "@prisma/client"
+import { useSession } from "next-auth/react"
 
 interface Metric {
   title: string
@@ -53,6 +54,8 @@ export default function MaintenanceDashboardClient() {
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
 
+  const { data: session } = useSession()
+
   useEffect(() => {
     fetchMetrics()
     fetchTickets()
@@ -81,21 +84,25 @@ export default function MaintenanceDashboardClient() {
     ])
   }
 
-  const fetchTickets = async () => {
-    const { tickets: fetchedTickets, totalPages: pages } = await getMaintenanceTickets({
-      page: currentPage,
-      searchTerm,
-      status: filterStatus === "ALL" ? undefined : filterStatus || undefined,
-      startDate: filterStartDate,
-      endDate: filterEndDate,
-    })
-    setTickets(fetchedTickets)
-    setTotalPages(pages)
-  }
+  const fetchTickets = useCallback(async () => {
+    if (session?.user?.id) {
+      const { serviceRequests, totalPages: pages } = await getClientServiceRequests({
+        userId: session.user.id,
+        page: currentPage,
+        limit: 10,
+        searchTerm,
+        status: filterStatus === "ALL" ? undefined : filterStatus || undefined,
+        startDate: filterStartDate,
+        endDate: filterEndDate,
+      })
+      setTickets(serviceRequests)
+      setTotalPages(pages)
+    }
+  }, [session, currentPage, searchTerm, filterStatus, filterStartDate, filterEndDate])
 
   useEffect(() => {
     fetchTickets()
-  }, [searchTerm, filterStatus, filterStartDate, filterEndDate]) //Corrected useEffect dependency array
+  }, [fetchTickets])
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {

@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, isSameDay } from "date-fns"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -8,12 +8,13 @@ import { Label } from "@/components/ui/label"
 import { PlusIcon } from "@heroicons/react/24/outline"
 import { getTechnicians } from "@/app/actions/fetchUserStats"
 import { getKiosksForTicket } from "@/app/actions/kiosk-actions"
-import { createServiceRequest, getServiceRequests } from "@/app/actions/ticketsactions"
+import { createServiceRequest, getClientServiceRequests } from "@/app/actions/ticketsactions"
 import { DialogClose } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { ServiceRequestForm } from "./ServiceRequestForm"
+import { useSession } from "next-auth/react"
 
-import { type Kiosk, User, ServiceRequest as PrismaServiceRequest } from "@prisma/client"
+import type { Kiosk, User, ServiceRequest as PrismaServiceRequest } from "@prisma/client"
 
 // Define the extended types with relations
 type ServiceRequestWithRelations = PrismaServiceRequest & {
@@ -35,26 +36,39 @@ export default function MaintenanceCalendarClient() {
   const [kiosks, setKiosks] = useState<Kiosk[]>([])
   const [selectedTicket, setSelectedTicket] = useState<ServiceRequestWithRelations | null>(null)
   const [isTicketDialogOpen, setIsTicketDialogOpen] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+
+  const { data: session } = useSession()
+
+  const fetchServiceRequests = useCallback(async () => {
+    if (session?.user?.id) {
+      const { serviceRequests: fetchedRequests, totalPages } = await getClientServiceRequests({
+        userId: session.user.id,
+        page: currentPage,
+        limit: 100, // Adjust this value as needed
+      })
+      setServiceRequests(fetchedRequests)
+      setTotalPages(totalPages)
+    }
+  }, [session, currentPage])
 
   useEffect(() => {
     const fetchData = async () => {
-      const [fetchedTechnicians, fetchedKiosks, fetchedServiceRequests] = await Promise.all([
-        getTechnicians(),
-        getKiosksForTicket(),
-        getServiceRequests(),
-      ])
+      const [fetchedTechnicians, fetchedKiosks] = await Promise.all([getTechnicians(), getKiosksForTicket()])
       setTechnicians(fetchedTechnicians)
       setKiosks(fetchedKiosks)
-      setServiceRequests(fetchedServiceRequests)
     }
     fetchData()
-  }, [])
+    fetchServiceRequests()
+  }, [fetchServiceRequests])
 
   const handleSubmit = async (formData: any) => {
     try {
       const newServiceRequest = await createServiceRequest(formData)
       setServiceRequests((prevRequests) => [...prevRequests, newServiceRequest])
       setIsNewRequestModalOpen(false)
+      fetchServiceRequests() // Refresh the list after creating a new request
     } catch (error) {
       console.error("Error creating service request:", error)
       throw error
@@ -62,8 +76,8 @@ export default function MaintenanceCalendarClient() {
   }
 
   const renderEventList = (day: Date) => {
-    const dayEvents = serviceRequests.filter((request) => 
-      request.createdDate ? isSameDay(new Date(request.createdDate), day) : false
+    const dayEvents = serviceRequests.filter((request) =>
+      request.createdDate ? isSameDay(new Date(request.createdDate), day) : false,
     )
     return (
       <div className="mt-1 space-y-1 max-h-20 overflow-y-auto">
@@ -88,27 +102,27 @@ export default function MaintenanceCalendarClient() {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'HIGH':
-        return 'bg-red-500'
-      case 'MEDIUM':
-        return 'bg-yellow-500'
-      case 'LOW':
-        return 'bg-green-500'
+      case "HIGH":
+        return "bg-red-500"
+      case "MEDIUM":
+        return "bg-yellow-500"
+      case "LOW":
+        return "bg-green-500"
       default:
-        return 'bg-gray-500'
+        return "bg-gray-500"
     }
   }
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'OPEN':
-        return 'bg-gray-500'
-      case 'IN_PROGRESS':
-        return 'bg-blue-500'
-      case 'RESOLVED':
-        return 'bg-green-500'
+      case "OPEN":
+        return "bg-gray-500"
+      case "IN_PROGRESS":
+        return "bg-blue-500"
+      case "RESOLVED":
+        return "bg-green-500"
       default:
-        return 'bg-gray-500'
+        return "bg-gray-500"
     }
   }
 
@@ -203,17 +217,13 @@ export default function MaintenanceCalendarClient() {
 
                 <div className="space-y-2">
                   <Label className="text-sm font-medium text-orange-700">Kiosque</Label>
-                  <p className="text-gray-700 bg-orange-50 p-3 rounded-md">
-                    {selectedTicket.kiosk.kioskName}
-                  </p>
+                  <p className="text-gray-700 bg-orange-50 p-3 rounded-md">{selectedTicket.kiosk.kioskName}</p>
                 </div>
 
                 <div className="space-y-2">
                   <Label className="text-sm font-medium text-orange-700">Date de résolution</Label>
                   <p className="text-gray-700 bg-orange-50 p-3 rounded-md">
-                    {selectedTicket.resolvedDate 
-                      ? format(new Date(selectedTicket.resolvedDate), "PPP")
-                      : "Non résolu"}
+                    {selectedTicket.resolvedDate ? format(new Date(selectedTicket.resolvedDate), "PPP") : "Non résolu"}
                   </p>
                 </div>
 
@@ -229,9 +239,7 @@ export default function MaintenanceCalendarClient() {
             )}
             <DialogFooter className="border-t pt-4">
               <DialogClose asChild>
-                <Button className="bg-orange-500 hover:bg-orange-600 text-white px-6">
-                  Fermer
-                </Button>
+                <Button className="bg-orange-500 hover:bg-orange-600 text-white px-6">Fermer</Button>
               </DialogClose>
             </DialogFooter>
           </DialogContent>
@@ -240,3 +248,4 @@ export default function MaintenanceCalendarClient() {
     </Card>
   )
 }
+
