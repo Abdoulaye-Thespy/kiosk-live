@@ -38,10 +38,10 @@ export default function SideNav({
             </button>
           </div>
           <hr />
-          <div className="flex items-center justify-between">
+          {/* <div className="flex items-center justify-between">
             <span className="text-sm font-medium">Dark Mode</span>
             <Switch className="data-[state=checked]:bg-blue-600" />
-          </div>
+          </div> */}
         </div>
       </div>
     </div>

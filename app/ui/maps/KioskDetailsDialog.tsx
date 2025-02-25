@@ -50,12 +50,12 @@ export function KioskDetailsDialog({ isOpen, onClose, kiosk }: KioskDetailsProps
         </DialogHeader>
         <div className="space-y-4">
 
-          <div className="space-y-2">
+          {/* <div className="space-y-2">
             <p className="text-sm text-gray-500">Type de kiosque</p>
             <Badge className={`${getKioskTypeColor(kiosk.type)}`}>
               {getKioskTypeLabel(kiosk.type)}
             </Badge>
-          </div>
+          </div> */}
 
           <div className="space-y-2">
             <p className="text-sm text-gray-500">Client</p>
@@ -80,11 +80,6 @@ export function KioskDetailsDialog({ isOpen, onClose, kiosk }: KioskDetailsProps
           <div className="space-y-2">
             <p className="text-sm text-gray-500">Coordonnées GPS</p>
             <p className="font-medium">{kiosk.coordinates}</p>
-          </div>
-
-          <div className="space-y-2">
-            <p className="text-sm text-gray-500">Revenu mensuel moyen</p>
-            <p className="font-medium">{kiosk.revenue}</p>
           </div>
 
           <div className="pt-4">

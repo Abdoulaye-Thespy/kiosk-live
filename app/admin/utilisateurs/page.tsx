@@ -39,6 +39,7 @@ type User = {
   id: number
   name: string
   role: string
+  address: string
   email: string
   phone: string
   CreatedAt: Date
@@ -85,6 +86,7 @@ export default function UserManagement() {
         const data: User[] = await response.json()
         setUsers(data.sort((a, b) => new Date(b.CreatedAt).getTime() - new Date(a.CreatedAt).getTime()))
         setTotalUsers(data.length)
+        console.log(data)
       } catch (error) {
         console.error("Error fetching users:", error)
       } finally {
@@ -180,13 +182,14 @@ export default function UserManagement() {
 
   const openModal = (user?: User) => {
     if (user) {
+       console.log(user)
       setFormData({
         id: user.id,
         name: user.name,
         email: user.email,
         phone: user.phone,
         role: user.role,
-        address: "", // Assuming address is not in the User type
+        address: user.address, // Assuming address is not in the User type
         status: user.status,
       })
       setIsEditing(true)
@@ -584,10 +587,7 @@ export default function UserManagement() {
                 </TableCell>
                 <TableCell className="font-medium">
                   <Link
-                    href={{
-                      pathname: "/admin/utilisateurs/details",
-                      query: { userId: user.id },
-                    }}
+                    href={`/admin/utilisateurs/${user.id}`}
                     className="flex items-center hover:bg-gray-100 rounded-md p-1 transition-colors"
                   >
                     <Avatar className="h-8 w-8 mr-2">

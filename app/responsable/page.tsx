@@ -1,39 +1,122 @@
-'use client'
+"use client"
 
-import { useState } from "react"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
-import { MoreHorizontal, Search } from 'lucide-react'
-import Header from "../ui/header"
-import KioskMetrics from "../ui/admin/kiosques/metrics"
-import KioskTable from "../ui/admin/kiosques/tab1"
+import { useState, useEffect, useCallback } from "react"
+import KioskTab1 from "@/app/ui/admin/kiosques/tab1"
+import KioskTab2 from "@/app/ui/admin/kiosques/tab2"
+import { AddKioskDialog } from "@/app/ui/admin/kiosques/nouveau"
+import Header from "@/app/ui/header"
+import { getKiosks } from "@/app/actions/kiosk-actions"
 
-export default function KioskTableREsponsable() {
+const tabs = [
+  { id: "dashboard", label: "Vue des kiosque sur tableau" },
+  { id: "invoices", label: "Vue des kiosque sur Map" },
+]
+
+
+import { type Kiosk } from "@prisma/client"
+
+export default function InvoiceDashboard() {
+  const [activeTab, setActiveTab] = useState("dashboard")
+  const [kiosks, setKiosks] = useState<Kiosk[]>([])
+  const [totalPages, setTotalPages] = useState(1)
   const [currentPage, setCurrentPage] = useState(1)
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedKiosk, setSelectedKiosk] = useState("all")
+  const [filterStatus, setFilterStatus] = useState("")
+  const [filterDate, setFilterDate] = useState<Date | undefined>(undefined)
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "En activité":
-        return "bg-green-100 text-green-800"
-      case "En maintenance":
-        return "bg-purple-100 text-purple-800"
-      case "Fermé":
-        return "bg-red-100 text-red-800"
-      default:
-        return "bg-gray-100 text-gray-800"
-    }
+  const fetchKiosks = useCallback(async () => {
+    const result = await getKiosks({
+      page: currentPage,
+      searchTerm,
+      status: filterStatus as any,
+      date: filterDate,
+    })
+    console.log(result.kiosks)
+    setKiosks(result.kiosks)
+    setTotalPages(result.totalPages)
+  }, [currentPage, searchTerm, filterStatus, filterDate])
+
+  useEffect(() => {
+    fetchKiosks()
+  }, [fetchKiosks])
+
+  const handleSearch = (term: string) => {
+    setSearchTerm(term)
+    setCurrentPage(1)
+  }
+
+  const handleFilterStatus = (status: string) => {
+    setFilterStatus(status)
+    setCurrentPage(1)
+  }
+
+  const handleFilterDate = (date: Date | undefined) => {
+    setFilterDate(date)
+    setCurrentPage(1)
+  }
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+  }
+
+  const handleKioskUpdate = (updatedKiosk: Kiosk) => {
+    setKiosks(kiosks.map((kiosk) => (kiosk.id === updatedKiosk.id ? updatedKiosk : kiosk)))
+  }
+
+  const handleKioskDelete = (kioskId: number) => {
+    setKiosks(kiosks.filter((kiosk) => kiosk.id !== kioskId))
+  }
+
+  const handleKioskAdd = (newKiosk: Kiosk) => {
+  console.log("handlign kiosk add")
+    setKiosks((prevKiosks) => [newKiosk, ...prevKiosks])
+    fetchKiosks() // Refresh the list to ensure we have the latest data
   }
 
   return (
-    <div className="">
-      <Header title="Tableau de Bord" />
-      <KioskTable />
+    <div className="container mx-auto p-4">
+      <Header title="Kiosques" />
+      <div className="flex justify-between items-center mb-6 mt-6">
+        <nav className="flex space-x-1 border-b border-gray-200">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 focus:outline-none ${
+                activeTab === tab.id ? "border-b-2 border-orange-500 text-orange-600" : ""
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </nav>
+        <AddKioskDialog kiosks={kiosks} 
+        onSuccess={(addedKiosk) => {
+          handleKioskAdd(addedKiosk)
+        }}
+        />
+      </div>
+
+      <div className="mt-4">
+        {activeTab === "dashboard" && (
+          <KioskTab1
+            kiosks={kiosks}
+            totalPages={totalPages}
+            currentPage={currentPage}
+            searchTerm={searchTerm}
+            filterStatus={filterStatus}
+            filterDate={filterDate}
+            onSearch={handleSearch}
+            onFilterStatus={handleFilterStatus}
+            onFilterDate={handleFilterDate}
+            onPageChange={handlePageChange}
+            onKioskUpdate={handleKioskUpdate}
+            onKioskDelete={handleKioskDelete}
+            onRefresh={fetchKiosks}
+          />
+        )}
+        {activeTab === "invoices" && <KioskTab2 />}
+      </div>
     </div>
   )
 }

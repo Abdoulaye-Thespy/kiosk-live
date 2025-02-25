@@ -100,3 +100,20 @@ export async function getTechnicians() {
   })
   return technicians
 }
+
+export async function getUserDetails(userId: string) {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    })
+
+    if (!user) {
+      throw new Error("User not found")
+    }
+
+    return user
+  } catch (error) {
+    console.error("Error fetching user details:", error)
+    throw new Error("Failed to fetch user details")
+  }
+}
