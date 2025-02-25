@@ -47,10 +47,9 @@ export function UpdateKioskDialogAdmin({
     kioskName: "",
     clientName: "",
     kioskAddress: "",
-    latitude: "",
-    longitude: "",
+    gpsLatitude: null,
+    gpsLongitude: null,
     kioskType: "",
-    productsServices: "",
     managerName: "",
     managerContacts: "",
     productTypes:"",
@@ -67,8 +66,8 @@ export function UpdateKioskDialogAdmin({
         kioskName: "",
         clientName: "",
         kioskAddress: "",
-        latitude: "",
-        longitude: "",
+        gpsLatitude: null,
+        gpsLongitude: null,
         kioskType: "",
         productsServices: "",
         managerName: "",
@@ -183,8 +182,8 @@ export function UpdateKioskDialogAdmin({
                 id="latitude"
                 type="text"
                 placeholder="Latitude"
-                value={formData.latitude || ""}
-                onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
+                value={formData.gpsLatitude || ""}
+                onChange={(e) => setFormData({ ...formData, gpsLatitude: e.target.value !== '' ? parseFloat(e.target.value) : null })}
               />
             </div>
             <div>
@@ -193,8 +192,8 @@ export function UpdateKioskDialogAdmin({
                 id="longitude"
                 type="text"
                 placeholder="Longitude"
-                value={formData.longitude || ""}
-                onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
+                value={formData.gpsLongitude || ""}
+                onChange={(e) => setFormData({ ...formData, gpsLongitude: e.target.value !== '' ? parseFloat(e.target.value) : null })}
               />
             </div>
             <div>

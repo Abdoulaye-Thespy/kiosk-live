@@ -10,8 +10,8 @@ type KioskFormData = {
   kioskName: string
   clientName: string
   kioskAddress: string
-  latitude: string
-  longitude: string
+  gpsLatitude: string
+  gpsLongitude: string
   productTypes: string
   kioskType: KioskType
   managerName: string
@@ -26,8 +26,8 @@ export async function addKioskByClient(formData: FormData) {
     kioskName: formData.get("kioskName") as string,
     clientName: formData.get("clientName") as string,
     kioskAddress: formData.get("kioskAddress") as string,
-    latitude: formData.get("latitude") as string,
-    longitude: formData.get("longitude") as string,
+    gpsLatitude: formData.get("gpsLatitute") as string,
+    gpsLongitude: formData.get("gpsLongitude") as string,
     kioskType: formData.get("kioskType") as KioskType,
     productTypes: formData.get("productTypes") as string,
     managerName: formData.get("managerName") as string,
@@ -56,7 +56,7 @@ export async function addKioskByClient(formData: FormData) {
         gpsLatitude: Number.parseFloat(kioskData.latitude) || 0,
         gpsLongitude: Number.parseFloat(kioskData.longitude) || 0,
         type: kioskData.kioskType,
-        productTypes: kioskData.productsServices,
+        productTypes: kioskData.productTypes,
         managerName: kioskData.managerName,
         managerContacts: kioskData.managerContacts,
         status: "REQUEST",
@@ -107,8 +107,8 @@ export async function addKioskByStaff(formData: FormData) {
     clientName: formData.get("clientName") as string,
     kioskName: formData.get("kioskName") as string,
     kioskAddress: formData.get("kioskAddress") as string,
-    latitude: formData.get("latitude") as string,
-    longitude: formData.get("longitude") as string,
+    gpsLatitude: formData.get("latitude") as string,
+    gpsLongitude: formData.get("longitude") as string,
     kioskType: formData.get("kioskType") as KioskType,
     productTypes: formData.get("productTypes") as string,
     managerName: formData.get("managerName") as string,
@@ -134,8 +134,8 @@ export async function addKioskByStaff(formData: FormData) {
         kioskName: kioskData.kioskName,
         clientName: kioskData.clientName,
         kioskAddress: kioskData.kioskAddress,
-        gpsLatitude: Number.parseFloat(kioskData.latitude) || 0,
-        gpsLongitude: Number.parseFloat(kioskData.longitude) || 0,
+        gpsLatitude: Number.parseFloat(kioskData.gpsLatitude) || 0,
+        gpsLongitude: Number.parseFloat(kioskData.gpsLongitude) || 0,
         type: kioskData.kioskType,
         productTypes: kioskData.productTypes,
         managerName: kioskData.managerName,
@@ -354,14 +354,15 @@ export async function updateKiosk(kioskId: number, formData: KioskFormData) {
     }
 
     // Update the kiosk
+    console.log(formData)
     const updatedKiosk = await prisma.kiosk.update({
       where: { id: kioskId },
       data: {
         kioskName: formData.kioskName,
         clientName: formData.clientName,
         kioskAddress: formData.kioskAddress,
-        gpsLatitude: formData.latitude ? Number.parseFloat(formData.latitude) : undefined,
-        gpsLongitude: formData.longitude ? Number.parseFloat(formData.longitude) : undefined,
+        gpsLatitude: formData.gpsLatitude ? parseFloat(formData.gpsLatitude) : 0,
+        gpsLongitude: formData.gpsLatitude ? parseFloat(formData.gpsLongitude) : 0,
         type: formData.kioskType,
         productTypes: formData.productTypes,
         managerName: formData.managerName,
@@ -427,89 +428,46 @@ export async function getUserServiceRequests(userId: string) {
   }
 }
 
-
-export async function getClientServiceRequests({
-  userId,
-  page = 1,
-  limit = 10,
-  searchTerm = "",
-  status,
-  startDate,
-  endDate,
-}: {
-  userId: string
-  page?: number
-  limit?: number
-  searchTerm?: string
-  status?: RequestStatus
-  startDate?: Date
-  endDate?: Date
-}) {
+export async function getKiosksWithCoordinates() {
   try {
-    // First, get the kiosk IDs associated with the user
-    const userKiosks = await prisma.userKiosk.findMany({
-      where: { userId: userId },
-      select: { kioskId: true },
+    const kiosks = await prisma.kiosk.findMany({
+      where: {
+        gpsLatitude: { not: null },
+        gpsLongitude: { not: null },
+      },
+      select: {
+        id: true,
+        kioskName: true,
+        clientName: true,
+        managerName: true,
+        productTypes: true,
+        kioskAddress: true,
+        gpsLatitude: true,
+        gpsLongitude: true,
+        averageMonthlyRevenue: true,
+        type: true,
+      },
     })
-
-    const kioskIds = userKiosks.map((uk) => uk.kioskId)
-
-    // Prepare the where clause for the service requests query
-    const where: any = {
-      kioskId: { in: kioskIds },
-    }
-
-    if (searchTerm) {
-      where.OR = [
-        { id: { contains: searchTerm } },
-        { problemDescription: { contains: searchTerm } },
-        { kiosk: { kioskName: { contains: searchTerm } } },
-        { technicians: { some: { name: { contains: searchTerm } } } },
-      ]
-    }
-
-    if (status) {
-      where.status = status
-    }
-
-    if (startDate) {
-      where.createdDate = { gte: startDate }
-    }
-
-    if (endDate) {
-      where.createdDate = endDate ? { ...where.createdDate, lte: endDate } : where.createdDate
-    }
-
-    // Fetch service requests
-    const [serviceRequests, totalCount] = await Promise.all([
-      prisma.serviceRequest.findMany({
-        where,
-        include: {
-          technicians: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-          kiosk: true,
-        },
-        orderBy: {
-          createdDate: "desc",
-        },
-        skip: (page - 1) * limit,
-        take: limit,
-      }),
-      prisma.serviceRequest.count({ where }),
-    ])
-
-    return {
-      serviceRequests,
-      totalPages: Math.ceil(totalCount / limit),
-      totalCount,
-    }
+    
+    return kiosks.map(kiosk => ({
+      id: kiosk.id.toString(),
+      position: {
+        lat: kiosk.gpsLatitude!,
+        lng: kiosk.gpsLongitude!,
+      },
+      title: kiosk.kioskName,
+      client: kiosk.clientName || 'Non spécifié',
+      manager: kiosk.managerName || 'Non spécifié',
+      services: kiosk.productTypes || 'Non spécifié',
+      location: kiosk.kioskAddress || 'Non spécifié',
+      coordinates: `${kiosk.gpsLatitude}, ${kiosk.gpsLongitude}`,
+      revenue: kiosk.averageMonthlyRevenue ? 
+        `${kiosk.averageMonthlyRevenue.toLocaleString()} CFA` : 
+        'Non spécifié',
+      type: kiosk.type
+    }))
   } catch (error) {
-    console.error("Error fetching user's service requests:", error)
-    throw new Error("Failed to fetch user's service requests")
+    console.error("Error fetching kiosks with coordinates:", error)
+    throw new Error("Failed to fetch kiosks with coordinates")
   }
 }

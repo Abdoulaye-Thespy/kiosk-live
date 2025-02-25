@@ -78,8 +78,8 @@ model Kiosk {
   kioskName             String
   clientName            String?
   kioskAddress          String?
-  gpsLatitude           Decimal?
-  gpsLongitude          Decimal?
+  gpsLatitude           Float?
+  gpsLongitude          Float?
   productTypes          String?
   managerName           String?
   managerContacts       String?
@@ -96,7 +96,6 @@ model Kiosk {
   serviceRequests       ServiceRequest[]
   locationHistory       LocationHistory[]
   users                 UserKiosk[]  // Many-to-many relationship with User model
-
 }
 
 model UserKiosk {
