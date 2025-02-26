@@ -39,6 +39,7 @@ interface Ticket {
   status: RequestStatus
   priority: RequestPriority
   problemDescription: string
+  deadLine: Date | null
 }
 
 export default function MaintenanceDashboardTechnicien() {
@@ -303,10 +304,11 @@ export default function MaintenanceDashboardTechnicien() {
             <TableHead className="w-[50px]">
               <Checkbox checked={selectedTickets.length === tickets.length} onCheckedChange={handleSelectAll} />
             </TableHead>
-            <TableHead className="w-[100px]">ID ticket</TableHead>
             <TableHead>Kiosque</TableHead>
+            <TableHead>Problème</TableHead>
             <TableHead>Date création</TableHead>
             <TableHead>Délai</TableHead>
+            <TableHead>Date de Résolution</TableHead>
             <TableHead>Technicien</TableHead>
             <TableHead>Etat</TableHead>
             <TableHead>Priorité</TableHead>
@@ -322,8 +324,8 @@ export default function MaintenanceDashboardTechnicien() {
                   onCheckedChange={(checked) => handleSelectTicket(ticket.id, checked as boolean)}
                 />
               </TableCell>
-              <TableCell className="font-medium">{ticket.id}</TableCell>
               <TableCell>{ticket.kiosk.kioskName}</TableCell>
+              <TableCell>{ticket.problemDescription}</TableCell>
               <TableCell>
                 <div className="flex items-center">
                   <svg className="mr-2 h-4 w-4 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -335,6 +337,19 @@ export default function MaintenanceDashboardTechnicien() {
                     />
                   </svg>
                   {format(new Date(ticket.createdDate), "dd/MM/yyyy")}
+                </div>
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center">
+                  <svg className="mr-2 h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                  {ticket.deadLine ? format(new Date(ticket.deadLine), "dd/MM/yyyy") : "Non résolu"}
                 </div>
               </TableCell>
               <TableCell>

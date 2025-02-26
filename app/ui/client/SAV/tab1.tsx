@@ -37,6 +37,7 @@ interface Ticket {
   technicians: { name: string }[]
   status: RequestStatus
   priority: RequestPriority
+  problemDescription: string
 }
 
 export default function MaintenanceDashboardClient() {
@@ -300,8 +301,8 @@ export default function MaintenanceDashboardClient() {
             <TableHead className="w-[50px]">
               <Checkbox checked={selectedTickets.length === tickets.length} onCheckedChange={handleSelectAll} />
             </TableHead>
-            <TableHead className="w-[100px]">ID ticket</TableHead>
             <TableHead>Kiosque</TableHead>
+            <TableHead>Problème</TableHead>
             <TableHead>Date création</TableHead>
             <TableHead>Date résolution</TableHead>
             <TableHead>Technicien</TableHead>
@@ -319,8 +320,8 @@ export default function MaintenanceDashboardClient() {
                   onCheckedChange={(checked) => handleSelectTicket(ticket.id, checked as boolean)}
                 />
               </TableCell>
-              <TableCell className="font-medium">{ticket.id}</TableCell>
               <TableCell>{ticket.kiosk.kioskName}</TableCell>
+              <TableCell>{ticket.problemDescription}</TableCell>
               <TableCell>
                 <div className="flex items-center">
                   <svg className="mr-2 h-4 w-4 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">

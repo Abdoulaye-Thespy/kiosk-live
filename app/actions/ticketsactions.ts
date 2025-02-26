@@ -11,6 +11,7 @@ export async function createServiceRequest(formData: {
   comments?: string
   priority: RequestPriority
   resolvedDate?: string
+  deadLine?: string
   attachments?: string[]
 }) {
 
@@ -25,6 +26,7 @@ export async function createServiceRequest(formData: {
         comments: formData.comments,
         priority: formData.priority,
         resolvedDate: formData.resolvedDate ? new Date(formData.resolvedDate) : null,
+        deadLine: formData.deadLine ? new Date(formData.deadLine) : null,
         attachments: formData.attachments ? formData.attachments.join(",") : null,
         status: RequestStatus.OPEN,
       },
@@ -101,7 +103,7 @@ export async function getMaintenanceMetrics() {
 
 export async function getMaintenanceTickets({
   page = 1,
-  limit = 10,
+  limit = 50,
   searchTerm = "",
   status,
   startDate,

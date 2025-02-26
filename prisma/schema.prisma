@@ -155,6 +155,7 @@ model ServiceRequest {
   status              RequestStatus @default(OPEN)
   priority            RequestPriority @default(MEDIUM)
   createdDate         DateTime  @default(now())
+  deadLine            DateTime?
   resolvedDate        DateTime?
   attachments         String?
   updatedAt           DateTime  @updatedAt

@@ -19,7 +19,8 @@ interface FormErrors {
   technicians?: boolean
   problemDescription?: boolean
   priority?: boolean
-  resolvedDate?: boolean
+  dateLine?: boolean
+
 }
 
 interface ServiceRequestFormProps {
@@ -47,6 +48,7 @@ export function ServiceRequestForm({ isOpen, onOpenChange, onSubmit, kiosks, tec
     comments: "",
     priority: "" as RequestPriority,
     resolvedDate: "",
+    deadLine: "",
     attachments: [] as string[],
   })
   const [technicianSearch, setTechnicianSearch] = useState("")
@@ -72,8 +74,8 @@ export function ServiceRequestForm({ isOpen, onOpenChange, onSubmit, kiosks, tec
       errors.priority = true
       isValid = false
     }
-    if (!formData.resolvedDate) {
-      errors.resolvedDate = true
+    if (!formData.deadLine) {
+      errors.dateLine= true
       isValid = false
     }
 
@@ -97,6 +99,7 @@ export function ServiceRequestForm({ isOpen, onOpenChange, onSubmit, kiosks, tec
         comments: "",
         priority: "" as RequestPriority,
         resolvedDate: "",
+        deadLine: "",
         attachments: [],
       })
       onOpenChange(false)
@@ -266,16 +269,16 @@ export function ServiceRequestForm({ isOpen, onOpenChange, onSubmit, kiosks, tec
               </div>
 
               <div>
-                <RequiredLabel htmlFor="resolvedDate">Date de résolution prévue</RequiredLabel>
+                <RequiredLabel htmlFor="deadLine">Date de résolution prévue</RequiredLabel>
                 <Input
-                  id="resolvedDate"
+                  id="deadLine"
                   type="date"
-                  value={formData.resolvedDate}
+                  value={formData.deadLine}
                   onChange={(e) => {
-                    setFormData((prev) => ({ ...prev, resolvedDate: e.target.value }))
-                    setFormErrors((prev) => ({ ...prev, resolvedDate: false }))
+                    setFormData((prev) => ({ ...prev, deadLine: e.target.value }))
+                    setFormErrors((prev) => ({ ...prev, deadLine: false }))
                   }}
-                  className={cn(formErrors.resolvedDate && "border-red-500 focus-visible:ring-red-500")}
+                  className={cn(formErrors.deadLine && "border-red-500 focus-visible:ring-red-500")}
                 />
               </div>
 
