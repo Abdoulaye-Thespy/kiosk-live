@@ -39,7 +39,7 @@ export default function Home() {
               <h2 className="text-xl font-semibold text-gray-900 mb-2">Gestion de vos kiosque</h2>
               <p className="text-sm text-gray-600">
                 Simplifiez la gestion de vos kiosques et optimisez vos opérations au quotidien. Accédez aux statistiques
-                pour maximiser vos résultats
+                pour maximiser vos résultats.
               </p>
               <div className="flex justify-center mt-6">
                 <div className="flex gap-1">

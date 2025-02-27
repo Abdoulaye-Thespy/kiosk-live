@@ -1,38 +1,37 @@
 "use client"
 
-import { useEffect, useState } from 'react'
-import { GoogleMap, LoadScript, Marker } from '@react-google-maps/api'
-import { Button } from "@/components/ui/button"
+import { useEffect, useState } from "react"
+import { GoogleMap, LoadScript, Marker } from "@react-google-maps/api"
 import { Card } from "@/components/ui/card"
-import { KioskDetailsDialog } from './KioskDetailsDialog'
-import { getKiosksWithCoordinates } from '@/app/actions/kiosk-actions'
-import { KioskType } from '@prisma/client'
+import { KioskDetailsDialog } from "./KioskDetailsDialog"
+import { getKiosksWithCoordinates } from "@/app/actions/kiosk-actions"
+import { KioskType } from "@prisma/client"
 
 const mapContainerStyle = {
-  width: '100%',
-  height: '400px'
+  width: "100%",
+  height: "400px",
 }
 
-const center = {
+const defaultCenter = {
   lat: 4.061536,
-  lng: 9.786072
+  lng: 9.786072,
 }
 
 const oneCompartmentMarker = {
-  path: 'M83.5135 123.523c15.1929 0 27.5096-12.3167 27.5096-27.5095 0-15.1929-12.3167-27.5096-27.5096-27.5096-15.1928 0-27.5095 12.3167-27.5095 27.5096 0 15.1928 12.3167 27.5095 27.5095 27.5095z',
-  fillColor: '#E5520F',
+  path: "M83.5135 123.523c15.1929 0 27.5096-12.3167 27.5096-27.5095 0-15.1929-12.3167-27.5096-27.5096-27.5096-15.1928 0-27.5095 12.3167-27.5095 27.5096 0 15.1928 12.3167 27.5095 27.5095 27.5095z",
+  fillColor: "#E5520F",
   fillOpacity: 1,
   strokeWeight: 2,
-  strokeColor: '#FFFFFF',
+  strokeColor: "#FFFFFF",
   scale: 0.5,
 }
 
 const threeCompartmentMarker = {
-  path: 'M83.5135 123.523c15.1929 0 27.5096-12.3167 27.5096-27.5095 0-15.1929-12.3167-27.5096-27.5096-27.5096-15.1928 0-27.5095 12.3167-27.5095 27.5096 0 15.1928 12.3167 27.5095 27.5095 27.5095z',
-  fillColor: '#2563EB',
+  path: "M83.5135 123.523c15.1929 0 27.5096-12.3167 27.5096-27.5095 0-15.1929-12.3167-27.5096-27.5096-27.5096-15.1928 0-27.5095 12.3167-27.5095 27.5096 0 15.1928 12.3167 27.5095 27.5095 27.5095z",
+  fillColor: "#2563EB",
   fillOpacity: 1,
   strokeWeight: 2,
-  strokeColor: '#FFFFFF',
+  strokeColor: "#FFFFFF",
   scale: 0.5,
 }
 
@@ -56,6 +55,8 @@ export default function MapView() {
   const [markers, setMarkers] = useState<KioskMarker[]>([])
   const [selectedKiosk, setSelectedKiosk] = useState<KioskMarker | null>(null)
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
+  const [center, setCenter] = useState(defaultCenter)
+  const [userLocation, setUserLocation] = useState<google.maps.LatLngLiteral | null>(null)
 
   useEffect(() => {
     const fetchKiosks = async () => {
@@ -63,10 +64,29 @@ export default function MapView() {
         const kioskMarkers = await getKiosksWithCoordinates()
         setMarkers(kioskMarkers)
       } catch (error) {
-        console.error('Error fetching kiosks:', error)
+        console.error("Error fetching kiosks:", error)
       }
     }
     fetchKiosks()
+
+    // Get user's current position
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const userPos = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          }
+          setCenter(userPos)
+          setUserLocation(userPos)
+        },
+        (error) => {
+          console.error("Error getting user's location:", error)
+        },
+      )
+    } else {
+      console.log("Geolocation is not supported by this browser.")
+    }
   }, [])
 
   const handleMarkerClick = (marker: KioskMarker) => {
@@ -119,17 +139,27 @@ export default function MapView() {
                 onClick={() => handleMarkerClick(marker)}
               />
             ))}
+            {userLocation && (
+              <Marker
+                position={userLocation}
+                icon={{
+                  path: window.google.maps.SymbolPath.CIRCLE,
+                  scale: 7,
+                  fillColor: "#4285F4",
+                  fillOpacity: 1,
+                  strokeColor: "#ffffff",
+                  strokeWeight: 2,
+                }}
+              />
+            )}
           </GoogleMap>
         </LoadScript>
       </Card>
 
       {selectedKiosk && (
-        <KioskDetailsDialog
-          isOpen={isDetailsOpen}
-          onClose={() => setIsDetailsOpen(false)}
-          kiosk={selectedKiosk}
-        />
+        <KioskDetailsDialog isOpen={isDetailsOpen} onClose={() => setIsDetailsOpen(false)} kiosk={selectedKiosk} />
       )}
     </div>
   )
 }
+
