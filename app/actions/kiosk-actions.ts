@@ -471,3 +471,26 @@ export async function getKiosksWithCoordinates() {
     throw new Error("Failed to fetch kiosks with coordinates")
   }
 }
+
+export async function deleteKiosk(kioskId: number) {
+  try {
+    // First delete related UserKiosk records
+    await prisma.userKiosk.deleteMany({
+      where: {
+        kioskId: kioskId,
+      },
+    })
+
+    // Then delete the kiosk
+    const deletedKiosk = await prisma.kiosk.delete({
+      where: {
+        id: kioskId,
+      },
+    })
+
+    return { message: "Kiosque supprimé avec succès!", kiosk: deletedKiosk }
+  } catch (error) {
+    console.error("Error deleting kiosk:", error)
+    return { error: "Une erreur est survenue lors de la suppression du kiosque." }
+  }
+}

@@ -77,11 +77,6 @@ export function KioskDetailsDialog({ isOpen, onClose, kiosk }: KioskDetailsProps
             <p className="font-medium">{kiosk.location}</p>
           </div>
 
-          <div className="space-y-2">
-            <p className="text-sm text-gray-500">Coordonnées GPS</p>
-            <p className="font-medium">{kiosk.coordinates}</p>
-          </div>
-
           <div className="pt-4">
             <div className="rounded-md bg-orange-50 p-4">
               <div className="flex">

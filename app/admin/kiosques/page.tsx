@@ -5,7 +5,7 @@ import KioskTab1 from "@/app/ui/admin/kiosques/tab1"
 import KioskTab2 from "@/app/ui/admin/kiosques/tab2"
 import { AddKioskDialog } from "@/app/ui/admin/kiosques/nouveau"
 import Header from "@/app/ui/header"
-import { getKiosks } from "@/app/actions/kiosk-actions"
+import { deleteKiosk, getKiosks } from "@/app/actions/kiosk-actions"
 
 const tabs = [
   { id: "dashboard", label: "Vue des kiosque sur tableau" },
@@ -63,8 +63,21 @@ export default function InvoiceDashboard() {
     setKiosks(kiosks.map((kiosk) => (kiosk.id === updatedKiosk.id ? updatedKiosk : kiosk)))
   }
 
-  const handleKioskDelete = (kioskId: number) => {
-    setKiosks(kiosks.filter((kiosk) => kiosk.id !== kioskId))
+  const handleKioskDelete = async (kioskId: number) => {
+      try {
+        const result = await deleteKiosk(kioskId)
+        if (result.error) {
+          // You might want to add a toast notification here
+          console.error(result.error)
+        } else {
+          // Update local state only after successful deletion
+          setKiosks(kiosks.filter((kiosk) => kiosk.id !== kioskId))
+          // You might want to add a success toast notification here
+          console.log(result.message)
+        }
+      } catch (error) {
+        console.error("Error deleting kiosk:", error)
+      }
   }
 
   const handleKioskAdd = (newKiosk: Kiosk) => {

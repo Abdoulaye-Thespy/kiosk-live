@@ -6,6 +6,8 @@ import { Card } from "@/components/ui/card"
 import { KioskDetailsDialog } from "./KioskDetailsDialog"
 import { getKiosksWithCoordinates } from "@/app/actions/kiosk-actions"
 import { KioskType } from "@prisma/client"
+import OneKioskSVG from "../svg/onekiosks"
+import ThreeKioskSVG from "../svg/threekiosks"
 
 const mapContainerStyle = {
   width: "100%",
@@ -23,8 +25,31 @@ const oneCompartmentMarker = {
   fillOpacity: 1,
   strokeWeight: 2,
   strokeColor: "#FFFFFF",
-  scale: 0.5,
+  scale: 0.3,
 }
+
+// // Method 2: Custom Component with animation
+// const oneCompartmentMarker = () => (
+//   <div className="relative -translate-x-1/2 -translate-y-full group">
+//     {/* Pulse animation */}
+//     <div className="absolute -inset-2 rounded-full bg-orange-500/20 animate-ping" />
+//     {/* Hover scale effect */}
+//     <div className="relative transition-transform group-hover:scale-110 duration-200">
+//       <OneKioskSVG />
+//     </div>
+//   </div>
+// )
+
+// const threeCompartmentMarker = () => (
+//   <div className="relative -translate-x-1/2 -translate-y-full group">
+//     {/* Pulse animation */}
+//     <div className="absolute -inset-2 rounded-full bg-orange-500/20 animate-ping" />
+//     {/* Hover scale effect */}
+//     <div className="relative transition-transform group-hover:scale-110 duration-200">
+//       <ThreeKioskSVG />
+//     </div>
+//   </div>
+// )
 
 const threeCompartmentMarker = {
   path: "M83.5135 123.523c15.1929 0 27.5096-12.3167 27.5096-27.5095 0-15.1929-12.3167-27.5096-27.5096-27.5096-15.1928 0-27.5095 12.3167-27.5095 27.5096 0 15.1928 12.3167 27.5095 27.5095 27.5095z",
@@ -32,7 +57,7 @@ const threeCompartmentMarker = {
   fillOpacity: 1,
   strokeWeight: 2,
   strokeColor: "#FFFFFF",
-  scale: 0.5,
+  scale: 0.3,
 }
 
 interface KioskMarker {
