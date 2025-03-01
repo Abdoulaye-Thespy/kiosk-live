@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label"
 import { PlusIcon } from "@heroicons/react/24/outline"
 import { getTechnicians } from "@/app/actions/fetchUserStats"
-import { getKiosksForTicket } from "@/app/actions/kiosk-actions"
+import { getUserKiosksForTicket } from "@/app/actions/kiosk-actions"
 import { createServiceRequest, getClientServiceRequests } from "@/app/actions/ticketsactions"
 import { DialogClose } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
@@ -55,13 +55,18 @@ export default function MaintenanceCalendarClient() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const [fetchedTechnicians, fetchedKiosks] = await Promise.all([getTechnicians(), getKiosksForTicket()])
-      setTechnicians(fetchedTechnicians)
-      setKiosks(fetchedKiosks)
+      if (session?.user?.id) {
+        const [fetchedTechnicians, fetchedKiosks] = await Promise.all([
+          getTechnicians(),
+          getUserKiosksForTicket(session.user.id),
+        ])
+        setTechnicians(fetchedTechnicians)
+        setKiosks(fetchedKiosks)
+      }
     }
     fetchData()
     fetchServiceRequests()
-  }, [fetchServiceRequests])
+  }, [session?.user?.id, fetchServiceRequests])
 
   const handleSubmit = async (formData: any) => {
     try {

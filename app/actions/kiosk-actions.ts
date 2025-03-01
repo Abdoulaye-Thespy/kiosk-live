@@ -603,3 +603,39 @@ export async function getUserKiosks({
     throw new Error("Une erreur est survenue lors de la récupération des kiosques de l'utilisateur.")
   }
 }
+
+export async function getUserKiosksForTicket(userId: string) {
+  try {
+    // First get the kioskIds for this user
+    const userKiosks = await prisma.userKiosk.findMany({
+      where: {
+        userId: userId,
+      },
+      select: {
+        kioskId: true,
+      },
+    })
+
+    // Get the array of kioskIds
+    const kioskIds = userKiosks.map((uk) => uk.kioskId)
+
+    // Fetch only the needed fields for the kiosks that belong to the user
+    const kiosks = await prisma.kiosk.findMany({
+      where: {
+        id: {
+          in: kioskIds,
+        },
+      },
+      select: {
+        id: true,
+        kioskName: true,
+        clientName: true,
+      },
+    })
+
+    return kiosks
+  } catch (error) {
+    console.error("Error fetching kiosks for ticket:", error)
+    throw new Error("Une erreur est survenue lors de la récupération des kiosques.")
+  }
+}

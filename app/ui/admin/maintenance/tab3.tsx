@@ -63,7 +63,7 @@ export default function MaintenanceCalendar() {
 
   const renderEventList = (day: Date) => {
     const dayEvents = serviceRequests.filter((request) => 
-      request.resolvedDate ? isSameDay(new Date(request.resolvedDate), day) : false
+      request.createdDate ? isSameDay(new Date(request.createdDate), day) : false
     )
     return (
       <div className="mt-1 space-y-1 max-h-20 overflow-y-auto">
