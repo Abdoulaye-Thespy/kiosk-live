@@ -227,7 +227,7 @@ export async function getKioskCounts() {
 
 export async function getKiosks({
   page = 1,
-  limit = 10,
+  limit = 100,
   searchTerm = "",
   status,
   date,
@@ -284,28 +284,54 @@ export async function getKiosks({
 
 export async function getUserKioskCounts(userId: string) {
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        kiosks: {
-          include: {
-            kiosk: true,
-          },
+    // First get all kioskIds for this user
+    const userKiosks = await prisma.userKiosk.findMany({
+      where: {
+        userId: userId,
+      },
+      select: {
+        kioskId: true,
+      },
+    })
+
+
+    if (!userKiosks.length) {
+      return {
+        totalKiosks: 0,
+        kiosksAddedThisMonth: 0,
+        percentageAddedThisMonth: 0,
+        oneCompartment: {
+          AVAILABLE: 0,
+          UNDER_MAINTENANCE: 0,
+          REQUEST: 0,
+          LOCALIZING: 0,
+        },
+        threeCompartment: {
+          AVAILABLE: 0,
+          UNDER_MAINTENANCE: 0,
+          REQUEST: 0,
+          LOCALIZING: 0,
+        },
+      }
+    }
+
+    // Get the kioskIds array
+    const kioskIds = userKiosks.map((uk) => uk.kioskId)
+
+    // Then fetch the actual kiosk data using these ids
+    const kiosks = await prisma.kiosk.findMany({
+      where: {
+        id: {
+          in: kioskIds,
         },
       },
     })
 
-    if (!user) {
-      throw new Error("Utilisateur non trouvé.")
-    }
-
-    const userKiosks = user.kiosks.map((uk) => uk.kiosk)
-
-    const totalKiosks = userKiosks.length
+    const totalKiosks = kiosks.length
 
     const now = new Date()
     const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-    const kiosksAddedThisMonth = userKiosks.filter((kiosk) => kiosk.createdAt >= firstDayOfMonth).length
+    const kiosksAddedThisMonth = kiosks.filter((kiosk) => kiosk.createdAt >= firstDayOfMonth).length
 
     const percentageAddedThisMonth = totalKiosks > 0 ? (kiosksAddedThisMonth / totalKiosks) * 100 : 0
 
@@ -327,7 +353,7 @@ export async function getUserKioskCounts(userId: string) {
       },
     }
 
-    userKiosks.forEach((kiosk) => {
+    kiosks.forEach((kiosk) => {
       if (
         kiosk.type === KioskType.ONE_COMPARTMENT_WITH_BRANDING ||
         kiosk.type === KioskType.ONE_COMPARTMENT_WITHOUT_BRANDING
@@ -344,6 +370,8 @@ export async function getUserKioskCounts(userId: string) {
     throw new Error("Une erreur est survenue lors du comptage des kiosques de l'utilisateur.")
   }
 }
+
+
 
 export async function updateKiosk(kioskId: number, formData: KioskFormData) {
 
@@ -492,5 +520,86 @@ export async function deleteKiosk(kioskId: number) {
   } catch (error) {
     console.error("Error deleting kiosk:", error)
     return { error: "Une erreur est survenue lors de la suppression du kiosque." }
+  }
+}
+
+
+export async function getUserKiosks({
+  userId,
+  page = 1,
+  limit = 100,
+  searchTerm = "",
+  status,
+  date,
+}: {
+  userId: string
+  page?: number
+  limit?: number
+  searchTerm?: string
+  status?: KioskStatus | "all"
+  date?: Date
+}) {
+  try {
+    // Base where clause that includes the user relation
+    const where: any = {
+      users: {
+        some: {
+          userId: userId,
+        },
+      },
+    }
+
+    // Add search conditions
+    if (searchTerm) {
+      where.OR = [
+        { kioskName: { contains: searchTerm, mode: "insensitive" } },
+        { clientName: { contains: searchTerm, mode: "insensitive" } },
+        { managerName: { contains: searchTerm, mode: "insensitive" } },
+        { kioskAddress: { contains: searchTerm, mode: "insensitive" } },
+      ]
+    }
+
+    // Add status filter
+    if (status && status !== "all") {
+      where.status = status
+    }
+
+    // Add date filter
+    if (date) {
+      where.createdAt = {
+        gte: date,
+        lt: new Date(date.getTime() + 24 * 60 * 60 * 1000), // Next day
+      }
+    }
+
+    // Fetch kiosks and total count in parallel
+    const [kiosks, totalCount] = await Promise.all([
+      prisma.kiosk.findMany({
+        where,
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { createdAt: "desc" },
+        include: {
+          users: {
+            where: {
+              userId: userId,
+            },
+            select: {
+              userId: true,
+            },
+          },
+        },
+      }),
+      prisma.kiosk.count({ where }),
+    ])
+
+    return {
+      kiosks,
+      totalPages: Math.ceil(totalCount / limit),
+      totalCount,
+    }
+  } catch (error) {
+    console.error("Error fetching user kiosks:", error)
+    throw new Error("Une erreur est survenue lors de la récupération des kiosques de l'utilisateur.")
   }
 }

@@ -9,7 +9,7 @@ import ThreeKioskSVG from "../../svg/threekiosks"
 import OneKioskSVG from "../../svg/onekiosks"
 import { getUserKioskCounts } from "@/app/actions/kiosk-actions"
 
-export default function KioskMetrics() {
+export default function KioskMetricsClient() {
   const { data: session, status } = useSession()
   const [kioskCounts, setKioskCounts] = useState({
     totalKiosks: 0,
@@ -36,6 +36,7 @@ export default function KioskMetrics() {
           setIsLoading(true)
           console.log(session.user.id)
           const counts = await getUserKioskCounts(session.user.id)
+          console.log(counts)
           setKioskCounts(counts)
           setError(null)
         } catch (err) {

@@ -168,7 +168,7 @@ export default function MapView() {
               <Marker
                 position={userLocation}
                 icon={{
-                  path: window.google.maps.SymbolPath.CIRCLE,
+                  path:"",
                   scale: 7,
                   fillColor: "#4285F4",
                   fillOpacity: 1,
