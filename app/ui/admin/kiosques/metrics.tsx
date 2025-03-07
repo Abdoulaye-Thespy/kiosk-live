@@ -54,11 +54,18 @@ export default function KioskMetrics() {
       total: kioskCounts.oneCompartment.UNDER_MAINTENANCE + kioskCounts.threeCompartment.UNDER_MAINTENANCE,
       period: "actuellement",
     },
+    {
+      title: "En Localisation",
+      oneCompartment: kioskCounts.oneCompartment.LOCALIZING,
+      threeCompartment: kioskCounts.threeCompartment.LOCALIZING,
+      total: kioskCounts.oneCompartment.LOCALIZING + kioskCounts.threeCompartment.LOCALIZING,
+      period: "actuellement",
+    },
   ]
 
   return (
     <div className="">
-      <div className="grid md:grid-cols-3 gap-4">
+      <div className="grid md:grid-cols-2 gap-4">
         {metrics.map((metric, index) => (
           <Card className={`shadow-md ${styles.carte}`} key={index}>
             <CardHeader className={`flex flex-column space-y-0 pb-2 shadow-md ${styles.carteEntete}`}>

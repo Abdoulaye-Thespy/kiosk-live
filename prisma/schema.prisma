@@ -36,6 +36,66 @@ model User {
   quotes              Quote[]
   reports             Report[]
   kiosks              UserKiosk[]        // Many-to-many relationship with Kiosk model
+  
+  // New relations for enhanced Prospect model
+  convertedFromProspect Prospect?  @relation("ConvertedUser")
+  createdProspects      Prospect[] @relation("CreatedByUser")
+}
+
+// Enhanced Prospect model
+enum ProspectStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  PROPOSAL_SENT
+  NEGOTIATION
+  CONVERTED
+  LOST
+}
+
+model Prospect {
+  id              String          @id @default(cuid())
+  name            String
+  contact         String?
+  address         String?
+  need            String?
+  prospectStatus  ProspectStatus  @default(NEW)
+  source          String?
+  estimatedValue  Decimal?
+  notes           String?
+  lastContactDate DateTime?
+  conversionDate  DateTime?
+  
+  // Relationship to User if converted
+  convertedUserId String?         @unique
+  convertedUser   User?           @relation("ConvertedUser", fields: [convertedUserId], references: [id])
+  
+  // Assignment relationship
+  assignedTo      User?           @relation(fields: [assignedToId], references: [id])
+  assignedToId    String?
+  
+  // Created by relationship
+  createdBy       User?           @relation("CreatedByUser", fields: [createdById], references: [id])
+  createdById     String?
+  
+  // Timestamps
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  
+  // Related models
+  actions         ProspectAction[]
+  quotes          Quote[]
+}
+
+model ProspectAction {
+  id            String    @id @default(cuid())
+  prospect      Prospect  @relation(fields: [prospectId], references: [id])
+  prospectId    String
+  user          User      @relation(fields: [userId], references: [id])
+  userId        String
+  actionType    String
+  actionDetails String?
+  createdAt     DateTime  @default(now())
 }
 
 model Account {
@@ -234,31 +294,6 @@ model Notification {
   userId      String
   message     String
   status      NotificationStatus @default(SENT)
-}
-
-model Prospect {
-  id          String    @id @default(cuid())
-  name        String?
-  contact     String?
-  need        String?
-  statusId    String?
-  assignedTo  User?     @relation(fields: [assignedToId], references: [id])
-  assignedToId String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  actions     ProspectAction[]
-  quotes      Quote[]
-}
-
-model ProspectAction {
-  id            String    @id @default(cuid())
-  prospect      Prospect  @relation(fields: [prospectId], references: [id])
-  prospectId    String
-  user          User      @relation(fields: [userId], references: [id])
-  userId        String
-  actionType    String
-  actionDetails String?
-  createdAt     DateTime  @default(now())
 }
 
 model Quote {

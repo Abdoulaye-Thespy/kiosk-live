@@ -117,10 +117,10 @@ const linksResponsable = [
     href: '/responsable/inventaires', 
     icon: ChartPieIcon 
   },
-  { name: 'Rapports d’activités', 
-    href: '/responsable/rapports', 
-    icon: ChartPieIcon 
-  },
+  // { name: 'Rapports d’activités', 
+  //   href: '/responsable/rapports', 
+  //   icon: ChartPieIcon 
+  // },
   { name: 'Paramètres', href: '/responsable/parametre', icon: QuestionMarkCircleIcon },
 ];
 const linksJuridique = [

@@ -2,7 +2,6 @@
 
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import KioskMetrics from "@/app/ui/admin/kiosques/metrics"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { MagnifyingGlassIcon } from "@heroicons/react/24/outline"
@@ -13,7 +12,7 @@ import { format } from "date-fns"
 import { fr } from "date-fns/locale"
 import { MoreHorizontal, RotateCcw, Filter } from "lucide-react"
 import type { KioskType } from "@prisma/client"
-import { UpdateKioskDialogAdmin } from "./modifykiok"
+import { UpdateKioskDialogAdmin } from "@/app/ui/admin/kiosques/modifykiok"
 import { useState } from "react"
 
 import { type Kiosk } from "@prisma/client"
@@ -130,7 +129,6 @@ export default function KioskTab1({
 
   return (
     <div className="space-y-4 p-6">
-      <KioskMetrics />
       <div className="flex items-center gap-4">
         <div className="relative w-72">
           <MagnifyingGlassIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
