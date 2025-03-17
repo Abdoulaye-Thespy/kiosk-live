@@ -1,378 +1,285 @@
-'use client';
+"use client"
 
-import React, { useState } from 'react'
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import Link from 'next/link'
+import { useState, useEffect } from "react"
+import { useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { EnvelopeIcon, BellIcon, EllipsisHorizontalIcon, ArrowDownTrayIcon, MagnifyingGlassIcon, DocumentPlusIcon } from '@heroicons/react/24/outline'
-import styles from '@/app/ui/contrats.module.css';
-import {
-  ArrowLongRightIcon,
-  ArrowUpCircleIcon,
-  XMarkIcon,
-  FunnelIcon,
-  ArrowsUpDownIcon,
-  TrashIcon, 
-  PencilIcon
-} from '@heroicons/react/24/solid'
+import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { PlusIcon, FileTextIcon } from "lucide-react"
+import { getAllContracts } from "@/app/actions/contractActions"
+import type { ContractStatus } from "@prisma/client"
 
-import { format } from "date-fns"
-import { fr } from "date-fns/locale"
+export default function ContractsPage() {
+  const { data: session } = useSession()
+  const router = useRouter()
+  const [contracts, setContracts] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [activeTab, setActiveTab] = useState("all")
+  const [filterStatus, setFilterStatus] = useState<ContractStatus | "">("")
 
-import ContractDetails from '@/app/ui/commercial/contrat/details';
+  useEffect(() => {
+    const fetchContracts = async () => {
+      setIsLoading(true)
+      try {
+        const filters: any = {}
 
-const contracts = [
-  {
-    id: 1,
-    contractorName: "Dupont Entreprise",
-    contractNumber: "CONT-2023-001",
-    startDate: "2023-01-01",
-    endDate: "2023-12-31",
-    amount: 50000,
-    status: "En cours"
-  },
-  {
-    id: 2,
-    contractorName: "Martin & Co",
-    contractNumber: "CONT-2023-002",
-    startDate: "2023-02-15",
-    endDate: "2024-02-14",
-    amount: 75000,
-    status: "En attente"
-  },
-  {
-    id: 3,
-    contractorName: "Lefevre Services",
-    contractNumber: "CONT-2023-003",
-    startDate: "2023-03-01",
-    endDate: "2023-08-31",
-    amount: 30000,
-    status: "Terminé"
-  },
-  {
-    id: 4,
-    contractorName: "Moreau Consulting",
-    contractNumber: "CONT-2023-004",
-    startDate: "2023-04-01",
-    endDate: "2024-03-31",
-    amount: 100000,
-    status: "En cours"
-  },
-  {
-    id: 5,
-    contractorName: "Petit Innovations",
-    contractNumber: "CONT-2023-005",
-    startDate: "2023-05-15",
-    endDate: "2023-11-15",
-    amount: 45000,
-    status: "En cours"
-  }
-]
+        if (filterStatus) {
+          filters.status = filterStatus
+        }
 
-export default function ContractManagement() {
-  const [selectedContracts, setSelectedContracts] = useState<number[]>([])
-  const [searchTerm, setSearchTerm] = useState('')
-  const [selectedContractType, setSelectedContractType] = useState('all')
-  const [filterStatus, setFilterStatus] = useState('')
-  const [filterStartDate, setFilterStartDate] = useState<Date | undefined>(undefined)
-  const [filterEndDate, setFilterEndDate] = useState<Date | undefined>(undefined)
-  const [isFilterOpen, setIsFilterOpen] = useState(false)
-  const [isStartDateOpen, setIsStartDateOpen] = useState(false)
-  const [isEndDateOpen, setIsEndDateOpen] = useState(false)
+        if (session?.user?.id) {
+          filters.userId = session.user.id
+        }
 
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedContracts(contracts.map(contract => contract.id))
-    } else {
-      setSelectedContracts([])
+
+        const result = await getAllContracts(filters)
+
+        if (result.success) {
+          console.log(result)
+          setContracts(result.contracts)
+        } else {
+          setError(result.error || "Failed to load contracts")
+        }
+      } catch (error) {
+        console.error("Error fetching contracts:", error)
+        setError("An error occurred while loading contracts")
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    if (session) {
+      fetchContracts()
+    }
+  }, [session, filterStatus])
+
+  const getStatusBadge = (status: ContractStatus) => {
+    switch (status) {
+      case "DRAFT":
+        return <Badge variant="outline">Brouillon</Badge>
+      case "PENDING":
+        return <Badge variant="secondary">En attente</Badge>
+      case "CONFIRMED":
+        return <Badge variant="default">Confirmé</Badge>
+      case "ACTIVE":
+        return (
+          <Badge variant="success" className="bg-green-500">
+            Actif
+          </Badge>
+        )
+      case "EXPIRED":
+        return <Badge variant="destructive">Expiré</Badge>
+      case "TERMINATED":
+        return <Badge variant="destructive">Résilié</Badge>
+      case "CANCELLED":
+        return <Badge variant="destructive">Annulé</Badge>
+      default:
+        return <Badge variant="outline">{status}</Badge>
     }
   }
 
-  const handleDelete = () => {
-    console.log('Deleting contracts:', selectedContracts)
-  }
-
-  const handleSelectContract = (contractId: number, checked: boolean) => {
-    if (checked) {
-      setSelectedContracts([...selectedContracts, contractId])
-    } else {
-      setSelectedContracts(selectedContracts.filter(id => id !== contractId))
-    }
-  }
-
-  const resetFilters = () => {
-    setFilterStatus('')
-    setFilterStartDate(undefined)
-    setFilterEndDate(undefined)
-  }
-
-  const applyFilters = () => {
-    console.log('Filters applied:', { filterStatus, filterStartDate, filterEndDate })
-    setIsFilterOpen(false)
-  }
-
-  const handleStartDateSelect = (date: Date | undefined) => {
-    setFilterStartDate(date)
-    setIsStartDateOpen(false)
-  }
-
-  const handleEndDateSelect = (date: Date | undefined) => {
-    setFilterEndDate(date)
-    setIsEndDateOpen(false)
-  }
+  const filteredContracts = contracts.filter((contract) => {
+    return (
+      (contract.clientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        contract.contractNumber?.toLowerCase().includes(searchTerm.toLowerCase())) &&
+      (activeTab === "all" ||
+        (activeTab === "active" && contract.status === "ACTIVE") ||
+        (activeTab === "pending" && ["DRAFT", "PENDING", "CONFIRMED"].includes(contract.status)) ||
+        (activeTab === "expired" && ["EXPIRED", "TERMINATED", "CANCELLED"].includes(contract.status)))
+    )
+  })
 
   return (
-    <div className="container mx-auto space-y-6">
-      <header className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Contrats</h1>
-        <div className="flex space-x-2">
-          <Button variant="ghost" size="icon">
-            <EnvelopeIcon className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon">
-            <BellIcon className="h-4 w-4" />
-          </Button>
-          <Avatar>
-            <AvatarImage src="/placeholder.svg?height=32&width=32" alt="User" />
-            <AvatarFallback>U</AvatarFallback>
-          </Avatar>
-          <Button variant="ghost" size="icon">
-            <EllipsisHorizontalIcon className="h-4 w-4" />
-          </Button>
-        </div>
-      </header>
-      <hr />
-
-      <div className="flex justify-end items-center">
-        <Button variant="ghost">
-          <ArrowDownTrayIcon className="mr-2 h-4 w-4" />
+    <div className="container mx-auto py-6 space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">Contrats</h1>
+        <Button onClick={() => router.push("contrat/new")} className="bg-orange-500 hover:bg-orange-600 text-white">
+          <PlusIcon className="mr-2 h-4 w-4" />
+          Nouveau Contrat
         </Button>
-        <Link href="/commercial/contrat/nouveau">
-          <Button className={styles.add}>
-            <DocumentPlusIcon className="mr-2 h-4 w-4" />
-            Créer un nouveau contrat
-          </Button>
-        </Link>
       </div>
-      <hr />
+
+      <div className="grid grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Total Contrats</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{contracts.length}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Contrats Actifs</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{contracts.filter((c) => c.status === "ACTIVE").length}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">En Attente</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {contracts.filter((c) => ["DRAFT", "PENDING", "CONFIRMED"].includes(c.status)).length}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Expirés/Résiliés</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {contracts.filter((c) => ["EXPIRED", "TERMINATED", "CANCELLED"].includes(c.status)).length}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       <div className="flex items-center justify-between space-x-4 p-4 bg-white shadow rounded-lg">
-        <div className='flex'>
-          <div className="relative mr-5">
-            <Input
-              type="text"
-              placeholder="Recherche"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 w-full border rounded-md"
-            />
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-          </div>
-          <Select value={selectedContractType} onValueChange={setSelectedContractType}>
+        <div className="flex space-x-4">
+          <Input
+            type="text"
+            placeholder="Rechercher par nom ou numéro de contrat"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-80"
+          />
+          <Select value={filterStatus} onValueChange={(value: any) => setFilterStatus(value)}>
             <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Tous les contrats" />
+              <SelectValue placeholder="Tous les statuts" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Tous les contrats</SelectItem>
-              <SelectItem value="active">Contrats actifs</SelectItem>
-              <SelectItem value="expired">Contrats expirés</SelectItem>
+              <SelectItem value="ALL">Tous les statuts</SelectItem>
+              <SelectItem value="DRAFT">Brouillon</SelectItem>
+              <SelectItem value="PENDING">En attente</SelectItem>
+              <SelectItem value="CONFIRMED">Confirmé</SelectItem>
+              <SelectItem value="ACTIVE">Actif</SelectItem>
+              <SelectItem value="EXPIRED">Expiré</SelectItem>
+              <SelectItem value="TERMINATED">Résilié</SelectItem>
+              <SelectItem value="CANCELLED">Annulé</SelectItem>
             </SelectContent>
           </Select>
         </div>
-        <div>
-          {selectedContracts.length > 0 && (
-            <Button 
-              onClick={handleDelete}
-              className='bg-white border border-gray-500 text-black-500 font-medium py-2 px-4 rounded inline-flex items-center'
-            >
-              <TrashIcon className="h-4 w-4" />
-              Supprimer
-            </Button>
-          )}
-
-          {selectedContracts.length === 1 && (
-            <Button 
-              className='bg-white border border-gray-500 text-black-500 font-medium py-2 px-4 rounded inline-flex items-center ml-4'
-            >
-              <PencilIcon className="h-4 w-4" />
-              Modifier
-            </Button>
-          )}
-
-          {!selectedContracts.length && (
-            <div>
-              <button className="p-2 hover:bg-gray-100 rounded-md">
-                <ArrowsUpDownIcon className="h-6 w-6 text-gray-600" />
-              </button>
-
-              <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
-                <PopoverTrigger asChild>
-                  <button className="p-2 hover:bg-gray-100 rounded-md">
-                    <FunnelIcon className="h-6 w-6 text-gray-600" />
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80 p-0">
-                  <div className="p-4 space-y-4">
-                    <h3 className="font-semibold text-lg">Filtre</h3>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Statut</label>
-                      <Select value={filterStatus} onValueChange={setFilterStatus}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Sélectionner le statut" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="en_cours">En cours</SelectItem>
-                          <SelectItem value="termine">Terminé</SelectItem>
-                          <SelectItem value="en_attente">En attente</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Date de début</label>
-                      <Popover open={isStartDateOpen} onOpenChange={setIsStartDateOpen}>
-                        <PopoverTrigger asChild>
-                          <Button 
-                            variant="outline" 
-                            className="w-full justify-start text-left font-normal"
-                          >
-                            {filterStartDate 
-                              ? format(filterStartDate, "P", { locale: fr }) 
-                              : "Sélectionner la date"
-                            }
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={filterStartDate}
-                            onSelect={handleStartDateSelect}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Date de fin</label>
-                      <Popover open={isEndDateOpen} onOpenChange={setIsEndDateOpen}>
-                        <PopoverTrigger asChild>
-                          <Button 
-                            variant="outline" 
-                            className="w-full justify-start text-left font-normal"
-                          >
-                            {filterEndDate 
-                              ? format(filterEndDate, "P", { locale: fr }) 
-                              : "Sélectionner la date"
-                            }
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={filterEndDate}
-                            onSelect={handleEndDateSelect}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                    <div className="flex justify-between">
-                      <Button variant="outline" onClick={resetFilters}>Réinitialiser</Button>
-                      <Button onClick={applyFilters} className="bg-orange-500 hover:bg-orange-600 text-white">Appliquer</Button>
-                    </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
-            </div>
-          )}
-        </div>
       </div>
 
-      <Table className='shadow'>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[50px]">
-              <Checkbox
-                checked={selectedContracts.length === contracts.length}
-                onCheckedChange={handleSelectAll}
-              />
-            </TableHead>
-            <TableHead className="w-[200px]">Nom du contractant</TableHead>
-            <TableHead>N° Contrat</TableHead>
-            <TableHead>Date debut</TableHead>
-            <TableHead>Date fin</TableHead>
-            <TableHead>Montant</TableHead>
-            <TableHead>Statut</TableHead>
-            <TableHead className="text-right"></TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {contracts.map((contract) => (
-            <TableRow key={contract.id}>
-              <TableCell>
-                <Checkbox
-                  checked={selectedContracts.includes(contract.id)}
-                  onCheckedChange={(checked) => handleSelectContract(contract.id, checked as boolean)}
-                />
-              </TableCell>
-              <TableCell className="font-medium">
-                <span className="text-blue-600">{contract.contractorName}</span>
-              </TableCell>
-              <TableCell>{contract.contractNumber}</TableCell>
-              <TableCell>{contract.startDate}</TableCell>
-              <TableCell>{contract.endDate}</TableCell>
-              <TableCell>{contract.amount.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}</TableCell>
-              <TableCell>
-                <span className={`px-2 py-1 rounded-full text-xs ${
-                  contract.status === 'En cours' ? 'bg-green-100 text-green-800' :
-                  contract.status === 'En attente' ? 'bg-yellow-100 text-yellow-800' :
-                  'bg-gray-100 text-gray-800'
-                }`}>
-                  {contract.status}
-                </span>
-              </TableCell>
-              <TableCell className="text-right">
-               <ContractDetails />
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-
-      <div className="flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">
-          Page 1 of 5
-        </div>
-        <div className="flex space-x-2">
-          <Button variant="outline" size="icon" disabled>
-            &lt;
-          </Button>
-          <Button variant="outline" size="icon">
-            1
-          </Button>
-          <Button variant="outline" size="icon">
-            2
-          </Button>
-          <Button variant="outline" size="icon">
-            3
-          </Button>
-          <Button variant="outline" size="icon">
-            4
-          </Button>
-          <Button variant="outline" size="icon">
-            5
-          </Button>
-          <Button variant="outline" size="icon">
-            &gt;
-          </Button>
-        </div>
-      </div>
+      <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="all">Tous</TabsTrigger>
+          <TabsTrigger value="active">Actifs</TabsTrigger>
+          <TabsTrigger value="pending">En attente</TabsTrigger>
+          <TabsTrigger value="expired">Expirés/Résiliés</TabsTrigger>
+        </TabsList>
+        <TabsContent value="all" className="mt-4">
+          <ContractsTable contracts={filteredContracts} isLoading={isLoading} getStatusBadge={getStatusBadge} />
+        </TabsContent>
+        <TabsContent value="active" className="mt-4">
+          <ContractsTable contracts={filteredContracts} isLoading={isLoading} getStatusBadge={getStatusBadge} />
+        </TabsContent>
+        <TabsContent value="pending" className="mt-4">
+          <ContractsTable contracts={filteredContracts} isLoading={isLoading} getStatusBadge={getStatusBadge} />
+        </TabsContent>
+        <TabsContent value="expired" className="mt-4">
+          <ContractsTable contracts={filteredContracts} isLoading={isLoading} getStatusBadge={getStatusBadge} />
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }
+
+function ContractsTable({
+  contracts,
+  isLoading,
+  getStatusBadge,
+}: {
+  contracts: any[]
+  isLoading: boolean
+  getStatusBadge: (status: ContractStatus) => JSX.Element
+}) {
+  const router = useRouter()
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+      </div>
+    )
+  }
+
+  if (contracts.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 text-gray-500">
+        <FileTextIcon className="h-12 w-12 mb-4" />
+        <p>Aucun contrat trouvé</p>
+      </div>
+    )
+  }
+
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>N° Contrat</TableHead>
+          <TableHead>Client</TableHead>
+          <TableHead>Date de création</TableHead>
+          <TableHead>Statut</TableHead>
+          <TableHead>Montant</TableHead>
+          <TableHead>Kiosques</TableHead>
+          <TableHead>Actions</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {contracts.map((contract) => (
+          <TableRow
+            key={contract.id}
+            className="cursor-pointer hover:bg-gray-50"
+            onClick={() => router.push(`contrat/${contract.id}`)}
+          >
+            <TableCell className="font-medium">{contract.contractNumber}</TableCell>
+            <TableCell>{contract.clientName}</TableCell>
+            <TableCell>{new Date(contract.createdAt).toLocaleDateString()}</TableCell>
+            <TableCell>{getStatusBadge(contract.status)}</TableCell>
+            <TableCell>{Number(contract.totalAmount).toLocaleString()} FCFA</TableCell>
+            <TableCell>{contract.kiosks.length}</TableCell>
+            <TableCell>
+              <div className="flex space-x-2" onClick={(e) => e.stopPropagation()}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    router.push(`contrat/${contract.id}`)
+                  }}
+                >
+                  Voir
+                </Button>
+                {contract.contractDocument && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      window.open(contract.contractDocument, "_blank")
+                    }}
+                  >
+                    PDF
+                  </Button>
+                )}
+              </div>
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  )
+}
+

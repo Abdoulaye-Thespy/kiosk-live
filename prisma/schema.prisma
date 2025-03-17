@@ -27,7 +27,6 @@ model User {
   accounts            Account[]
   sessions            Session[]
   notifications       Notification[]
-  contracts           Contract[]
   inventoryMoves      InventoryMovement[]
   serviceRequests     ServiceRequest[] @relation("TechnicianServiceRequests")
   locationHistory     LocationHistory[]
@@ -40,7 +39,83 @@ model User {
   // New relations for enhanced Prospect model
   convertedFromProspect Prospect?  @relation("ConvertedUser")
   createdProspects      Prospect[] @relation("CreatedByUser")
+
+  contractsCreated     Contract[] @relation("ContractCreator")
+  contractsSigned      Contract[] @relation("ContractSigner")
 }
+
+// Contract model
+enum ContractStatus {
+  DRAFT
+  PENDING
+  CONFIRMED
+  ACTIVE
+  EXPIRED
+  TERMINATED
+  CANCELLED
+}
+
+model Contract {
+  id                String          @id @default(cuid())
+  contractNumber    String          @unique
+  title             String
+  status            ContractStatus  @default(DRAFT)
+  startDate         DateTime?
+  endDate           DateTime?
+  signatureDate     DateTime?
+  terminationDate   DateTime?
+  
+  // Contract details
+  clientName        String
+  clientIdNumber    String?
+  clientIdIssuedDate DateTime?
+  clientIdIssuedPlace String?
+  clientAddress     String?
+  clientPhone       String?
+  clientBusinessAddress String?
+  clientBusinessQuarter String?
+  clientBusinessLocation String?
+  
+  // Contract terms
+  contractDuration  Int             // Duration in months
+  paymentFrequency  String          // Monthly, Quarterly, Annually
+  paymentAmount     Float
+  totalAmount       Float
+  
+  // Kiosk details
+  kiosks            Kiosk[]
+  
+  // Relationships
+  createdBy         User            @relation("ContractCreator", fields: [createdById], references: [id])
+  createdById       String
+  signedBy          User?           @relation("ContractSigner", fields: [signedById], references: [id])
+  signedById        String?
+  
+  // Documents
+  contractDocument  String?         // URL to the PDF document
+  
+  // Timestamps
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  
+  // Related models
+  contractActions   ContractAction[]
+}
+
+
+model ContractAction {
+  id                String          @id @default(cuid())
+  action            String
+  description       String?
+  
+  // Relationships
+  contract          Contract        @relation(fields: [contractId], references: [id])
+  contractId        String
+  
+  // Timestamps
+  createdAt         DateTime        @default(now())
+}
+
 
 // Enhanced Prospect model
 enum ProspectStatus {
@@ -136,6 +211,7 @@ model VerificationToken {
 model Kiosk {
   id                    Int      @id @default(autoincrement())
   kioskName             String
+  kioskMatricule        String   @default("K-000-0000-000")
   clientName            String?
   kioskAddress          String?
   gpsLatitude           Float?
@@ -158,6 +234,13 @@ model Kiosk {
   users                 UserKiosk[]  // Many-to-many relationship with User model
 }
 
+enum KioskState {
+  FREE
+  ONE_COMPARTMENT_OCCUPIED
+  TWO_COMPARTMENTS_OCCUPIED
+  FULLY_OCCUPIED
+}
+
 model UserKiosk {
   id      String   @id @default(cuid())
   userId  String
@@ -167,29 +250,6 @@ model UserKiosk {
   kiosk Kiosk @relation(fields: [kioskId], references: [id])
 
   @@unique([userId, kioskId])
-}
-
-model Contract {
-  id                  String    @id @default(cuid())
-  user                User      @relation(fields: [userId], references: [id])
-  userId              String
-  kiosk               Kiosk     @relation(fields: [kioskId], references: [id])
-  kioskId             Int
-  type                String?
-  amount              Decimal?
-  startDate           DateTime 
-  endDate             DateTime?
-  status              ContractStatus @default(PENDING)
-  responsibilities    String?
-  cancellationTerms   String?
-  contractNumber      String?
-  paymentMethod       String?
-  lateFee             Decimal?
-  note                String?
-  documents           String?
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
-  invoices            Invoice[]
 }
 
 model Product {
@@ -280,7 +340,6 @@ model Invoice {
   type            String?
   issueDate       DateTime?
   termsConditions String?
-  contract        Contract  @relation(fields: [contractId], references: [id])
   contractId      String
   amount          Decimal
   dueDate         DateTime?
@@ -342,12 +401,6 @@ enum KioskStatus {
   LOCALIZING
   AVAILABLE
   UNDER_MAINTENANCE
-}
-
-enum ContractStatus {
-  ACTIVE
-  EXPIRED
-  PENDING
 }
 
 enum RequestStatus {

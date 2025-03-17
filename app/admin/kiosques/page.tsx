@@ -31,7 +31,6 @@ export default function InvoiceDashboard() {
       status: filterStatus as any,
       date: filterDate,
     })
-    console.log(result.kiosks)
     setKiosks(result.kiosks)
     setTotalPages(result.totalPages)
   }, [currentPage, searchTerm, filterStatus, filterDate])
@@ -81,7 +80,6 @@ export default function InvoiceDashboard() {
   }
 
   const handleKioskAdd = (newKiosk: Kiosk) => {
-  console.log("handlign kiosk add")
     setKiosks((prevKiosks) => [newKiosk, ...prevKiosks])
     fetchKiosks() // Refresh the list to ensure we have the latest data
   }

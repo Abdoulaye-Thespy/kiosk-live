@@ -18,6 +18,7 @@ type KioskFormData = {
   managerContacts: string
   status: KioskStatus
   userId: string
+  kioskMatricule: string
 
 }
 
@@ -34,6 +35,7 @@ export async function addKioskByClient(formData: FormData) {
     managerContacts: formData.get("managerContact") as string,
     userId: formData.get("userId") as string,
     status: formData.get("status") as KioskStatus ,
+    kioskMatricule: formData.get("kioskMatricule") as KioskStatus ,
   }
 
   try {
@@ -53,13 +55,14 @@ export async function addKioskByClient(formData: FormData) {
         kioskName: kioskData.kioskName,
         clientName: kioskData.clientName,
         kioskAddress: kioskData.kioskAddress,
-        gpsLatitude: Number.parseFloat(kioskData.latitude) || 0,
-        gpsLongitude: Number.parseFloat(kioskData.longitude) || 0,
+        // gpsLatitude: Number.parseFloat(kioskData.latitude) || 0,
+        // gpsLongitude: Number.parseFloat(kioskData.longitude) || 0,
         type: kioskData.kioskType,
         productTypes: kioskData.productTypes,
         managerName: kioskData.managerName,
         managerContacts: kioskData.managerContacts,
         status: "REQUEST",
+        kioskMatricule: "K-000-0000-000"
       },
     })
 
@@ -113,6 +116,7 @@ export async function addKioskByStaff(formData: FormData) {
     productTypes: formData.get("productTypes") as string,
     managerName: formData.get("managerName") as string,
     managerContacts: formData.get("managerContacts") as string,
+    kioskMatricule: formData.get("kioskMatricule") as string,
     userId: formData.get("userId") as string,
     status: formData.get("status") as KioskStatus,
   }
@@ -140,6 +144,7 @@ export async function addKioskByStaff(formData: FormData) {
         productTypes: kioskData.productTypes,
         managerName: kioskData.managerName,
         managerContacts: kioskData.managerContacts,
+        kioskMatricule: kioskData.kioskMatricule,
         status: "AVAILABLE",
       },
     })

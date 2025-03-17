@@ -50,6 +50,7 @@ export function AddKioskDialog({ kiosks, onSuccess }: AddKioskDialogProps) {
     productTypes: "",
     managerName: "",
     managerContacts: "",
+    kioskMatricule: "",
   }
 
   const [formData, setFormData] = useState(initialFormData)
@@ -231,6 +232,19 @@ export function AddKioskDialog({ kiosks, onSuccess }: AddKioskDialogProps) {
                   id="kiosk-name"
                   name="kioskName"
                   value={formData.kioskName}
+                  onChange={handleChange}
+                  placeholder="Kiosk 639"
+                  className={`w-full mt-1 ${fieldErrors.kioskName ? "border-red-500" : ""}`}
+                />
+              </div>
+              <div>
+                <Label htmlFor="kiosk-matricule" className={fieldErrors.kioskName ? "text-red-500" : ""}>
+                  Matricule du kiosque *
+                </Label>
+                <Input
+                  id="kiosk-matricule"
+                  name="kioskMatricule"
+                  value={formData.kioskMatricule}
                   onChange={handleChange}
                   placeholder="Kiosk 639"
                   className={`w-full mt-1 ${fieldErrors.kioskName ? "border-red-500" : ""}`}
