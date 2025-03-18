@@ -375,6 +375,58 @@ export async function getAllContracts(filters?: { status?: ContractStatus; userI
   }
 }
 
+export async function getAllContractsStaff(filters?: { status?: ContractStatus }) {
+  try {
+    const where: any = {}
+
+    if (filters?.status) {
+      where.status = filters.status
+    }
+
+
+    const contracts = await prisma.contract.findMany({
+      where,
+      include: {
+        kiosks: true,
+        createdBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        signedBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        contractActions: {
+          take: 1,
+          orderBy: {
+            createdAt: "desc",
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    })
+
+    return {
+      success: true,
+      contracts,
+    }
+  } catch (error) {
+    console.error("Error fetching contracts:", error)
+    return {
+      success: false,
+      error: "Failed to fetch contracts",
+    }
+  }
+}
+
 // Record a payment for a contract
 export async function recordPayment(contractId: string, amount: number, paymentMethod: string, reference?: string) {
   try {

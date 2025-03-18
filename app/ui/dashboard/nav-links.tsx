@@ -28,7 +28,7 @@ const linksAdmin = [
     icon: ChartPieIcon 
   },
   { name: 'Kiosques', href: '/admin/kiosques', icon: BuildingOfficeIcon },
-  { name: 'Contrats', href: '/admin/contrats', icon: ClipboardIcon },
+  { name: 'Contrats', href: '/admin/contrat', icon: ClipboardIcon },
   { name: 'Factures & Paiments', href: '/admin/facturepaiement', icon: ClipboardDocumentIcon },
   { name: 'Administration des Ventes', href: '/admin/administrationvente', icon: ClipboardDocumentIcon },
   { name: 'Maintenances', href: '/admin/maintenances', icon: QuestionMarkCircleIcon },
