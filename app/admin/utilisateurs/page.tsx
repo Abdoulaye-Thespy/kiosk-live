@@ -16,7 +16,6 @@ import {
   EllipsisHorizontalIcon,
   ArrowDownTrayIcon,
   MagnifyingGlassIcon,
-  UserGroupIcon,
   UserPlusIcon,
 } from "@heroicons/react/24/outline"
 import {
@@ -29,7 +28,7 @@ import {
   PencilIcon,
 } from "@heroicons/react/24/solid"
 import { Loader2 } from "lucide-react"
-import { format, isAfter, isBefore, isEqual } from "date-fns"
+import { format, isAfter, isEqual } from "date-fns"
 import { fr } from "date-fns/locale"
 import Header from "@/app/ui/header"
 import { createUserByAdmin } from "@/app/actions/createUserByAdmin"
@@ -44,6 +43,7 @@ type User = {
   phone: string
   CreatedAt: Date
   status: string
+  clientType: string
 }
 
 export default function UserManagement() {
@@ -64,6 +64,7 @@ export default function UserManagement() {
     role: "",
     address: "",
     status: "VERIFIED",
+    clientType: "", // Add this line
   })
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -71,12 +72,12 @@ export default function UserManagement() {
   const [totalUsers, setTotalUsers] = useState(0)
   const [newUsersThisMonth, setNewUsersThisMonth] = useState(0)
   const [isEditing, setIsEditing] = useState(false)
-    const [userStats, setUserStats] = useState({
-      totalUsers: 0,
-      usersThisMonth: 0,
-      percentageGrowth: 0,
-      lastNineUsers: [] as User[],
-    })
+  const [userStats, setUserStats] = useState({
+    totalUsers: 0,
+    usersThisMonth: 0,
+    percentageGrowth: 0,
+    lastNineUsers: [] as User[],
+  })
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -96,34 +97,32 @@ export default function UserManagement() {
     fetchUsers()
   }, [])
 
-    useEffect(() => {
-      async function loadStats() {
-        setIsLoading(true)
-        try {
-          const [userResult] = await Promise.all([fetchUserStats()])
-  
-          if (userResult.success) {
-            setUserStats({
-              totalUsers: userResult.totalUsers,
-              usersThisMonth: userResult.usersThisMonth,
-              percentageGrowth: userResult.percentageGrowth,
-              lastNineUsers: userResult.lastNineUsers,
-            })
-            setError(null)
-          } else {
-            setError("Échec du chargement des statistiques")
-          }
-        } catch (error) {
-          console.error("Error loading stats:", error)
-          setError("Une erreur est survenue lors du chargement des statistiques")
+  useEffect(() => {
+    async function loadStats() {
+      setIsLoading(true)
+      try {
+        const [userResult] = await Promise.all([fetchUserStats()])
+
+        if (userResult.success) {
+          setUserStats({
+            totalUsers: userResult.totalUsers,
+            usersThisMonth: userResult.usersThisMonth,
+            percentageGrowth: userResult.percentageGrowth,
+            lastNineUsers: userResult.lastNineUsers,
+          })
+          setError(null)
+        } else {
+          setError("Échec du chargement des statistiques")
         }
-        setIsLoading(false)
+      } catch (error) {
+        console.error("Error loading stats:", error)
+        setError("Une erreur est survenue lors du chargement des statistiques")
       }
-  
-      loadStats()
-    }, [])
+      setIsLoading(false)
+    }
 
-
+    loadStats()
+  }, [])
 
   const filteredUsers = useMemo(() => {
     return users.filter((user) => {
@@ -157,8 +156,8 @@ export default function UserManagement() {
           body: JSON.stringify({ userIds: selectedUsers }),
         })
         if (response.ok) {
-          const updatedUsers = users.filter(user => user.id !== userId);
-          console.log(updatedUsers);
+          const updatedUsers = users.filter((user) => user.id !== userId)
+          console.log(updatedUsers)
           setUsers(updatedUsers)
           setSelectedUsers([])
           setTotalUsers(updatedUsers.length)
@@ -182,7 +181,7 @@ export default function UserManagement() {
 
   const openModal = (user?: User) => {
     if (user) {
-       console.log(user)
+      console.log(user)
       setFormData({
         id: user.id,
         name: user.name,
@@ -191,6 +190,7 @@ export default function UserManagement() {
         role: user.role,
         address: user.address, // Assuming address is not in the User type
         status: user.status,
+        clientType: user.clientType || "", // Add this line
       })
       setIsEditing(true)
     } else {
@@ -202,6 +202,7 @@ export default function UserManagement() {
         role: "",
         address: "",
         status: "VERIFIED",
+        clientType: "", // Add this line
       })
       setIsEditing(false)
     }
@@ -242,7 +243,7 @@ export default function UserManagement() {
     setIsSubmitting(true)
     try {
       if (isEditing) {
-        const userId=formData.id
+        const userId = formData.id
         console.log(userId)
         const response = await fetch(`/api/users/${userId}`, {
           method: "PUT",
@@ -362,6 +363,25 @@ export default function UserManagement() {
                       <option value="JURIDIQUE">Responsable Juridique</option>
                     </select>
                   </div>
+
+                  {formData.role === "CLIENT" && (
+                    <div>
+                      <label htmlFor="clientType" className="block text-sm font-medium text-gray-700 mb-1">
+                        Type de client
+                      </label>
+                      <select
+                        id="clientType"
+                        name="clientType"
+                        value={formData.clientType}
+                        onChange={handleInputChange}
+                        className="w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                      >
+                        <option value="">Sélectionner un type</option>
+                        <option value="PARTICULIER">Particulier</option>
+                        <option value="ENTREPRISE">Entreprise</option>
+                      </select>
+                    </div>
+                  )}
                   <div>
                     <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
                       Address
@@ -455,7 +475,7 @@ export default function UserManagement() {
           </div>
         </div>
         <div>
-{/*
+          {/*
 {selectedUsers.length === 1 && (
   <Button
     onClick={() => handleDelete(user.id)}
@@ -467,7 +487,7 @@ export default function UserManagement() {
 )}
 */}
 
-{/*
+          {/*
 {selectedUsers.length === 1 && (
   <Button
     className="bg-white border border-gray-500 text-black-500 font-medium py-2 px-4 rounded inline-flex items-center ml-4"
@@ -602,9 +622,7 @@ export default function UserManagement() {
                   <span className="text-[#E55210]">{user.email}</span>
                 </TableCell>
                 <TableCell className="font-medium">{user.phone}</TableCell>
-                <TableCell className="font-medium">
-                {new Date(user.createdAt).toLocaleDateString()}
-                </TableCell>
+                <TableCell className="font-medium">{new Date(user.createdAt).toLocaleDateString()}</TableCell>
                 <TableCell>
                   <span
                     className={`px-2 py-1 rounded-full text-xs ${
@@ -674,3 +692,4 @@ export default function UserManagement() {
     </div>
   )
 }
+

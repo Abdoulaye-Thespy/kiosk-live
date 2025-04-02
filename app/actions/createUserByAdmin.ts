@@ -1,7 +1,7 @@
 "use server"
 
 import { hash } from "bcrypt"
-import { PrismaClient, type Role, type UserStatus } from "@prisma/client"
+import { PrismaClient, type Role, type UserStatus, type ClientType } from "@prisma/client"
 import crypto from "crypto"
 import { sendTemporaryPasswordEmail, sendVerificationEmail } from "@/lib/email"
 
@@ -14,8 +14,9 @@ export async function createUserByAdmin(formData: {
   role: string
   address: string
   status: string
+  clientType: ClientType
 }) {
-  const { name, email, phone, role, address, status } = formData
+  const { name, email, phone, role, address, status, clientType } = formData
 
   try {
     const existingUser = await prisma.user.findUnique({ where: { email } })
@@ -29,6 +30,7 @@ export async function createUserByAdmin(formData: {
 
     const verificationToken = crypto.randomUUID()
 
+    console.log(formData)
     const user = await prisma.user.create({
       data: {
         name,
@@ -36,6 +38,7 @@ export async function createUserByAdmin(formData: {
         password: hashedPassword,
         phone,
         role: role as Role,
+        clientType,
         address,
         status: status as UserStatus,
         emailVerified: false,

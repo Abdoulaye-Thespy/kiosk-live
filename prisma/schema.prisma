@@ -12,6 +12,7 @@ model User {
   name                String
   email               String             @unique
   role                Role               @default(CLIENT)
+  clientType          ClientType         @default(STAFF)
   status              UserStatus         @default(PENDING)
   address             String?
   phone               String?
@@ -44,6 +45,13 @@ model User {
   contractsSigned      Contract[] @relation("ContractSigner")
 }
 
+
+// Contract model
+enum ClientType {
+  PARTICULIER
+  ENTREPRISE
+  STAFF
+}
 // Contract model
 enum ContractStatus {
   DRAFT
