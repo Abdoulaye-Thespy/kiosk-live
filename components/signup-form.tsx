@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -14,6 +16,7 @@ export function SignupForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
+  const [clientType, setClientType] = useState("PARTICULIER")
   const [error, setError] = useState("")
   const [signupSuccess, setSignupSuccess] = useState(false)
   const router = useRouter()
@@ -35,7 +38,7 @@ export function SignupForm() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, password, clientType }),
       })
 
       const data = await response.json()
@@ -98,6 +101,38 @@ export function SignupForm() {
             />
           </div>
         </div>
+
+        {/* Client Type Selection */}
+        <div>
+          <label className="text-sm text-gray-700 mb-1.5 block">Type de client</label>
+          <div className="flex gap-6 mt-2">
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="particulier"
+                checked={clientType === "PARTICULIER"}
+                onChange={() => setClientType("PARTICULIER")}
+                className="h-4 w-4 rounded border-gray-300 text-[#ff6b4a] focus:ring-[#ff6b4a]"
+              />
+              <label htmlFor="particulier" className="ml-2 text-sm font-medium text-gray-700">
+                PARTICULIER
+              </label>
+            </div>
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="entreprise"
+                checked={clientType === "ENTREPRISE"}
+                onChange={() => setClientType("ENTREPRISE")}
+                className="h-4 w-4 rounded border-gray-300 text-[#ff6b4a] focus:ring-[#ff6b4a]"
+              />
+              <label htmlFor="entreprise" className="ml-2 text-sm font-medium text-gray-700">
+                ENTREPRISE
+              </label>
+            </div>
+          </div>
+        </div>
+
         <div>
           <label className="text-sm text-gray-700 mb-1.5 block">Mot de passe</label>
           <div className="relative">

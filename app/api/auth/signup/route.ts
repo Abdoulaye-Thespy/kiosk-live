@@ -7,7 +7,7 @@ const prisma = new PrismaClient()
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, email, password } = await req.json()
+    const { name, email, password, clientType } = await req.json()
 
     // Validate input
     if (!name || !email || !password) {
@@ -40,6 +40,7 @@ export async function POST(req: NextRequest) {
         status: "PENDING",
         emailVerified: false,
         verificationToken,
+        clientType,
       },
     })
 
