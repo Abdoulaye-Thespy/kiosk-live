@@ -1,27 +1,14 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import { useState, useEffect } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 
 import { ArrowDownTrayIcon, ArrowUpCircleIcon } from "@heroicons/react/24/solid"
-import {
-  Search,
-  RefreshCw,
-  TrendingUp,
-  Users,
-  Store,
-  FileText,
-  Building2,
-  ArrowUpRight,
-  ArrowRight,
-  ArrowUpLeft,
-  Loader2,
-} from "lucide-react"
+import { RefreshCw, TrendingUp, Store, FileText, Building2, ArrowUpRight, ArrowUpLeft, Loader2 } from "lucide-react"
 
 import styles from "@/app/ui/dashboard.module.css"
 import Header from "../ui/header"
@@ -56,6 +43,8 @@ export default function UserManagement() {
     usersThisMonth: 0,
     percentageGrowth: 0,
     lastNineUsers: [] as User[],
+    particulierCount: 0,
+    entrepriseCount: 0,
   })
   const [kioskStats, setKioskStats] = useState({
     totalKiosks: 0,
@@ -81,6 +70,8 @@ export default function UserManagement() {
             usersThisMonth: userResult.usersThisMonth,
             percentageGrowth: userResult.percentageGrowth,
             lastNineUsers: userResult.lastNineUsers,
+            particulierCount: userResult.particulierCount || 0,
+            entrepriseCount: userResult.entrepriseCount || 0,
           })
           setKioskStats((prevStats) => ({
             ...prevStats,
@@ -231,6 +222,34 @@ export default function UserManagement() {
         {/* Chart Section */}
         <div className="grid gap-4 md:grid-cols-7 mt-7">
           <div className="md:col-span-5">
+            <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-1 mb-2">
+              <Card className={`shadow-md ${styles.carte}`}>
+                <CardHeader className={`flex flex-column space-y-0 pb-2 shadow-md ${styles.carteEntete}`}>
+                  <CardTitle className="text-lg font-lg">Type de Client</CardTitle>
+                  <div className="flex items-baseline space-x-3 ">
+                    {loading ? (
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                    ) : (
+                      <div className="text-xl font-bold mt-2">{userStats.particulierCount}</div>
+                    )}
+                    <div className="flex items-center bg-green-500 rounded-full bg-opacity-15 px-2 py-0.5">
+                      <div className="ml-2 text-xm text-black-500 font-bold">PARTICULIERS</div>
+                    </div>
+                  </div>
+                  <div className="flex items-baseline space-x-3 ">
+                    {loading ? (
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                    ) : (
+                      <div className="text-xl font-bold mt-2">{userStats.entrepriseCount}</div>
+                    )}
+                    <div className="flex items-center bg-red-500 rounded-full bg-opacity-15 px-2 py-0.5">
+                      <div className="ml-2 text-xm font-bold text-black-500">ENTREPRISES</div>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent></CardContent>
+              </Card>
+            </div>
             <Card className="rounded-2xl shadow-sm">
               <CardContent className="p-6">
                 <div className="flex flex-col lg:flex-row gap-6">
@@ -342,28 +361,6 @@ export default function UserManagement() {
                       </ResponsiveContainer>
                     </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Kiosks Section */}
-            <Card className="shadow-md mt-5">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Kiosks</CardTitle>
-                <div className="flex items-center gap-2">
-                  <div className="text-2xl font-bold">{kioskStats.totalKiosks}</div>
-                  <span className="text-xs text-green-500">+{kioskStats.newKiosksLastMonth}</span>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-2">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="Rechercher des kiosques..." className="pl-8" />
-                  </div>
-                  <Button size="icon" variant="outline">
-                    <RefreshCw className="h-4 w-4" />
-                  </Button>
                 </div>
               </CardContent>
             </Card>

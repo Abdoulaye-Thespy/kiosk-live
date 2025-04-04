@@ -9,7 +9,14 @@ export async function fetchUserStats() {
     const now = new Date()
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
 
-    const [totalUsers, usersThisMonth, usersBeforeThisMonth, lastNineUsers] = await Promise.all([
+    const [
+      totalUsers, 
+      usersThisMonth, 
+      usersBeforeThisMonth, 
+      lastNineUsers,
+      particulierCount,
+      entrepriseCount
+    ] = await Promise.all([
       prisma.user.count(),
       prisma.user.count({
         where: {
@@ -37,6 +44,16 @@ export async function fetchUserStats() {
           createdAt: true,
         },
       }),
+      prisma.user.count({
+        where: {
+          clientType: "PARTICULIER",
+        },
+      }),
+      prisma.user.count({
+        where: {
+          clientType: "ENTREPRISE",
+        },
+      }),
     ])
 
     let percentageGrowth = 0
@@ -52,6 +69,8 @@ export async function fetchUserStats() {
       usersThisMonth,
       percentageGrowth: Number.parseFloat(percentageGrowth.toFixed(2)),
       lastNineUsers,
+      particulierCount,
+      entrepriseCount,
     }
   } catch (error) {
     console.error("Failed to fetch user stats:", error)
