@@ -14,12 +14,17 @@ import { updateKiosk } from "@/app/actions/kiosk-actions"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
-interface User {
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Search } from "lucide-react"
+import { fetchClients } from "@/app/actions/fetchUserStats"
+
+interface Client {
   id: string
   name: string
   email: string
 }
-import { type Kiosk } from "@prisma/client"
+import type { Kiosk } from "@prisma/client"
 
 interface UpdateKioskDialogAdminProps {
   isOpen: boolean
@@ -40,6 +45,15 @@ export function UpdateKioskDialogAdmin({
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
+  const [clients, setClients] = useState<Client[]>([])
+  const [selectedClientId, setSelectedClientId] = useState<string>("")
+  const [selectedClientName, setSelectedClientName] = useState<string>("")
+  const [openClientSelect, setOpenClientSelect] = useState(false)
+
+  // Add these new state variables after the other state declarations
+  const [initialClientId, setInitialClientId] = useState<string>("")
+  const [initialClientName, setInitialClientName] = useState<string>("")
+
   const router = useRouter()
   const { data: session } = useSession()
 
@@ -52,15 +66,33 @@ export function UpdateKioskDialogAdmin({
     kioskType: "",
     managerName: "",
     managerContacts: "",
-    productTypes:"",
+    productTypes: "",
     userId: "",
     status: "REQUEST",
   })
 
   useEffect(() => {
+    const getClients = async () => {
+      try {
+        const data = await fetchClients()
+        setClients(data.clients)
+      } catch (error) {
+        console.error("Error fetching clients:", error)
+      }
+    }
+
+    getClients()
+  }, [])
+
+  // Modify the useEffect that sets the form data when kiosk changes
+  useEffect(() => {
     if (kiosk) {
       console.log(kiosk)
       setFormData(kiosk)
+      setSelectedClientId(kiosk.userId || "")
+      setSelectedClientName(kiosk.clientName || "")
+      setInitialClientId(kiosk.userId || "")
+      setInitialClientName(kiosk.clientName || "")
     } else {
       setFormData({
         kioskName: "",
@@ -72,10 +104,14 @@ export function UpdateKioskDialogAdmin({
         productsServices: "",
         managerName: "",
         managerContacts: "",
-        productTypes:"",
+        productTypes: "",
         userId: "",
         status: "REQUEST",
       })
+      setSelectedClientId("")
+      setSelectedClientName("")
+      setInitialClientId("")
+      setInitialClientName("")
     }
   }, [kiosk])
 
@@ -84,15 +120,20 @@ export function UpdateKioskDialogAdmin({
     setIsSubmitting(true)
     setError(null)
     setSuccess(null)
-    console.log(formData);
+
+    const updatedData = {
+      ...formData,
+      userId: selectedClientId,
+      clientName: selectedClientName,
+    }
 
     try {
-      const result = await updateKiosk(kiosk.id, formData)
+      const result = await updateKiosk(kiosk.id, updatedData)
       if (result.error) {
         setError(result.error)
       } else {
         setSuccess("Le kiosque a été modifié avec succès.")
-        const updatedKiosk = { ...kiosk, ...formData }
+        const updatedKiosk = { ...kiosk, ...updatedData }
         onSuccess(updatedKiosk)
         setTimeout(() => {
           onOpenChange(false)
@@ -157,15 +198,70 @@ export function UpdateKioskDialogAdmin({
               </Select>
             </div>
             <div>
-              <Label htmlFor="client-name">Nom du client</Label>
-              <Input
-                id="client-name"
-                type="text"
-                placeholder="Nom du client"
-                value={formData.clientName || ""}
-                onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
-              />
+              <Label htmlFor="client-select">Sélectionner un client</Label>
+              <Popover open={openClientSelect} onOpenChange={setOpenClientSelect}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={openClientSelect}
+                    className="w-full justify-between"
+                  >
+                    {selectedClientId
+                      ? clients.find((client) => client.id === selectedClientId)?.name || selectedClientName
+                      : "Sélectionner un client"}
+                    <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[300px] p-0">
+                  <Command>
+                    <CommandInput placeholder="Rechercher un client..." />
+                    <CommandList>
+                      <CommandEmpty>Aucun client trouvé.</CommandEmpty>
+                      <CommandGroup>
+                        {clients.map((client) => (
+                          <CommandItem
+                            key={client.id}
+                            onSelect={() => {
+                              setSelectedClientId(client.id)
+                              setSelectedClientName(client.name)
+                              setOpenClientSelect(false)
+                              setFormData({
+                                ...formData,
+                                userId: client.id,
+                                clientName: client.name,
+                              })
+                            }}
+                          >
+                            {client.name} ({client.email})
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
+            {initialClientName && (
+              <div>
+                <Label htmlFor="initial-client">Client initial</Label>
+                <Input id="initial-client" type="text" value={initialClientName} readOnly className="bg-gray-50" />
+              </div>
+            )}
+            {selectedClientId !== initialClientId && selectedClientName && (
+              <div>
+                <Label htmlFor="new-client" className="text-orange-500">
+                  Nouveau client
+                </Label>
+                <Input
+                  id="new-client"
+                  type="text"
+                  value={selectedClientName}
+                  readOnly
+                  className="bg-gray-50 border-orange-200"
+                />
+              </div>
+            )}
             <div>
               <Label htmlFor="kiosk-address">Adresse du kiosque</Label>
               <Input
@@ -183,7 +279,12 @@ export function UpdateKioskDialogAdmin({
                 type="text"
                 placeholder="Latitude"
                 value={formData.gpsLatitude || ""}
-                onChange={(e) => setFormData({ ...formData, gpsLatitude: e.target.value !== '' ? parseFloat(e.target.value) : null })}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    gpsLatitude: e.target.value !== "" ? Number.parseFloat(e.target.value) : null,
+                  })
+                }
               />
             </div>
             <div>
@@ -193,7 +294,12 @@ export function UpdateKioskDialogAdmin({
                 type="text"
                 placeholder="Longitude"
                 value={formData.gpsLongitude || ""}
-                onChange={(e) => setFormData({ ...formData, gpsLongitude: e.target.value !== '' ? parseFloat(e.target.value) : null })}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    gpsLongitude: e.target.value !== "" ? Number.parseFloat(e.target.value) : null,
+                  })
+                }
               />
             </div>
             <div>
@@ -265,4 +371,3 @@ export function UpdateKioskDialogAdmin({
     </Dialog>
   )
 }
-

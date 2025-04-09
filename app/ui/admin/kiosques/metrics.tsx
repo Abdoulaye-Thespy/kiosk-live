@@ -34,11 +34,11 @@ export default function KioskMetrics() {
 
   const metrics = [
     {
-      title: "Nouveaux kiosques",
+      title: "Nouvelles Demandes De Kiosque",
       oneCompartment: kioskCounts.oneCompartment.REQUEST,
       threeCompartment: kioskCounts.threeCompartment.REQUEST,
       total: kioskCounts.oneCompartment.REQUEST + kioskCounts.threeCompartment.REQUEST,
-      period: "en attente",
+      period: "actuellement",
     },
     {
       title: "Kiosques en activité",
