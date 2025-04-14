@@ -15,8 +15,9 @@ import { addKioskByStaff } from "@/app/actions/kiosk-actions"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { fetchClients } from "@/app/actions/fetchUserStats"
-import type { KioskType, KioskStatus } from "@prisma/client"
+import type { KioskTown } from "@prisma/client"
 
 interface Client {
   id: string
@@ -24,7 +25,7 @@ interface Client {
   email: string
 }
 
-import { type Kiosk } from "@prisma/client"
+import type { Kiosk } from "@prisma/client"
 
 interface AddKioskDialogProps {
   kiosks: Kiosk[]
@@ -51,6 +52,7 @@ export function AddKioskDialog({ kiosks, onSuccess }: AddKioskDialogProps) {
     managerName: "",
     managerContacts: "",
     kioskMatricule: "",
+    kioskTown: "DOUALA" as KioskTown, // Default town is DOUALA
   }
 
   const [formData, setFormData] = useState(initialFormData)
@@ -72,6 +74,13 @@ export function AddKioskDialog({ kiosks, onSuccess }: AddKioskDialogProps) {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
+    setFormData((prevData) => ({
+      ...prevData,
+      [name]: value,
+    }))
+  }
+
+  const handleSelectChange = (name: string, value: string) => {
     setFormData((prevData) => ({
       ...prevData,
       [name]: value,
@@ -115,10 +124,7 @@ export function AddKioskDialog({ kiosks, onSuccess }: AddKioskDialogProps) {
       } else {
         // Add the new kiosk to the kiosks array
 
-
-        // Reset the form data
-
-        const addedKiosk = result.kiosk;
+        const addedKiosk = result.kiosk
         // onKioskAdd(kioskAdded)
         onSuccess(addedKiosk)
 
@@ -263,6 +269,19 @@ export function AddKioskDialog({ kiosks, onSuccess }: AddKioskDialogProps) {
                   placeholder="Douala, Makepe BM"
                   className={`w-full mt-1 ${fieldErrors.kioskAddress ? "border-red-500" : ""}`}
                 />
+              </div>
+
+              <div>
+                <Label htmlFor="kiosk-town">Ville du kiosque *</Label>
+                <Select value={formData.kioskTown} onValueChange={(value) => handleSelectChange("kioskTown", value)}>
+                  <SelectTrigger className="w-full mt-1">
+                    <SelectValue placeholder="Sélectionner une ville" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="DOUALA">Douala</SelectItem>
+                    <SelectItem value="YAOUNDE">Yaoundé</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
@@ -415,4 +434,3 @@ export function AddKioskDialog({ kiosks, onSuccess }: AddKioskDialogProps) {
     </>
   )
 }
-

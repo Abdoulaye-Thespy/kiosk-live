@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import styles from "@/app/ui/dashboard.module.css"
 import ThreeKioskSVG from "../../svg/threekiosks"
 import OneKioskSVG from "../../svg/onekiosks"
@@ -10,17 +11,61 @@ import { getKioskCounts } from "@/app/actions/kiosk-actions"
 export default function KioskMetrics() {
   const [kioskCounts, setKioskCounts] = useState({
     totalKiosks: 0,
-    oneCompartment: {
-      AVAILABLE: 0,
-      UNDER_MAINTENANCE: 0,
-      REQUEST: 0,
-      LOCALIZING: 0,
+    all: {
+      oneCompartment: {
+        REQUEST: 0,
+        IN_STOCK: 0,
+        ACTIVE: 0,
+        UNACTIVE: 0,
+        ACTIVE_UNDER_MAINTENANCE: 0,
+        UNACTIVE_UNDER_MAINTENANCE: 0,
+      },
+      threeCompartment: {
+        REQUEST: 0,
+        IN_STOCK: 0,
+        ACTIVE: 0,
+        UNACTIVE: 0,
+        ACTIVE_UNDER_MAINTENANCE: 0,
+        UNACTIVE_UNDER_MAINTENANCE: 0,
+      },
     },
-    threeCompartment: {
-      AVAILABLE: 0,
-      UNDER_MAINTENANCE: 0,
-      REQUEST: 0,
-      LOCALIZING: 0,
+    towns: {
+      DOUALA: {
+        oneCompartment: {
+          REQUEST: 0,
+          IN_STOCK: 0,
+          ACTIVE: 0,
+          UNACTIVE: 0,
+          ACTIVE_UNDER_MAINTENANCE: 0,
+          UNACTIVE_UNDER_MAINTENANCE: 0,
+        },
+        threeCompartment: {
+          REQUEST: 0,
+          IN_STOCK: 0,
+          ACTIVE: 0,
+          UNACTIVE: 0,
+          ACTIVE_UNDER_MAINTENANCE: 0,
+          UNACTIVE_UNDER_MAINTENANCE: 0,
+        },
+      },
+      YAOUNDE: {
+        oneCompartment: {
+          REQUEST: 0,
+          IN_STOCK: 0,
+          ACTIVE: 0,
+          UNACTIVE: 0,
+          ACTIVE_UNDER_MAINTENANCE: 0,
+          UNACTIVE_UNDER_MAINTENANCE: 0,
+        },
+        threeCompartment: {
+          REQUEST: 0,
+          IN_STOCK: 0,
+          ACTIVE: 0,
+          UNACTIVE: 0,
+          ACTIVE_UNDER_MAINTENANCE: 0,
+          UNACTIVE_UNDER_MAINTENANCE: 0,
+        },
+      },
     },
   })
 
@@ -32,39 +77,61 @@ export default function KioskMetrics() {
     fetchKioskCounts()
   }, [])
 
-  const metrics = [
-    {
-      title: "Nouvelles Demandes De Kiosque",
-      oneCompartment: kioskCounts.oneCompartment.REQUEST,
-      threeCompartment: kioskCounts.threeCompartment.REQUEST,
-      total: kioskCounts.oneCompartment.REQUEST + kioskCounts.threeCompartment.REQUEST,
-      period: "actuellement",
-    },
-    {
-      title: "Kiosques en activité",
-      oneCompartment: kioskCounts.oneCompartment.AVAILABLE,
-      threeCompartment: kioskCounts.threeCompartment.AVAILABLE,
-      total: kioskCounts.oneCompartment.AVAILABLE + kioskCounts.threeCompartment.AVAILABLE,
-      period: "actuellement",
-    },
-    {
-      title: "Kiosques en maintenance",
-      oneCompartment: kioskCounts.oneCompartment.UNDER_MAINTENANCE,
-      threeCompartment: kioskCounts.threeCompartment.UNDER_MAINTENANCE,
-      total: kioskCounts.oneCompartment.UNDER_MAINTENANCE + kioskCounts.threeCompartment.UNDER_MAINTENANCE,
-      period: "actuellement",
-    },
-    {
-      title: "En Localisation",
-      oneCompartment: kioskCounts.oneCompartment.LOCALIZING,
-      threeCompartment: kioskCounts.threeCompartment.LOCALIZING,
-      total: kioskCounts.oneCompartment.LOCALIZING + kioskCounts.threeCompartment.LOCALIZING,
-      period: "actuellement",
-    },
-  ]
+  // Function to generate metrics for a specific location
+  const generateMetrics = (location) => {
+    const data = location === "all" ? kioskCounts.all : kioskCounts.towns[location]
 
-  return (
-    <div className="">
+    if (!data) return []
+
+    return [
+      {
+        title: "Nouvelles Demandes De Kiosque",
+        oneCompartment: data.oneCompartment.REQUEST,
+        threeCompartment: data.threeCompartment.REQUEST,
+        total: data.oneCompartment.REQUEST + data.threeCompartment.REQUEST,
+        period: "actuellement",
+      },
+      {
+        title: "Kiosques en Stock",
+        oneCompartment: data.oneCompartment.IN_STOCK,
+        threeCompartment: data.threeCompartment.IN_STOCK,
+        total: data.oneCompartment.IN_STOCK + data.threeCompartment.IN_STOCK,
+        period: "actuellement",
+      },
+      {
+        title: "Kiosques Actifs",
+        oneCompartment: data.oneCompartment.ACTIVE,
+        threeCompartment: data.threeCompartment.ACTIVE,
+        total: data.oneCompartment.ACTIVE + data.threeCompartment.ACTIVE,
+        period: "actuellement",
+      },
+      {
+        title: "Kiosques Inactifs",
+        oneCompartment: data.oneCompartment.UNACTIVE,
+        threeCompartment: data.threeCompartment.UNACTIVE,
+        total: data.oneCompartment.UNACTIVE + data.threeCompartment.UNACTIVE,
+        period: "actuellement",
+      },
+      {
+        title: "Kiosques Actifs en Maintenance",
+        oneCompartment: data.oneCompartment.ACTIVE_UNDER_MAINTENANCE,
+        threeCompartment: data.threeCompartment.ACTIVE_UNDER_MAINTENANCE,
+        total: data.oneCompartment.ACTIVE_UNDER_MAINTENANCE + data.threeCompartment.ACTIVE_UNDER_MAINTENANCE,
+        period: "actuellement",
+      },
+      {
+        title: "Kiosques Inactifs en Maintenance",
+        oneCompartment: data.oneCompartment.UNACTIVE_UNDER_MAINTENANCE,
+        threeCompartment: data.threeCompartment.UNACTIVE_UNDER_MAINTENANCE,
+        total: data.oneCompartment.UNACTIVE_UNDER_MAINTENANCE + data.threeCompartment.UNACTIVE_UNDER_MAINTENANCE,
+        period: "actuellement",
+      },
+    ]
+  }
+
+  // Render metrics cards for a specific location
+  const renderMetricsCards = (metrics) => {
+    return (
       <div className="grid md:grid-cols-2 gap-4">
         {metrics.map((metric, index) => (
           <Card className={`shadow-md ${styles.carte}`} key={index}>
@@ -99,7 +166,30 @@ export default function KioskMetrics() {
           </Card>
         ))}
       </div>
+    )
+  }
+
+  return (
+    <div className="space-y-4">
+      <Tabs defaultValue="all" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="all">Tous les Kiosques</TabsTrigger>
+          <TabsTrigger value="DOUALA">Douala</TabsTrigger>
+          <TabsTrigger value="YAOUNDE">Yaoundé</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="all" className="mt-4">
+          {renderMetricsCards(generateMetrics("all"))}
+        </TabsContent>
+
+        <TabsContent value="DOUALA" className="mt-4">
+          {renderMetricsCards(generateMetrics("DOUALA"))}
+        </TabsContent>
+
+        <TabsContent value="YAOUNDE" className="mt-4">
+          {renderMetricsCards(generateMetrics("YAOUNDE"))}
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }
-

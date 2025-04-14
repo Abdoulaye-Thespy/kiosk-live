@@ -3,13 +3,15 @@
 import { useState, useEffect, useCallback } from "react"
 import KioskTab1 from "@/app/ui/admin/kiosques/tab1"
 import KioskTab2 from "@/app/ui/admin/kiosques/tab2"
+import KioskTab3 from "@/app/ui/admin/kiosques/tab3"
 import { AddKioskDialog } from "@/app/ui/admin/kiosques/nouveau"
 import Header from "@/app/ui/header"
 import { deleteKiosk, getKiosks } from "@/app/actions/kiosk-actions"
 
 const tabs = [
-  { id: "dashboard", label: "Vue des kiosque sur tableau" },
-  { id: "invoices", label: "Vue des kiosque sur Map" },
+  { id: "metrique", label: "Metriques" },
+  { id: "dashboard", label: "Vue des kiosque sur Tabeau" },
+  { id: "invoices", label: "Vue des kiosque sur Carte" },
 ]
 
 
@@ -110,6 +112,23 @@ export default function InvoiceDashboard() {
 
       <div className="mt-4">
         {activeTab === "dashboard" && (
+          <KioskTab3
+            kiosks={kiosks}
+            totalPages={totalPages}
+            currentPage={currentPage}
+            searchTerm={searchTerm}
+            filterStatus={filterStatus}
+            filterDate={filterDate}
+            onSearch={handleSearch}
+            onFilterStatus={handleFilterStatus}
+            onFilterDate={handleFilterDate}
+            onPageChange={handlePageChange}
+            onKioskUpdate={handleKioskUpdate}
+            onKioskDelete={handleKioskDelete}
+            onRefresh={fetchKiosks}
+          />
+        )}
+         {activeTab === "metrique" && (
           <KioskTab1
             kiosks={kiosks}
             totalPages={totalPages}

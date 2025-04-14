@@ -1,7 +1,7 @@
 "use server"
 
 import { sendClientNotification, sendStaffNotification } from "@/lib/email"
-import { KioskType, type KioskStatus, PrismaClient, Role } from "@prisma/client"
+import { KioskType, type KioskStatus, PrismaClient, Role, KioskTown } from "@prisma/client"
 import { get } from "http"
 
 const prisma = new PrismaClient()
@@ -19,6 +19,7 @@ type KioskFormData = {
   status: KioskStatus
   userId: string
   kioskMatricule: string
+  kioskTown: KioskTown
 
 }
 
@@ -119,17 +120,35 @@ export async function addKioskByStaff(formData: FormData) {
     kioskMatricule: formData.get("kioskMatricule") as string,
     userId: formData.get("userId") as string,
     status: formData.get("status") as KioskStatus,
+    kioskTown: formData.get("kioskTown") as KioskTown,
   }
-
 
   try {
     // Validate the data (you may want to add more thorough validation)
-    if (!kioskData.kioskName || !kioskData.clientName || !kioskData.kioskAddress || !kioskData.userId) {
+    if (!kioskData.kioskName || !kioskData.kioskAddress) {
       return { error: "Veuillez remplir tous les champs obligatoires." }
     }
 
     if (kioskData.kioskType.length === 0) {
       return { error: "Veuillez sélectionner au moins un type de kiosque." }
+    }
+
+    // Determine the status based on conditions
+    let kioskStatus: KioskStatus = "AVAILABLE"; // Default status
+
+    // If no user is provided, determine status based on GPS coordinates and matricule
+    if (!kioskData.userId) {
+      const hasGpsCoordinates = kioskData.gpsLatitude && kioskData.gpsLongitude && 
+                               kioskData.gpsLatitude.trim() !== "" && kioskData.gpsLongitude.trim() !== "";
+      
+      if (hasGpsCoordinates) {
+        kioskStatus = "UNACTIVE"; // No user but has GPS coordinates
+      } else if (kioskData.kioskMatricule && kioskData.kioskMatricule.trim() !== "") {
+        kioskStatus = "IN_STOCK"; // No user but has matricule
+      }
+    } else if (kioskData.status) {
+      // If user provided a specific status, use that
+      kioskStatus = kioskData.status;
     }
 
     // Create the kiosk
@@ -145,26 +164,29 @@ export async function addKioskByStaff(formData: FormData) {
         managerName: kioskData.managerName,
         managerContacts: kioskData.managerContacts,
         kioskMatricule: kioskData.kioskMatricule,
-        status: "AVAILABLE",
+        status: kioskStatus,
+        kioskTown: kioskData.kioskTown,
       },
     })
 
-    // Create the UserKiosk record
-    await prisma.userKiosk.create({
-      data: {
-        userId: kioskData.userId,
-        kioskId: newKiosk.id,
-      },
-    })
+    // Only create UserKiosk record if userId is provided
+    if (kioskData.userId) {
+      await prisma.userKiosk.create({
+        data: {
+          userId: kioskData.userId,
+          kioskId: newKiosk.id,
+        },
+      })
 
-    // Fetch the user associated with the kiosk
-    const user = await prisma.user.findUnique({
-      where: { id: kioskData.userId },
-    })
+      // Fetch the user associated with the kiosk
+      const user = await prisma.user.findUnique({
+        where: { id: kioskData.userId },
+      })
 
-    if (user) {
-      // Send email to the client
-      await sendClientNotification(user.email, newKiosk.kioskName, newKiosk.kioskAddress)
+      if (user) {
+        // Send email to the client
+        await sendClientNotification(user.email, newKiosk.kioskName, newKiosk.kioskAddress)
+      }
     }
 
     return { message: "Kiosque ajouté avec succès!", kiosk: newKiosk }
@@ -190,36 +212,106 @@ export async function getKioskCounts() {
 
     const percentageAddedThisMonth = totalKiosks > 0 ? (kiosksAddedThisMonth / totalKiosks) * 100 : 0
 
+    // Updated to include kioskTown instead of relying on address
     const kioskCounts = await prisma.kiosk.groupBy({
-      by: ["type", "status"],
+      by: ["type", "status", "kioskTown"],
       _count: {
         _all: true,
       },
     })
 
+    // Initialize the counts object with towns and the new statuses
     const counts = {
       totalKiosks,
       kiosksAddedThisMonth,
       percentageAddedThisMonth,
-      oneCompartment: {
-        AVAILABLE: 0,
-        UNDER_MAINTENANCE: 0,
-        REQUEST: 0,
-        LOCALIZING: 0,
+      // Default counts for all kiosks with new statuses
+      all: {
+        oneCompartment: {
+          REQUEST: 0,
+          IN_STOCK: 0,
+          ACTIVE: 0,
+          UNACTIVE: 0,
+          ACTIVE_UNDER_MAINTENANCE: 0,
+          UNACTIVE_UNDER_MAINTENANCE: 0,
+        },
+        threeCompartment: {
+          REQUEST: 0,
+          IN_STOCK: 0,
+          ACTIVE: 0,
+          UNACTIVE: 0,
+          ACTIVE_UNDER_MAINTENANCE: 0,
+          UNACTIVE_UNDER_MAINTENANCE: 0,
+        },
       },
-      threeCompartment: {
-        AVAILABLE: 0,
-        UNDER_MAINTENANCE: 0,
-        REQUEST: 0,
-        LOCALIZING: 0,
+      // Town-specific counts with new statuses
+      towns: {
+        DOUALA: {
+          oneCompartment: {
+            REQUEST: 0,
+            IN_STOCK: 0,
+            ACTIVE: 0,
+            UNACTIVE: 0,
+            ACTIVE_UNDER_MAINTENANCE: 0,
+            UNACTIVE_UNDER_MAINTENANCE: 0,
+          },
+          threeCompartment: {
+            REQUEST: 0,
+            IN_STOCK: 0,
+            ACTIVE: 0,
+            UNACTIVE: 0,
+            ACTIVE_UNDER_MAINTENANCE: 0,
+            UNACTIVE_UNDER_MAINTENANCE: 0,
+          },
+        },
+        YAOUNDE: {
+          oneCompartment: {
+            REQUEST: 0,
+            IN_STOCK: 0,
+            ACTIVE: 0,
+            UNACTIVE: 0,
+            ACTIVE_UNDER_MAINTENANCE: 0,
+            UNACTIVE_UNDER_MAINTENANCE: 0,
+          },
+          threeCompartment: {
+            REQUEST: 0,
+            IN_STOCK: 0,
+            ACTIVE: 0,
+            UNACTIVE: 0,
+            ACTIVE_UNDER_MAINTENANCE: 0,
+            UNACTIVE_UNDER_MAINTENANCE: 0,
+          },
+        },
       },
     }
 
-    kioskCounts.forEach(({ type, status, _count }) => {
+    kioskCounts.forEach(({ type, status, kioskTown, _count }) => {
+      // Use kioskTown directly instead of parsing from address
+      const town = kioskTown || null
+
+      // Update the overall counts
       if (type === KioskType.ONE_COMPARTMENT_WITH_BRANDING || type === KioskType.ONE_COMPARTMENT_WITHOUT_BRANDING) {
-        counts.oneCompartment[status] += _count._all
+        // Only update if the status exists in our structure
+        if (counts.all.oneCompartment[status] !== undefined) {
+          counts.all.oneCompartment[status] += _count._all
+        }
       } else {
-        counts.threeCompartment[status] += _count._all
+        if (counts.all.threeCompartment[status] !== undefined) {
+          counts.all.threeCompartment[status] += _count._all
+        }
+      }
+
+      // Update town-specific counts if applicable
+      if (town && counts.towns[town]) {
+        if (type === KioskType.ONE_COMPARTMENT_WITH_BRANDING || type === KioskType.ONE_COMPARTMENT_WITHOUT_BRANDING) {
+          if (counts.towns[town].oneCompartment[status] !== undefined) {
+            counts.towns[town].oneCompartment[status] += _count._all
+          }
+        } else {
+          if (counts.towns[town].threeCompartment[status] !== undefined) {
+            counts.towns[town].threeCompartment[status] += _count._all
+          }
+        }
       }
     })
 
@@ -229,6 +321,7 @@ export async function getKioskCounts() {
     throw new Error("Une erreur est survenue lors du comptage des kiosques.")
   }
 }
+
 
 export async function getKiosks({
   page = 1,

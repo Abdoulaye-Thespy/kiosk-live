@@ -224,6 +224,7 @@ model Kiosk {
   kioskAddress          String?
   gpsLatitude           Float?
   gpsLongitude          Float?
+  kioskTown             KioskTown   @default(DOUALA)
   productTypes          String?
   managerName           String?
   managerContacts       String?
@@ -242,6 +243,11 @@ model Kiosk {
   users                 UserKiosk[]  // Many-to-many relationship with User model
 }
 
+
+enum KioskTown {
+DOUALA
+YAOUNDE
+}
 enum KioskState {
   FREE
   ONE_COMPARTMENT_OCCUPIED
@@ -409,6 +415,11 @@ enum KioskStatus {
   LOCALIZING
   AVAILABLE
   UNDER_MAINTENANCE
+  IN_STOCK
+  ACTIVE
+  UNACTIVE
+  ACTIVE_UNDER_MAINTENANCE
+  UNACTIVE_UNDER_MAINTENANCE
 }
 
 enum RequestStatus {
