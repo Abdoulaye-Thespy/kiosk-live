@@ -93,7 +93,7 @@ export function AddKioskDialog({ kiosks, onSuccess }: AddKioskDialogProps) {
     setError(null)
     setSuccess(null)
 
-    const requiredFields = ["kioskName", "kioskAddress", "kioskType"]
+    const requiredFields = ["kioskType", "kioskMatricule"]
     const newFieldErrors = requiredFields.reduce(
       (acc, field) => {
         acc[field] = !formData[field]

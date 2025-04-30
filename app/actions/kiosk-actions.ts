@@ -125,7 +125,7 @@ export async function addKioskByStaff(formData: FormData) {
 
   try {
     // Validate the data (you may want to add more thorough validation)
-    if (!kioskData.kioskName || !kioskData.kioskAddress) {
+    if (!kioskData.kioskType || !kioskData.kioskMatricule) {
       return { error: "Veuillez remplir tous les champs obligatoires." }
     }
 

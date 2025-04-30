@@ -34,7 +34,7 @@ interface KioskTab1Props {
   onRefresh: () => void
 }
 
-export default function KioskTab1({
+export default function KioskTab3({
   kiosks,
   totalPages,
   currentPage,
