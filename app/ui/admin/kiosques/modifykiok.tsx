@@ -191,9 +191,11 @@ export function UpdateKioskDialogAdmin({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="REQUEST">Demande</SelectItem>
-                  <SelectItem value="LOCALIZING">En cours de localisation</SelectItem>
-                  <SelectItem value="AVAILABLE">Disponible</SelectItem>
-                  <SelectItem value="UNDER_MAINTENANCE">En maintenance</SelectItem>
+                  <SelectItem value="IN_STOCK">En stock</SelectItem>
+                  <SelectItem value="ACTIVE">Actif</SelectItem>
+                  <SelectItem value="UNACTIVE">Inactif</SelectItem>
+                  <SelectItem value="ACTIVE_UNDER_MAINTENANCE">Actif en maintenance</SelectItem>
+                  <SelectItem value="UNACTIVE_UNDER_MAINTENANCE">Inactif en maintenance</SelectItem>
                 </SelectContent>
               </Select>
             </div>

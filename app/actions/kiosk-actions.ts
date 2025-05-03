@@ -41,7 +41,7 @@ export async function addKioskByClient(formData: FormData) {
 
   try {
     // Validate the data (you may want to add more thorough validation)
-    console.log(formData)
+    // console.log(formData)
     if (!kioskData.kioskName || !kioskData.clientName || !kioskData.kioskAddress || !kioskData.userId) {
       return { error: "Veuillez remplir tous les champs obligatoires." }
     }
@@ -475,12 +475,12 @@ export async function updateKiosk(kioskId: number, formData: KioskFormData) {
 
   try {
     // Validate the data
-    if (!formData.kioskName || !formData.clientName || !formData.kioskAddress) {
-      return { error: "Veuillez remplir tous les champs obligatoires." }
-    }
+    // if (!formData.kioskName || !formData.clientName || !formData.kioskAddress) {
+    //   return { error: "Veuillez remplir tous les champs obligatoires." }
+    // }
 
     // Update the kiosk
-    console.log(formData)
+    // console.log(formData)
     const updatedKiosk = await prisma.kiosk.update({
       where: { id: kioskId },
       data: {

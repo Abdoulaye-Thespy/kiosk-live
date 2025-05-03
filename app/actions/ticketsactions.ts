@@ -33,10 +33,10 @@ export async function createServiceRequest(formData: {
     })
 
     // Update kiosk status to UNDER_MAINTENANCE
-    await prisma.kiosk.update({
-      where: { id: formData.kioskId },
-      data: { status: "UNDER_MAINTENANCE" },
-    })
+    // await prisma.kiosk.update({
+    //   where: { id: formData.kioskId },
+    //   data: { status: "UNDER_MAINTENANCE" },
+    // })
 
     return newServiceRequest
   } catch (error) {
