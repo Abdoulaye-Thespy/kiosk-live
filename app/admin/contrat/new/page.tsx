@@ -191,7 +191,7 @@ export default function NewContractPage() {
       })
 
       if (result.success) {
-        router.push(`/admin/contract/${result.contract.id}`)
+        router.push(`/admin/contrat/${result.contract.id}`)
       } else {
         setError(result.error || "Failed to create contract")
       }
@@ -338,7 +338,7 @@ export default function NewContractPage() {
                           <RadioGroupItem value={kiosk.id} id={`kiosk-${kiosk.id}`} />
                           <div className="space-y-1 flex-1">
                             <Label htmlFor={`kiosk-${kiosk.id}`} className="font-medium">
-                              {kiosk.kioskName || `Kiosque ${kiosk.id.substring(0, 8)}`}
+                             {kiosk.kioskName}
                             </Label>
                             <p className="text-sm text-gray-500">{kiosk.kioskAddress}</p>
 

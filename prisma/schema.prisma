@@ -43,8 +43,71 @@ model User {
 
   contractsCreated     Contract[] @relation("ContractCreator")
   contractsSigned      Contract[] @relation("ContractSigner")
+  
+  // Proforma relations
+  proformasCreated     Proforma[] @relation("ProformaCreator")
 }
 
+// Proforma model
+enum ProformaStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+  CONVERTED
+  EXPIRED
+}
+
+enum KioskBrandingType {
+  MONO
+  GRAND
+  COMPARTIMENT
+}
+
+model Proforma {
+  id                String          @id @default(cuid())
+  proformaNumber    String          @unique
+  status            ProformaStatus  @default(DRAFT)
+  
+  // Client details
+  clientId          String?
+  clientName        String
+  clientEmail       String?
+  clientPhone       String?
+  clientAddress     String?
+  
+  // Kiosk details
+  kioskType         KioskBrandingType
+  quantity          Int
+  
+  // Branding surfaces
+  surfaces          Json            // Stores the selected surfaces as a JSON object
+  
+  // Pricing
+  basePrice         Float
+  brandingPrice     Float
+  totalAmount       Float
+  
+  // Relationships
+  createdBy         User            @relation("ProformaCreator", fields: [createdById], references: [id])
+  createdById       String
+  
+  // If converted to contract
+  contract          Contract?       @relation("ProformaContract", fields: [contractId], references: [id])
+  contractId        String?         @unique
+  
+  // Timestamps
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  expiryDate        DateTime?       // 30 days from creation by default
+  sentDate          DateTime?
+  acceptedDate      DateTime?
+  rejectedDate      DateTime?
+  convertedDate     DateTime?
+  
+  // PDF document
+  pdfUrl            String?
+}
 
 // Contract model
 enum ClientType {
@@ -52,6 +115,7 @@ enum ClientType {
   ENTREPRISE
   STAFF
 }
+
 // Contract model
 enum ContractStatus {
   DRAFT
@@ -99,6 +163,9 @@ model Contract {
   signedBy          User?           @relation("ContractSigner", fields: [signedById], references: [id])
   signedById        String?
   
+  // Proforma relationship
+  proforma          Proforma?       @relation("ProformaContract")
+  
   // Documents
   contractDocument  String?         // URL to the PDF document
   
@@ -109,7 +176,6 @@ model Contract {
   // Related models
   contractActions   ContractAction[]
 }
-
 
 model ContractAction {
   id                String          @id @default(cuid())
@@ -123,7 +189,6 @@ model ContractAction {
   // Timestamps
   createdAt         DateTime        @default(now())
 }
-
 
 // Enhanced Prospect model
 enum ProspectStatus {
@@ -243,11 +308,11 @@ model Kiosk {
   users                 UserKiosk[]  // Many-to-many relationship with User model
 }
 
-
 enum KioskTown {
-DOUALA
-YAOUNDE
+  DOUALA
+  YAOUNDE
 }
+
 enum KioskState {
   FREE
   ONE_COMPARTMENT_OCCUPIED

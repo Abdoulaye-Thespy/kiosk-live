@@ -143,7 +143,7 @@ export default function TabOneFacturePaiement() {
                                 <span className="font-medium">Revenue</span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <span className="text-2xl font-bold">$23,569.00</span>
+                                <span className="text-2xl font-bold">23 000 FCFA</span>
                                 <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                                     <PopoverTrigger asChild>
                                         <Button variant="outline" size="icon">
@@ -184,7 +184,7 @@ export default function TabOneFacturePaiement() {
                                 <span className="font-medium">Bénéfices</span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <span className="text-2xl font-bold">$23,569.00</span>
+                                <span className="text-2xl font-bold">23 000 FCFA</span>
                                 <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                                     <PopoverTrigger asChild>
                                         <Button variant="outline" size="icon">
