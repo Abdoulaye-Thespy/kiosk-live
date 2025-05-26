@@ -108,7 +108,7 @@ model User {
   // New relations for enhanced Prospect model
   convertedFromProspect Prospect?  @relation("ConvertedUser")
   createdProspects      Prospect[] @relation("CreatedByUser")
-
+  proformasCreated  Proforma[]      @relation("ProformaCreator")
   contractsCreated     Contract[] @relation("ContractCreator")
   contractsSigned      Contract[] @relation("ContractSigner")
 }
