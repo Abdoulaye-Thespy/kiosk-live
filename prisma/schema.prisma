@@ -7,48 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id                  String             @id @default(cuid())
-  name                String
-  email               String             @unique
-  role                Role               @default(CLIENT)
-  clientType          ClientType         @default(STAFF)
-  status              UserStatus         @default(PENDING)
-  address             String?
-  phone               String?
-  verificationToken   String?
-  emailVerified       Boolean            @default(false)
-  image               String?
-  password            String?
-  resetPasswordToken  String?            @unique
-  resetPasswordExpires DateTime?
-  createdAt           DateTime           @default(now())
-  updatedAt           DateTime           @updatedAt
-
-  accounts            Account[]
-  sessions            Session[]
-  notifications       Notification[]
-  inventoryMoves      InventoryMovement[]
-  serviceRequests     ServiceRequest[] @relation("TechnicianServiceRequests")
-  locationHistory     LocationHistory[]
-  prospects           Prospect[]
-  prospectActions     ProspectAction[]
-  quotes              Quote[]
-  reports             Report[]
-  kiosks              UserKiosk[]        // Many-to-many relationship with Kiosk model
-  
-  // New relations for enhanced Prospect model
-  convertedFromProspect Prospect?  @relation("ConvertedUser")
-  createdProspects      Prospect[] @relation("CreatedByUser")
-
-  contractsCreated     Contract[] @relation("ContractCreator")
-  contractsSigned      Contract[] @relation("ContractSigner")
-  
-  // Proforma relations
-  proformasCreated     Proforma[] @relation("ProformaCreator")
-}
-
-// Proforma model
 enum ProformaStatus {
   DRAFT
   SENT
@@ -76,17 +34,23 @@ model Proforma {
   clientPhone       String?
   clientAddress     String?
   
-  // Kiosk details
-  kioskType         KioskBrandingType
-  quantity          Int
+  // Multiple kiosk selections (replaces single kioskType and quantity)
+  kioskSelections   Json            // Array of kiosk selections with their configurations
   
-  // Branding surfaces
-  surfaces          Json            // Stores the selected surfaces as a JSON object
+  // Pricing breakdown
+  subtotal          Float           // Pre-tax total
+  dtsp              Float           // DTSP amount (3% of subtotal)
+  tva               Float           // TVA amount (19.25% of subtotal + DTSP)
+  dtspRate          Float           @default(3.0)    // DTSP rate (%)
+  tvaRate           Float           @default(19.25)  // TVA rate (%)
+  totalAmount       Float           // Final total including all taxes
   
-  // Pricing
-  basePrice         Float
-  brandingPrice     Float
-  totalAmount       Float
+  // Legacy fields (kept for backward compatibility, can be removed later)
+  kioskType         KioskBrandingType?
+  quantity          Int?
+  surfaces          Json?           // Legacy surfaces data
+  basePrice         Float?          // Legacy base price
+  brandingPrice     Float?          // Legacy branding price
   
   // Relationships
   createdBy         User            @relation("ProformaCreator", fields: [createdById], references: [id])
@@ -107,6 +71,61 @@ model Proforma {
   
   // PDF document
   pdfUrl            String?
+  
+  @@map("proformas")
+}
+
+model Proforma {
+  id                String          @id @default(cuid())
+  proformaNumber    String          @unique
+  status            ProformaStatus  @default(DRAFT)
+  
+  // Client details
+  clientId          String?
+  clientName        String
+  clientEmail       String?
+  clientPhone       String?
+  clientAddress     String?
+  
+  // Multiple kiosk selections (replaces single kioskType and quantity)
+  kioskSelections   Json            // Array of kiosk selections with their configurations
+  
+  // Pricing breakdown
+  subtotal          Float           // Pre-tax total
+  dtsp              Float           // DTSP amount (3% of subtotal)
+  tva               Float           // TVA amount (19.25% of subtotal + DTSP)
+  dtspRate          Float           @default(3.0)    // DTSP rate (%)
+  tvaRate           Float           @default(19.25)  // TVA rate (%)
+  totalAmount       Float           // Final total including all taxes
+  
+  // Legacy fields (kept for backward compatibility, can be removed later)
+  kioskType         KioskBrandingType?
+  quantity          Int?
+  surfaces          Json?           // Legacy surfaces data
+  basePrice         Float?          // Legacy base price
+  brandingPrice     Float?          // Legacy branding price
+  
+  // Relationships
+  createdBy         User            @relation("ProformaCreator", fields: [createdById], references: [id])
+  createdById       String
+  
+  // If converted to contract
+  contract          Contract?       @relation("ProformaContract", fields: [contractId], references: [id])
+  contractId        String?         @unique
+  
+  // Timestamps
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  expiryDate        DateTime?       // 30 days from creation by default
+  sentDate          DateTime?
+  acceptedDate      DateTime?
+  rejectedDate      DateTime?
+  convertedDate     DateTime?
+  
+  // PDF document
+  pdfUrl            String?
+  
+  @@map("proformas")
 }
 
 // Contract model

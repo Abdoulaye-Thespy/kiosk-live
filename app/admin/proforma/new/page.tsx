@@ -1,19 +1,18 @@
 "use client"
 
-import type React from "react"
+import React from "react"
 import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { getUsers, createProforma } from "@/app/actions/proformaActions"
-import { Loader2, Search, User, MapPin, ArrowLeft, Plus, Minus } from "lucide-react"
+import { Loader2, Search, User, MapPin, ArrowLeft, Plus, Minus, Edit2 } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -52,6 +51,28 @@ const KIOSK_TYPES = {
   },
 }
 
+type KioskTypeKey = keyof typeof KIOSK_TYPES
+type SurfaceKey = keyof typeof KIOSK_TYPES.MONO.surfaces
+
+interface KioskSelection {
+  type: "MONO" | "GRAND" | "COMPARTIMENT"
+  quantity: number
+  basePrice: number
+  surfaces: {
+    joues: { selected: boolean; price: number }
+    oreilles: { selected: boolean; price: number }
+    menton: { selected: boolean; price: number }
+    fronton: { selected: boolean; price: number }
+  }
+}
+
+// Surface count mapping for calculations
+const SURFACE_COUNTS = {
+  MONO: { joues: 2, oreilles: 2, menton: 1, fronton: 1 },
+  GRAND: { joues: 2, oreilles: 4, menton: 1, fronton: 1 },
+  COMPARTIMENT: { joues: 1, oreilles: 1, menton: 1, fronton: 1 },
+} as const
+
 export default function NewProformaPage() {
   const { data: session } = useSession()
   const router = useRouter()
@@ -65,20 +86,44 @@ export default function NewProformaPage() {
   const [userSearchTerm, setUserSearchTerm] = useState("")
   const [selectedUser, setSelectedUser] = useState<any | null>(null)
 
-  // Proforma state
-  const [kioskType, setKioskType] = useState<"MONO" | "GRAND" | "COMPARTIMENT">("MONO")
-  const [quantity, setQuantity] = useState(1)
-  const [selectedSurfaces, setSelectedSurfaces] = useState<{
-    joues: boolean
-    oreilles: boolean
-    menton: boolean
-    fronton: boolean
-  }>({
-    joues: false,
-    oreilles: false,
-    menton: false,
-    fronton: false,
-  })
+  // Proforma state - now supporting multiple kiosk types
+  const [kioskSelections, setKioskSelections] = useState<KioskSelection[]>([])
+
+  // Tax rates
+  const [dtspRate, setDtspRate] = useState(3) // 3%
+  const [tvaRate, setTvaRate] = useState(19.25) // 19.25%
+
+  // Utility function to calculate proforma totals
+  const calculateProformaTotals = (selections: KioskSelection[], dtspRateValue: number, tvaRateValue: number) => {
+    // Calculate subtotal
+    const subtotal = selections.reduce((total, selection) => {
+      const kioskTotal = selection.basePrice * selection.quantity
+      const surfacesTotal = Object.entries(selection.surfaces).reduce((surfaceTotal, [surfaceKey, surface]) => {
+        if (surface.selected) {
+          const count = SURFACE_COUNTS[selection.type][surfaceKey as keyof typeof SURFACE_COUNTS.MONO] || 0
+          return surfaceTotal + surface.price * count * selection.quantity
+        }
+        return surfaceTotal
+      }, 0)
+      return total + kioskTotal + surfacesTotal
+    }, 0)
+
+    // Calculate DTSP (percentage of subtotal)
+    const dtsp = subtotal * (dtspRateValue / 100)
+
+    // Calculate TVA (percentage of subtotal + DTSP)
+    const tva = (subtotal + dtsp) * (tvaRateValue / 100)
+
+    // Calculate total
+    const totalAmount = subtotal + dtsp + tva
+
+    return {
+      subtotal: Math.round(subtotal * 100) / 100,
+      dtsp: Math.round(dtsp * 100) / 100,
+      tva: Math.round(tva * 100) / 100,
+      totalAmount: Math.round(totalAmount * 100) / 100,
+    }
+  }
 
   // Fetch initial data
   useEffect(() => {
@@ -119,55 +164,97 @@ export default function NewProformaPage() {
     setSelectedUser(user)
   }
 
-  // Handle kiosk type change
-  const handleKioskTypeChange = (value: "MONO" | "GRAND" | "COMPARTIMENT") => {
-    setKioskType(value)
+  // Add a new kiosk selection
+  const addKioskSelection = (type: KioskTypeKey) => {
+    const kioskType = KIOSK_TYPES[type]
+    const newSelection: KioskSelection = {
+      type: type as "MONO" | "GRAND" | "COMPARTIMENT",
+      quantity: 1,
+      basePrice: kioskType.basePrice,
+      surfaces: {
+        joues: { selected: false, price: kioskType.surfaces.joues.price },
+        oreilles: { selected: false, price: kioskType.surfaces.oreilles.price },
+        menton: { selected: false, price: kioskType.surfaces.menton.price },
+        fronton: { selected: false, price: kioskType.surfaces.fronton.price },
+      },
+    }
+    setKioskSelections([...kioskSelections, newSelection])
   }
 
-  // Handle quantity change
-  const handleQuantityChange = (value: number) => {
-    if (value >= 1) {
-      setQuantity(value)
+  // Remove a kiosk selection
+  const removeKioskSelection = (index: number) => {
+    setKioskSelections(kioskSelections.filter((_, i) => i !== index))
+  }
+
+  // Update kiosk quantity
+  const updateKioskQuantity = (index: number, quantity: number) => {
+    if (quantity >= 1) {
+      const updated = [...kioskSelections]
+      updated[index].quantity = quantity
+      setKioskSelections(updated)
     }
   }
 
-  // Handle surface selection
-  const handleSurfaceChange = (surface: keyof typeof selectedSurfaces) => {
-    setSelectedSurfaces((prev) => ({
-      ...prev,
-      [surface]: !prev[surface],
-    }))
+  // Update kiosk base price
+  const updateKioskBasePrice = (index: number, price: number) => {
+    const updated = [...kioskSelections]
+    updated[index].basePrice = price
+    setKioskSelections(updated)
   }
 
-  // Calculate subtotal for kiosk base price
+  // Update surface selection
+  const updateSurfaceSelection = (index: number, surface: SurfaceKey, selected: boolean) => {
+    const updated = [...kioskSelections]
+    updated[index].surfaces[surface].selected = selected
+    setKioskSelections(updated)
+  }
+
+  // Update surface price
+  const updateSurfacePrice = (index: number, surface: SurfaceKey, price: number) => {
+    const updated = [...kioskSelections]
+    updated[index].surfaces[surface].price = price
+    setKioskSelections(updated)
+  }
+
+  // Calculate subtotal for all kiosks
   const calculateKioskSubtotal = () => {
-    return KIOSK_TYPES[kioskType].basePrice * quantity
+    return kioskSelections.reduce((total, selection) => {
+      return total + selection.basePrice * selection.quantity
+    }, 0)
   }
 
-  // Calculate subtotal for selected surfaces
+  // Calculate subtotal for all surfaces
   const calculateSurfacesSubtotal = () => {
-    let total = 0
-    const surfaces = KIOSK_TYPES[kioskType].surfaces
-
-    if (selectedSurfaces.joues) {
-      total += surfaces.joues.price * surfaces.joues.count * quantity
-    }
-    if (selectedSurfaces.oreilles) {
-      total += surfaces.oreilles.price * surfaces.oreilles.count * quantity
-    }
-    if (selectedSurfaces.menton) {
-      total += surfaces.menton.price * surfaces.menton.count * quantity
-    }
-    if (selectedSurfaces.fronton) {
-      total += surfaces.fronton.price * surfaces.fronton.count * quantity
-    }
-
-    return total
+    return kioskSelections.reduce((total, selection) => {
+      let selectionTotal = 0
+      Object.entries(selection.surfaces).forEach(([surfaceKey, surface]) => {
+        if (surface.selected) {
+          const surfaceCount = KIOSK_TYPES[selection.type].surfaces[surfaceKey as SurfaceKey].count
+          selectionTotal += surface.price * surfaceCount * selection.quantity
+        }
+      })
+      return total + selectionTotal
+    }, 0)
   }
 
-  // Calculate total
+  // Calculate subtotal (before taxes)
+  const calculateSubtotal = () => {
+    return Math.round((calculateKioskSubtotal() + calculateSurfacesSubtotal()) * 100) / 100
+  }
+
+  // Calculate DTSP (3% of subtotal)
+  const calculateDTSP = () => {
+    return Math.round(calculateSubtotal() * (dtspRate / 100) * 100) / 100
+  }
+
+  // Calculate TVA (19.25% of subtotal + DTSP)
+  const calculateTVA = () => {
+    return Math.round((calculateSubtotal() + calculateDTSP()) * (tvaRate / 100) * 100) / 100
+  }
+
+  // Calculate total with taxes
   const calculateTotal = () => {
-    return calculateKioskSubtotal() + calculateSurfacesSubtotal()
+    return Math.round((calculateSubtotal() + calculateDTSP() + calculateTVA()) * 100) / 100
   }
 
   // Format currency
@@ -189,18 +276,44 @@ export default function NewProformaPage() {
         throw new Error("Veuillez sélectionner un client")
       }
 
+      if (kioskSelections.length === 0) {
+        throw new Error("Veuillez ajouter au moins un kiosque")
+      }
+
+      // Validation: Ensure all prices are positive and quantities are at least 1
+      for (const selection of kioskSelections) {
+        if (selection.quantity < 1) {
+          throw new Error("La quantité de kiosque doit être au moins 1.")
+        }
+        if (selection.basePrice < 0) {
+          throw new Error("Le prix de base du kiosque doit être positif.")
+        }
+        for (const surfaceKey in selection.surfaces) {
+          if (selection.surfaces.hasOwnProperty(surfaceKey)) {
+            const surface = selection.surfaces[surfaceKey as SurfaceKey]
+            if (surface.selected && surface.price < 0) {
+              throw new Error("Le prix de la surface doit être positif.")
+            }
+          }
+        }
+      }
+
+      // Calculate totals
+      const totals = calculateProformaTotals(kioskSelections, dtspRate, tvaRate)
+
       const formData = {
         clientId: selectedUser.id,
         clientName: selectedUser.name,
-        clientEmail: selectedUser.email,
+        clientEmail: selectedUser.email || "",
         clientPhone: selectedUser.phone || "",
         clientAddress: selectedUser.address || "",
-        kioskType,
-        quantity,
-        surfaces: selectedSurfaces,
-        basePrice: calculateKioskSubtotal(),
-        brandingPrice: calculateSurfacesSubtotal(),
-        totalAmount: calculateTotal(),
+        kioskSelections,
+        subtotal: totals.subtotal,
+        dtsp: totals.dtsp,
+        tva: totals.tva,
+        totalAmount: totals.totalAmount,
+        dtspRate,
+        tvaRate,
         createdById: session.user.id,
       }
 
@@ -235,7 +348,7 @@ export default function NewProformaPage() {
         <Tabs defaultValue="client" value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-4">
             <TabsTrigger value="client">Sélection du client</TabsTrigger>
-            <TabsTrigger value="kiosk">Configuration du kiosque</TabsTrigger>
+            <TabsTrigger value="kiosk">Configuration des kiosques</TabsTrigger>
             <TabsTrigger value="summary">Récapitulatif</TabsTrigger>
           </TabsList>
 
@@ -318,7 +431,7 @@ export default function NewProformaPage() {
                       className="bg-orange-500 hover:bg-orange-600 text-white"
                       disabled={!selectedUser}
                     >
-                      Continuer vers la configuration du kiosque
+                      Continuer vers la configuration des kiosques
                     </Button>
                   </div>
                 </div>
@@ -329,133 +442,133 @@ export default function NewProformaPage() {
           <TabsContent value="kiosk">
             <Card className="p-6">
               <CardHeader className="px-0 pt-0">
-                <CardTitle>Configuration du Kiosque</CardTitle>
+                <CardTitle>Configuration des Kiosques</CardTitle>
               </CardHeader>
               <CardContent className="px-0 pb-0">
                 <div className="space-y-6">
+                  {/* Add kiosk buttons */}
                   <div className="space-y-4">
-                    <Label htmlFor="kioskType">Type de Kiosque</Label>
-                    <RadioGroup
-                      value={kioskType}
-                      onValueChange={(value: "MONO" | "GRAND" | "COMPARTIMENT") => handleKioskTypeChange(value)}
-                      className="grid grid-cols-1 md:grid-cols-3 gap-4"
-                    >
-                      <div className="flex items-center space-x-2 border p-4 rounded-md">
-                        <RadioGroupItem value="MONO" id="mono" />
-                        <Label htmlFor="mono" className="flex flex-col">
-                          <span className="font-medium">Mono Kiosque</span>
-                          <span className="text-sm text-gray-500">{formatCurrency(KIOSK_TYPES.MONO.basePrice)}</span>
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-2 border p-4 rounded-md">
-                        <RadioGroupItem value="GRAND" id="grand" />
-                        <Label htmlFor="grand" className="flex flex-col">
-                          <span className="font-medium">Grand Kiosque</span>
-                          <span className="text-sm text-gray-500">{formatCurrency(KIOSK_TYPES.GRAND.basePrice)}</span>
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-2 border p-4 rounded-md">
-                        <RadioGroupItem value="COMPARTIMENT" id="compartiment" />
-                        <Label htmlFor="compartiment" className="flex flex-col">
-                          <span className="font-medium">Compartiment</span>
-                          <span className="text-sm text-gray-500">
-                            {formatCurrency(KIOSK_TYPES.COMPARTIMENT.basePrice)}
-                          </span>
-                        </Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
-
-                  <div className="space-y-4">
-                    <Label>Quantité</Label>
-                    <div className="flex items-center space-x-4">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        onClick={() => handleQuantityChange(quantity - 1)}
-                        disabled={quantity <= 1}
-                      >
-                        <Minus className="h-4 w-4" />
-                      </Button>
-                      <span className="text-xl font-medium w-8 text-center">{quantity}</span>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        onClick={() => handleQuantityChange(quantity + 1)}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
+                    <Label>Ajouter des kiosques</Label>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {Object.entries(KIOSK_TYPES).map(([key, type]) => (
+                        <Button
+                          key={key}
+                          type="button"
+                          variant="outline"
+                          onClick={() => addKioskSelection(key as KioskTypeKey)}
+                          className="h-auto p-4 flex flex-col items-center space-y-2"
+                        >
+                          <Plus className="h-5 w-5" />
+                          <div className="text-center">
+                            <div className="font-medium">{type.name}</div>
+                            <div className="text-sm text-gray-500">{formatCurrency(type.basePrice)}</div>
+                          </div>
+                        </Button>
+                      ))}
                     </div>
                   </div>
 
                   <Separator />
 
-                  <div className="space-y-4">
-                    <Label>Surfaces à brander</Label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="flex items-start space-x-2">
-                        <Checkbox
-                          id="joues"
-                          checked={selectedSurfaces.joues}
-                          onCheckedChange={() => handleSurfaceChange("joues")}
-                        />
-                        <div className="grid gap-1.5">
-                          <Label htmlFor="joues" className="font-medium">
-                            Joues ({KIOSK_TYPES[kioskType].surfaces.joues.count})
-                          </Label>
-                          <p className="text-sm text-gray-500">
-                            {formatCurrency(KIOSK_TYPES[kioskType].surfaces.joues.price)} par joue
-                          </p>
+                  {/* Kiosk selections */}
+                  <div className="space-y-6">
+                    {kioskSelections.map((selection, index) => (
+                      <Card key={index} className="p-4">
+                        <div className="flex justify-between items-start mb-4">
+                          <h3 className="text-lg font-medium">{KIOSK_TYPES[selection.type].name}</h3>
+                          <Button type="button" variant="outline" size="sm" onClick={() => removeKioskSelection(index)}>
+                            <Minus className="h-4 w-4" />
+                          </Button>
                         </div>
-                      </div>
-                      <div className="flex items-start space-x-2">
-                        <Checkbox
-                          id="oreilles"
-                          checked={selectedSurfaces.oreilles}
-                          onCheckedChange={() => handleSurfaceChange("oreilles")}
-                        />
-                        <div className="grid gap-1.5">
-                          <Label htmlFor="oreilles" className="font-medium">
-                            Oreilles ({KIOSK_TYPES[kioskType].surfaces.oreilles.count})
-                          </Label>
-                          <p className="text-sm text-gray-500">
-                            {formatCurrency(KIOSK_TYPES[kioskType].surfaces.oreilles.price)} par oreille
-                          </p>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                          {/* Quantity */}
+                          <div className="space-y-2">
+                            <Label>Quantité</Label>
+                            <div className="flex items-center space-x-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                onClick={() => updateKioskQuantity(index, selection.quantity - 1)}
+                                disabled={selection.quantity <= 1}
+                              >
+                                <Minus className="h-4 w-4" />
+                              </Button>
+                              <span className="text-lg font-medium w-8 text-center">{selection.quantity}</span>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                onClick={() => updateKioskQuantity(index, selection.quantity + 1)}
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+
+                          {/* Base Price */}
+                          <div className="space-y-2">
+                            <Label>Prix de base (FCFA)</Label>
+                            <div className="flex items-center space-x-2">
+                              <Input
+                                type="number"
+                                value={selection.basePrice}
+                                onChange={(e) => updateKioskBasePrice(index, Number(e.target.value))}
+                                className="flex-1"
+                              />
+                              <Edit2 className="h-4 w-4 text-gray-400" />
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex items-start space-x-2">
-                        <Checkbox
-                          id="menton"
-                          checked={selectedSurfaces.menton}
-                          onCheckedChange={() => handleSurfaceChange("menton")}
-                        />
-                        <div className="grid gap-1.5">
-                          <Label htmlFor="menton" className="font-medium">
-                            Menton ({KIOSK_TYPES[kioskType].surfaces.menton.count})
-                          </Label>
-                          <p className="text-sm text-gray-500">
-                            {formatCurrency(KIOSK_TYPES[kioskType].surfaces.menton.price)} par menton
-                          </p>
+
+                        {/* Surfaces */}
+                        <div className="space-y-4">
+                          <Label>Surfaces à brander</Label>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {Object.entries(selection.surfaces).map(([surfaceKey, surface]) => {
+                              const surfaceInfo = KIOSK_TYPES[selection.type].surfaces[surfaceKey as SurfaceKey]
+                              return (
+                                <div key={surfaceKey} className="space-y-2">
+                                  <div className="flex items-center space-x-2">
+                                    <Checkbox
+                                      id={`${index}-${surfaceKey}`}
+                                      checked={surface.selected}
+                                      onCheckedChange={(checked) =>
+                                        updateSurfaceSelection(index, surfaceKey as SurfaceKey, checked as boolean)
+                                      }
+                                    />
+                                    <Label htmlFor={`${index}-${surfaceKey}`} className="font-medium">
+                                      {surfaceInfo.name} ({surfaceInfo.count})
+                                    </Label>
+                                  </div>
+                                  <div className="flex items-center space-x-2 ml-6">
+                                    <Input
+                                      type="number"
+                                      value={surface.price}
+                                      onChange={(e) =>
+                                        updateSurfacePrice(index, surfaceKey as SurfaceKey, Number(e.target.value))
+                                      }
+                                      className="w-32"
+                                      disabled={!surface.selected}
+                                    />
+                                    <span className="text-sm text-gray-500">
+                                      FCFA par {surfaceInfo.name.toLowerCase()}
+                                    </span>
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
                         </div>
+                      </Card>
+                    ))}
+
+                    {kioskSelections.length === 0 && (
+                      <div className="text-center py-8 text-gray-500">
+                        Aucun kiosque ajouté. Utilisez les boutons ci-dessus pour ajouter des kiosques.
                       </div>
-                      <div className="flex items-start space-x-2">
-                        <Checkbox
-                          id="fronton"
-                          checked={selectedSurfaces.fronton}
-                          onCheckedChange={() => handleSurfaceChange("fronton")}
-                        />
-                        <div className="grid gap-1.5">
-                          <Label htmlFor="fronton" className="font-medium">
-                            Fronton ({KIOSK_TYPES[kioskType].surfaces.fronton.count})
-                          </Label>
-                          <p className="text-sm text-gray-500">
-                            {formatCurrency(KIOSK_TYPES[kioskType].surfaces.fronton.price)} par fronton
-                          </p>
-                        </div>
-                      </div>
-                    </div>
+                    )}
                   </div>
 
                   <div className="flex justify-end mt-4 space-x-4">
@@ -466,6 +579,7 @@ export default function NewProformaPage() {
                       type="button"
                       onClick={() => setActiveTab("summary")}
                       className="bg-orange-500 hover:bg-orange-600 text-white"
+                      disabled={kioskSelections.length === 0}
                     >
                       Voir le récapitulatif
                     </Button>
@@ -517,86 +631,105 @@ export default function NewProformaPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      <TableRow>
-                        <TableCell className="font-medium">{KIOSK_TYPES[kioskType].name}</TableCell>
-                        <TableCell>{quantity}</TableCell>
-                        <TableCell>{formatCurrency(KIOSK_TYPES[kioskType].basePrice)}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(calculateKioskSubtotal())}</TableCell>
+                      {kioskSelections.map((selection, index) => (
+                        <React.Fragment key={index}>
+                          {/* Kiosk base price */}
+                          <TableRow>
+                            <TableCell className="font-medium">{KIOSK_TYPES[selection.type].name}</TableCell>
+                            <TableCell>{selection.quantity}</TableCell>
+                            <TableCell>
+                              <Input
+                                type="number"
+                                value={selection.basePrice}
+                                onChange={(e) => updateKioskBasePrice(index, Number(e.target.value))}
+                                className="w-32"
+                              />
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {formatCurrency(selection.basePrice * selection.quantity)}
+                            </TableCell>
+                          </TableRow>
+
+                          {/* Surface branding */}
+                          {Object.entries(selection.surfaces).map(([surfaceKey, surface]) => {
+                            if (!surface.selected) return null
+                            const surfaceInfo = KIOSK_TYPES[selection.type].surfaces[surfaceKey as SurfaceKey]
+                            const totalQuantity = surfaceInfo.count * selection.quantity
+                            return (
+                              <TableRow key={`${index}-${surfaceKey}`}>
+                                <TableCell>
+                                  Branding {surfaceInfo.name} ({surfaceInfo.count} par kiosque)
+                                </TableCell>
+                                <TableCell>{totalQuantity}</TableCell>
+                                <TableCell>
+                                  <Input
+                                    type="number"
+                                    value={surface.price}
+                                    onChange={(e) =>
+                                      updateSurfacePrice(index, surfaceKey as SurfaceKey, Number(e.target.value))
+                                    }
+                                    className="w-32"
+                                  />
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  {formatCurrency(surface.price * totalQuantity)}
+                                </TableCell>
+                              </TableRow>
+                            )
+                          })}
+                        </React.Fragment>
+                      ))}
+
+                      {/* Subtotal */}
+                      <TableRow className="border-t-2">
+                        <TableCell colSpan={3} className="text-right font-medium">
+                          Sous-total (HT)
+                        </TableCell>
+                        <TableCell className="text-right font-medium">{formatCurrency(calculateSubtotal())}</TableCell>
                       </TableRow>
 
-                      {selectedSurfaces.joues && (
-                        <TableRow>
-                          <TableCell>
-                            Branding Joues ({KIOSK_TYPES[kioskType].surfaces.joues.count} par kiosque)
-                          </TableCell>
-                          <TableCell>{KIOSK_TYPES[kioskType].surfaces.joues.count * quantity}</TableCell>
-                          <TableCell>{formatCurrency(KIOSK_TYPES[kioskType].surfaces.joues.price)}</TableCell>
-                          <TableCell className="text-right">
-                            {formatCurrency(
-                              KIOSK_TYPES[kioskType].surfaces.joues.price *
-                                KIOSK_TYPES[kioskType].surfaces.joues.count *
-                                quantity,
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      )}
-
-                      {selectedSurfaces.oreilles && (
-                        <TableRow>
-                          <TableCell>
-                            Branding Oreilles ({KIOSK_TYPES[kioskType].surfaces.oreilles.count} par kiosque)
-                          </TableCell>
-                          <TableCell>{KIOSK_TYPES[kioskType].surfaces.oreilles.count * quantity}</TableCell>
-                          <TableCell>{formatCurrency(KIOSK_TYPES[kioskType].surfaces.oreilles.price)}</TableCell>
-                          <TableCell className="text-right">
-                            {formatCurrency(
-                              KIOSK_TYPES[kioskType].surfaces.oreilles.price *
-                                KIOSK_TYPES[kioskType].surfaces.oreilles.count *
-                                quantity,
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      )}
-
-                      {selectedSurfaces.menton && (
-                        <TableRow>
-                          <TableCell>
-                            Branding Menton ({KIOSK_TYPES[kioskType].surfaces.menton.count} par kiosque)
-                          </TableCell>
-                          <TableCell>{KIOSK_TYPES[kioskType].surfaces.menton.count * quantity}</TableCell>
-                          <TableCell>{formatCurrency(KIOSK_TYPES[kioskType].surfaces.menton.price)}</TableCell>
-                          <TableCell className="text-right">
-                            {formatCurrency(
-                              KIOSK_TYPES[kioskType].surfaces.menton.price *
-                                KIOSK_TYPES[kioskType].surfaces.menton.count *
-                                quantity,
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      )}
-
-                      {selectedSurfaces.fronton && (
-                        <TableRow>
-                          <TableCell>
-                            Branding Fronton ({KIOSK_TYPES[kioskType].surfaces.fronton.count} par kiosque)
-                          </TableCell>
-                          <TableCell>{KIOSK_TYPES[kioskType].surfaces.fronton.count * quantity}</TableCell>
-                          <TableCell>{formatCurrency(KIOSK_TYPES[kioskType].surfaces.fronton.price)}</TableCell>
-                          <TableCell className="text-right">
-                            {formatCurrency(
-                              KIOSK_TYPES[kioskType].surfaces.fronton.price *
-                                KIOSK_TYPES[kioskType].surfaces.fronton.count *
-                                quantity,
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      )}
-
+                      {/* DTSP */}
                       <TableRow>
-                        <TableCell colSpan={3} className="text-right font-bold">
-                          Total
+                        <TableCell colSpan={2} className="text-right">
+                          DTSP ({dtspRate}%)
                         </TableCell>
-                        <TableCell className="text-right font-bold">{formatCurrency(calculateTotal())}</TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            value={dtspRate}
+                            onChange={(e) => setDtspRate(Number(e.target.value))}
+                            className="w-20"
+                            step="0.01"
+                          />
+                        </TableCell>
+                        <TableCell className="text-right">{formatCurrency(calculateDTSP())}</TableCell>
+                      </TableRow>
+
+                      {/* TVA */}
+                      <TableRow>
+                        <TableCell colSpan={2} className="text-right">
+                          TVA ({tvaRate}%)
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            value={tvaRate}
+                            onChange={(e) => setTvaRate(Number(e.target.value))}
+                            className="w-20"
+                            step="0.01"
+                          />
+                        </TableCell>
+                        <TableCell className="text-right">{formatCurrency(calculateTVA())}</TableCell>
+                      </TableRow>
+
+                      {/* Total */}
+                      <TableRow className="border-t-2">
+                        <TableCell colSpan={3} className="text-right font-bold text-lg">
+                          Total TTC
+                        </TableCell>
+                        <TableCell className="text-right font-bold text-lg">
+                          {formatCurrency(calculateTotal())}
+                        </TableCell>
                       </TableRow>
                     </TableBody>
                   </Table>
@@ -606,7 +739,11 @@ export default function NewProformaPage() {
                   <Button type="button" variant="outline" onClick={() => setActiveTab("kiosk")}>
                     Retour
                   </Button>
-                  <Button type="submit" className="bg-orange-500 hover:bg-orange-600 text-white" disabled={isLoading}>
+                  <Button
+                    type="submit"
+                    className="bg-orange-500 hover:bg-orange-600 text-white"
+                    disabled={isLoading || kioskSelections.length === 0}
+                  >
                     {isLoading ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />

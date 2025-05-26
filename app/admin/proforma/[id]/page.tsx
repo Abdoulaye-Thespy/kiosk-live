@@ -1,5 +1,7 @@
 "use client"
 
+import React from "react"
+
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
@@ -46,6 +48,29 @@ const KIOSK_TYPES = {
   },
 }
 
+// Surface count mapping for calculations
+const SURFACE_COUNTS = {
+  MONO: { joues: 2, oreilles: 2, menton: 1, fronton: 1 },
+  GRAND: { joues: 2, oreilles: 4, menton: 1, fronton: 1 },
+  COMPARTIMENT: { joues: 1, oreilles: 1, menton: 1, fronton: 1 },
+} as const
+
+// Types for the new schema structure
+interface KioskSelection {
+  type: "MONO" | "GRAND" | "COMPARTIMENT"
+  quantity: number
+  basePrice: number
+  surfaces: {
+    joues: { selected: boolean; price: number }
+    oreilles: { selected: boolean; price: number }
+    menton: { selected: boolean; price: number }
+    fronton: { selected: boolean; price: number }
+  }
+  kioskSubtotal?: number
+  surfacesSubtotal?: number
+  selectionTotal?: number
+}
+
 export default function ProformaDetailsPage({ params }: { params: { id: string } }) {
   const router = useRouter()
   const { data: session } = useSession()
@@ -74,6 +99,41 @@ export default function ProformaDetailsPage({ params }: { params: { id: string }
       setError("Une erreur s'est produite lors du chargement de la proforma")
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  // Check if proforma uses new schema structure
+  const isNewSchema = (proforma: any) => {
+    return proforma.kioskSelections && Array.isArray(proforma.kioskSelections)
+  }
+
+  // Convert legacy proforma data to new structure for display
+  const getLegacyKioskSelections = (proforma: any): KioskSelection[] => {
+    if (!proforma.kioskType || !proforma.quantity) return []
+
+    return [
+      {
+        type: proforma.kioskType,
+        quantity: proforma.quantity,
+        basePrice: proforma.basePrice || KIOSK_TYPES[proforma.kioskType].basePrice,
+        surfaces: proforma.surfaces || {
+          joues: { selected: false, price: KIOSK_TYPES[proforma.kioskType].surfaces.joues.price },
+          oreilles: { selected: false, price: KIOSK_TYPES[proforma.kioskType].surfaces.oreilles.price },
+          menton: { selected: false, price: KIOSK_TYPES[proforma.kioskType].surfaces.menton.price },
+          fronton: { selected: false, price: KIOSK_TYPES[proforma.kioskType].surfaces.fronton.price },
+        },
+      },
+    ]
+  }
+
+  // Get kiosk selections (works for both new and legacy schema)
+  const getKioskSelections = (): KioskSelection[] => {
+    if (!proforma) return []
+
+    if (isNewSchema(proforma)) {
+      return proforma.kioskSelections
+    } else {
+      return getLegacyKioskSelections(proforma)
     }
   }
 
@@ -242,6 +302,8 @@ export default function ProformaDetailsPage({ params }: { params: { id: string }
     )
   }
 
+  const kioskSelections = getKioskSelections()
+
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -252,9 +314,16 @@ export default function ProformaDetailsPage({ params }: { params: { id: string }
           </Button>
           <h1 className="text-3xl font-bold">Proforma {proforma.proformaNumber}</h1>
         </div>
-        <Badge variant={getStatusBadgeVariant(proforma.status)} className="text-sm px-3 py-1">
-          {getStatusDisplayText(proforma.status)}
-        </Badge>
+        <div className="flex items-center space-x-2">
+          {!isNewSchema(proforma) && (
+            <Badge variant="outline" className="text-xs">
+              Legacy
+            </Badge>
+          )}
+          <Badge variant={getStatusBadgeVariant(proforma.status)} className="text-sm px-3 py-1">
+            {getStatusDisplayText(proforma.status)}
+          </Badge>
+        </div>
       </div>
 
       {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">{error}</div>}
@@ -285,6 +354,12 @@ export default function ProformaDetailsPage({ params }: { params: { id: string }
                     {getStatusDisplayText(proforma.status)}
                   </Badge>
                 </div>
+                {proforma.expiryDate && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Date d'expiration</p>
+                    <p>{formatDate(proforma.expiryDate)}</p>
+                  </div>
+                )}
               </div>
 
               <Separator />
@@ -325,94 +400,78 @@ export default function ProformaDetailsPage({ params }: { params: { id: string }
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    <TableRow>
-                      <TableCell className="font-medium">{KIOSK_TYPES[proforma.kioskType].name}</TableCell>
-                      <TableCell>{proforma.quantity}</TableCell>
-                      <TableCell>{formatCurrency(KIOSK_TYPES[proforma.kioskType].basePrice)}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(proforma.basePrice)}</TableCell>
+                    {kioskSelections.map((selection, selectionIndex) => (
+                      <React.Fragment key={selectionIndex}>
+                        {/* Kiosk base price */}
+                        <TableRow>
+                          <TableCell className="font-medium">{KIOSK_TYPES[selection.type].name}</TableCell>
+                          <TableCell>{selection.quantity}</TableCell>
+                          <TableCell>{formatCurrency(selection.basePrice)}</TableCell>
+                          <TableCell className="text-right">
+                            {formatCurrency(selection.basePrice * selection.quantity)}
+                          </TableCell>
+                        </TableRow>
+
+                        {/* Surface branding */}
+                        {Object.entries(selection.surfaces).map(([surfaceKey, surface]) => {
+                          if (!surface.selected) return null
+                          const surfaceInfo =
+                            KIOSK_TYPES[selection.type].surfaces[surfaceKey as keyof typeof KIOSK_TYPES.MONO.surfaces]
+                          const totalQuantity = surfaceInfo.count * selection.quantity
+                          return (
+                            <TableRow key={`${selectionIndex}-${surfaceKey}`}>
+                              <TableCell>
+                                Branding {surfaceInfo.name} ({surfaceInfo.count} par kiosque)
+                              </TableCell>
+                              <TableCell>{totalQuantity}</TableCell>
+                              <TableCell>{formatCurrency(surface.price)}</TableCell>
+                              <TableCell className="text-right">
+                                {formatCurrency(surface.price * totalQuantity)}
+                              </TableCell>
+                            </TableRow>
+                          )
+                        })}
+                      </React.Fragment>
+                    ))}
+
+                    {/* Subtotal */}
+                    <TableRow className="border-t-2">
+                      <TableCell colSpan={3} className="text-right font-medium">
+                        Sous-total (HT)
+                      </TableCell>
+                      <TableCell className="text-right font-medium">
+                        {formatCurrency(proforma.subtotal || proforma.totalAmount || 0)}
+                      </TableCell>
                     </TableRow>
 
-                    {proforma.surfaces.joues && (
+                    {/* DTSP (only for new schema) */}
+                    {isNewSchema(proforma) && proforma.dtsp > 0 && (
                       <TableRow>
-                        <TableCell>
-                          Branding Joues ({KIOSK_TYPES[proforma.kioskType].surfaces.joues.count} par kiosque)
+                        <TableCell colSpan={3} className="text-right">
+                          DTSP ({proforma.dtspRate || 3}%)
                         </TableCell>
-                        <TableCell>
-                          {KIOSK_TYPES[proforma.kioskType].surfaces.joues.count * proforma.quantity}
-                        </TableCell>
-                        <TableCell>{formatCurrency(KIOSK_TYPES[proforma.kioskType].surfaces.joues.price)}</TableCell>
-                        <TableCell className="text-right">
-                          {formatCurrency(
-                            KIOSK_TYPES[proforma.kioskType].surfaces.joues.price *
-                              KIOSK_TYPES[proforma.kioskType].surfaces.joues.count *
-                              proforma.quantity,
-                          )}
-                        </TableCell>
+                        <TableCell className="text-right">{formatCurrency(proforma.dtsp)}</TableCell>
                       </TableRow>
                     )}
 
-                    {proforma.surfaces.oreilles && (
+                    {/* TVA (only for new schema) */}
+                    {isNewSchema(proforma) && proforma.tva > 0 && (
                       <TableRow>
-                        <TableCell>
-                          Branding Oreilles ({KIOSK_TYPES[proforma.kioskType].surfaces.oreilles.count} par kiosque)
+                        <TableCell colSpan={3} className="text-right">
+                          TVA ({proforma.tvaRate || 19.25}%)
                         </TableCell>
-                        <TableCell>
-                          {KIOSK_TYPES[proforma.kioskType].surfaces.oreilles.count * proforma.quantity}
-                        </TableCell>
-                        <TableCell>{formatCurrency(KIOSK_TYPES[proforma.kioskType].surfaces.oreilles.price)}</TableCell>
-                        <TableCell className="text-right">
-                          {formatCurrency(
-                            KIOSK_TYPES[proforma.kioskType].surfaces.oreilles.price *
-                              KIOSK_TYPES[proforma.kioskType].surfaces.oreilles.count *
-                              proforma.quantity,
-                          )}
-                        </TableCell>
+                        <TableCell className="text-right">{formatCurrency(proforma.tva)}</TableCell>
                       </TableRow>
                     )}
 
-                    {proforma.surfaces.menton && (
-                      <TableRow>
-                        <TableCell>
-                          Branding Menton ({KIOSK_TYPES[proforma.kioskType].surfaces.menton.count} par kiosque)
-                        </TableCell>
-                        <TableCell>
-                          {KIOSK_TYPES[proforma.kioskType].surfaces.menton.count * proforma.quantity}
-                        </TableCell>
-                        <TableCell>{formatCurrency(KIOSK_TYPES[proforma.kioskType].surfaces.menton.price)}</TableCell>
-                        <TableCell className="text-right">
-                          {formatCurrency(
-                            KIOSK_TYPES[proforma.kioskType].surfaces.menton.price *
-                              KIOSK_TYPES[proforma.kioskType].surfaces.menton.count *
-                              proforma.quantity,
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    )}
-
-                    {proforma.surfaces.fronton && (
-                      <TableRow>
-                        <TableCell>
-                          Branding Fronton ({KIOSK_TYPES[proforma.kioskType].surfaces.fronton.count} par kiosque)
-                        </TableCell>
-                        <TableCell>
-                          {KIOSK_TYPES[proforma.kioskType].surfaces.fronton.count * proforma.quantity}
-                        </TableCell>
-                        <TableCell>{formatCurrency(KIOSK_TYPES[proforma.kioskType].surfaces.fronton.price)}</TableCell>
-                        <TableCell className="text-right">
-                          {formatCurrency(
-                            KIOSK_TYPES[proforma.kioskType].surfaces.fronton.price *
-                              KIOSK_TYPES[proforma.kioskType].surfaces.fronton.count *
-                              proforma.quantity,
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    )}
-
-                    <TableRow>
-                      <TableCell colSpan={3} className="text-right font-bold">
-                        Total
+                    {/* Total */}
+                    <TableRow className="border-t-2">
+                      <TableCell colSpan={3} className="text-right font-bold text-lg">
+                        Total {isNewSchema(proforma) ? "TTC" : ""}
                       </TableCell>
-                      <TableCell className="text-right font-bold">{formatCurrency(proforma.totalAmount)}</TableCell>
+                      <TableCell className="text-right font-bold text-lg">
+                        {formatCurrency(proforma.totalAmount)}
+                      </TableCell>
                     </TableRow>
                   </TableBody>
                 </Table>
@@ -526,9 +585,49 @@ export default function ProformaDetailsPage({ params }: { params: { id: string }
                   <p className="font-medium">Délai de livraison</p>
                   <p className="text-gray-500">15 jours ouvrables après signature du contrat.</p>
                 </div>
+                {isNewSchema(proforma) && (
+                  <div>
+                    <p className="font-medium">Taxes incluses</p>
+                    <p className="text-gray-500">
+                      DTSP ({proforma.dtspRate || 3}%) et TVA ({proforma.tvaRate || 19.25}%) incluses dans le total.
+                    </p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
+
+          {/* Schema information for debugging */}
+          {process.env.NODE_ENV === "development" && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Debug Info</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-xs space-y-2">
+                  <div>
+                    <span className="font-medium">Schema:</span> {isNewSchema(proforma) ? "New" : "Legacy"}
+                  </div>
+                  <div>
+                    <span className="font-medium">Kiosk Selections:</span> {kioskSelections.length}
+                  </div>
+                  {isNewSchema(proforma) && (
+                    <>
+                      <div>
+                        <span className="font-medium">Subtotal:</span> {proforma.subtotal}
+                      </div>
+                      <div>
+                        <span className="font-medium">DTSP:</span> {proforma.dtsp}
+                      </div>
+                      <div>
+                        <span className="font-medium">TVA:</span> {proforma.tva}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>

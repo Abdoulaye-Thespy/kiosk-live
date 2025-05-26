@@ -2,31 +2,45 @@
 
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
-import type { ProformaStatus, KioskBrandingType } from "@prisma/client"
-import { generatePdf } from "@/lib/pdfGenerator" // Assuming you have a PDF generator
+import type { ProformaStatus } from "@prisma/client"
 
-// Types
+// Updated types for multiple kiosk selections matching the new schema
+type KioskSelection = {
+  type: "MONO" | "GRAND" | "COMPARTIMENT"
+  quantity: number
+  basePrice: number
+  surfaces: {
+    joues: { selected: boolean; price: number }
+    oreilles: { selected: boolean; price: number }
+    menton: { selected: boolean; price: number }
+    fronton: { selected: boolean; price: number }
+  }
+}
+
 type ProformaFormData = {
   clientId: string
   clientName: string
   clientEmail?: string
   clientPhone?: string
   clientAddress?: string
-  kioskType: KioskBrandingType
-  quantity: number
-  surfaces: {
-    joues: boolean
-    oreilles: boolean
-    menton: boolean
-    fronton: boolean
-  }
-  basePrice: number
-  brandingPrice: number
+  kioskSelections: KioskSelection[]
+  subtotal: number
+  dtsp: number
+  tva: number
   totalAmount: number
+  dtspRate: number
+  tvaRate: number
   createdById: string
 }
 
-// Create a new proforma
+// Surface count mapping for calculations
+const SURFACE_COUNTS = {
+  MONO: { joues: 2, oreilles: 2, menton: 1, fronton: 1 },
+  GRAND: { joues: 2, oreilles: 4, menton: 1, fronton: 1 },
+  COMPARTIMENT: { joues: 1, oreilles: 1, menton: 1, fronton: 1 },
+} as const
+
+// Create a new proforma with multiple kiosk selections
 export async function createProforma(formData: ProformaFormData) {
   try {
     // Validate form data
@@ -34,12 +48,21 @@ export async function createProforma(formData: ProformaFormData) {
       return { success: false, error: "Client ID is required" }
     }
 
-    if (!formData.kioskType) {
-      return { success: false, error: "Kiosk type is required" }
+    if (!formData.kioskSelections || formData.kioskSelections.length === 0) {
+      return { success: false, error: "At least one kiosk selection is required" }
     }
 
-    if (!formData.quantity || formData.quantity < 1) {
-      return { success: false, error: "Quantity must be at least 1" }
+    // Validate each kiosk selection
+    for (const selection of formData.kioskSelections) {
+      if (!selection.type) {
+        return { success: false, error: "Kiosk type is required for all selections" }
+      }
+      if (!selection.quantity || selection.quantity < 1) {
+        return { success: false, error: "Quantity must be at least 1 for all kiosk selections" }
+      }
+      if (selection.basePrice < 0) {
+        return { success: false, error: "Base price must be a positive number" }
+      }
     }
 
     // Generate a unique proforma number
@@ -49,7 +72,29 @@ export async function createProforma(formData: ProformaFormData) {
     const expiryDate = new Date()
     expiryDate.setDate(expiryDate.getDate() + 30)
 
-    // Create the proforma
+    // Prepare kiosk selections data for storage with calculated subtotals
+    const kioskSelectionsData = formData.kioskSelections.map((selection) => {
+      const kioskSubtotal = selection.basePrice * selection.quantity
+      const surfacesSubtotal = Object.entries(selection.surfaces).reduce((total, [surfaceKey, surface]) => {
+        if (surface.selected) {
+          const count = SURFACE_COUNTS[selection.type][surfaceKey as keyof typeof SURFACE_COUNTS.MONO] || 0
+          return total + surface.price * count * selection.quantity
+        }
+        return total
+      }, 0)
+
+      return {
+        type: selection.type,
+        quantity: selection.quantity,
+        basePrice: selection.basePrice,
+        surfaces: selection.surfaces,
+        kioskSubtotal,
+        surfacesSubtotal,
+        selectionTotal: kioskSubtotal + surfacesSubtotal,
+      }
+    })
+
+    // Create the proforma using the new schema structure
     const proforma = await prisma.proforma.create({
       data: {
         proformaNumber,
@@ -58,12 +103,21 @@ export async function createProforma(formData: ProformaFormData) {
         clientEmail: formData.clientEmail,
         clientPhone: formData.clientPhone,
         clientAddress: formData.clientAddress,
-        kioskType: formData.kioskType,
-        quantity: formData.quantity,
-        surfaces: formData.surfaces,
-        basePrice: formData.basePrice,
-        brandingPrice: formData.brandingPrice,
+        // New schema fields
+        kioskSelections: kioskSelectionsData,
+        subtotal: formData.subtotal,
+        dtsp: formData.dtsp,
+        tva: formData.tva,
+        dtspRate: formData.dtspRate,
+        tvaRate: formData.tvaRate,
         totalAmount: formData.totalAmount,
+        // Legacy fields (set to null for new proformas)
+        kioskType: null,
+        quantity: null,
+        surfaces: null,
+        basePrice: null,
+        brandingPrice: null,
+        // Other fields
         createdById: formData.createdById,
         expiryDate,
         status: "DRAFT",
@@ -78,22 +132,6 @@ export async function createProforma(formData: ProformaFormData) {
         },
       },
     })
-
-    // Generate PDF (if you have a PDF generator)
-    try {
-      const pdfUrl = await generatePdf(proforma)
-
-      // Update proforma with PDF URL
-      await prisma.proforma.update({
-        where: { id: proforma.id },
-        data: { pdfUrl },
-      })
-
-      proforma.pdfUrl = pdfUrl
-    } catch (pdfError) {
-      console.error("Error generating PDF:", pdfError)
-      // Continue without PDF if generation fails
-    }
 
     revalidatePath("/admin/proforma")
 
@@ -198,9 +236,27 @@ export async function getProforma(proformaId: string) {
 // Update proforma status
 export async function updateProformaStatus(proformaId: string, status: ProformaStatus) {
   try {
+    const updateData: any = { status }
+
+    // Set timestamp based on status
+    switch (status) {
+      case "SENT":
+        updateData.sentDate = new Date()
+        break
+      case "ACCEPTED":
+        updateData.acceptedDate = new Date()
+        break
+      case "REJECTED":
+        updateData.rejectedDate = new Date()
+        break
+      case "CONVERTED":
+        updateData.convertedDate = new Date()
+        break
+    }
+
     const updatedProforma = await prisma.proforma.update({
       where: { id: proformaId },
-      data: { status },
+      data: updateData,
       include: {
         createdBy: {
           select: {
@@ -228,7 +284,97 @@ export async function updateProformaStatus(proformaId: string, status: ProformaS
   }
 }
 
-// Convert proforma to contract
+// Update proforma data (for editing existing proformas)
+export async function updateProforma(proformaId: string, formData: Partial<ProformaFormData>) {
+  try {
+    const existingProforma = await prisma.proforma.findUnique({
+      where: { id: proformaId },
+    })
+
+    if (!existingProforma) {
+      return { success: false, error: "Proforma not found" }
+    }
+
+    // Only allow updates to draft proformas
+    if (existingProforma.status !== "DRAFT") {
+      return { success: false, error: "Only draft proformas can be edited" }
+    }
+
+    // Prepare update data
+    const updateData: any = {}
+
+    if (formData.kioskSelections) {
+      // Validate kiosk selections
+      for (const selection of formData.kioskSelections) {
+        if (!selection.type || !selection.quantity || selection.quantity < 1) {
+          return { success: false, error: "Invalid kiosk selection data" }
+        }
+      }
+
+      // Prepare kiosk selections data
+      const kioskSelectionsData = formData.kioskSelections.map((selection) => {
+        const kioskSubtotal = selection.basePrice * selection.quantity
+        const surfacesSubtotal = Object.entries(selection.surfaces).reduce((total, [surfaceKey, surface]) => {
+          if (surface.selected) {
+            const count = SURFACE_COUNTS[selection.type][surfaceKey as keyof typeof SURFACE_COUNTS.MONO] || 0
+            return total + surface.price * count * selection.quantity
+          }
+          return total
+        }, 0)
+
+        return {
+          type: selection.type,
+          quantity: selection.quantity,
+          basePrice: selection.basePrice,
+          surfaces: selection.surfaces,
+          kioskSubtotal,
+          surfacesSubtotal,
+          selectionTotal: kioskSubtotal + surfacesSubtotal,
+        }
+      })
+
+      updateData.kioskSelections = kioskSelectionsData
+    }
+
+    // Update other fields if provided
+    if (formData.subtotal !== undefined) updateData.subtotal = formData.subtotal
+    if (formData.dtsp !== undefined) updateData.dtsp = formData.dtsp
+    if (formData.tva !== undefined) updateData.tva = formData.tva
+    if (formData.dtspRate !== undefined) updateData.dtspRate = formData.dtspRate
+    if (formData.tvaRate !== undefined) updateData.tvaRate = formData.tvaRate
+    if (formData.totalAmount !== undefined) updateData.totalAmount = formData.totalAmount
+
+    const updatedProforma = await prisma.proforma.update({
+      where: { id: proformaId },
+      data: updateData,
+      include: {
+        createdBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    })
+
+    revalidatePath("/admin/proforma")
+    revalidatePath(`/admin/proforma/${proformaId}`)
+
+    return {
+      success: true,
+      proforma: updatedProforma,
+    }
+  } catch (error) {
+    console.error("Error updating proforma:", error)
+    return {
+      success: false,
+      error: "Failed to update proforma",
+    }
+  }
+}
+
+// Convert proforma to contract (updated for multiple kiosk selections)
 export async function convertProformaToContract(proformaId: string, userId: string) {
   try {
     // Get the proforma details
@@ -247,6 +393,11 @@ export async function convertProformaToContract(proformaId: string, userId: stri
     // Generate a unique contract number
     const contractNumber = `CONT-${Date.now()}-${Math.floor(Math.random() * 1000)}`
 
+    // Create contract description based on kiosk selections
+    const kioskSelections = proforma.kioskSelections as any[]
+    const kioskSummary =
+      kioskSelections?.map((selection) => `${selection.quantity}x ${selection.type}`).join(", ") || "N/A"
+
     // Create the contract based on the proforma
     const contract = await prisma.contract.create({
       data: {
@@ -260,6 +411,7 @@ export async function convertProformaToContract(proformaId: string, userId: stri
         paymentFrequency: "Mensuel", // Default to monthly
         paymentAmount: proforma.totalAmount / 12, // Divide total by 12 for monthly payment
         totalAmount: proforma.totalAmount,
+        description: `Contrat basé sur la proforma ${proforma.proformaNumber}. Kiosques: ${kioskSummary}`,
         createdById: userId,
         contractActions: {
           create: {
@@ -276,6 +428,7 @@ export async function convertProformaToContract(proformaId: string, userId: stri
       data: {
         status: "CONVERTED",
         contractId: contract.id,
+        convertedDate: new Date(),
       },
     })
 
@@ -372,6 +525,56 @@ export async function deleteProforma(proformaId: string) {
     return {
       success: false,
       error: "Failed to delete proforma",
+    }
+  }
+}
+
+// Migration helper function to convert legacy proformas
+export async function migrateLegacyProformas() {
+  try {
+    const legacyProformas = await prisma.proforma.findMany({
+      where: {
+        kioskSelections: null, // Find proformas without the new structure
+        kioskType: { not: null }, // But with legacy data
+      },
+    })
+
+    for (const proforma of legacyProformas) {
+      if (!proforma.kioskType || !proforma.quantity) continue
+
+      // Convert legacy data to new structure
+      const kioskSelection = {
+        type: proforma.kioskType,
+        quantity: proforma.quantity,
+        basePrice: proforma.basePrice || 0,
+        surfaces: proforma.surfaces || {},
+        kioskSubtotal: (proforma.basePrice || 0) * (proforma.quantity || 1),
+        surfacesSubtotal: proforma.brandingPrice || 0,
+        selectionTotal: proforma.totalAmount || 0,
+      }
+
+      await prisma.proforma.update({
+        where: { id: proforma.id },
+        data: {
+          kioskSelections: [kioskSelection],
+          subtotal: proforma.totalAmount || 0,
+          dtsp: 0, // Legacy proformas didn't have DTSP
+          tva: 0, // Legacy proformas didn't have TVA
+          dtspRate: 3.0,
+          tvaRate: 19.25,
+        },
+      })
+    }
+
+    return {
+      success: true,
+      migratedCount: legacyProformas.length,
+    }
+  } catch (error) {
+    console.error("Error migrating legacy proformas:", error)
+    return {
+      success: false,
+      error: "Failed to migrate legacy proformas",
     }
   }
 }
