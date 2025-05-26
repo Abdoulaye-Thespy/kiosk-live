@@ -75,6 +75,45 @@ model Proforma {
   @@map("proformas")
 }
 
+model User {
+  id                  String             @id @default(cuid())
+  name                String
+  email               String             @unique
+  role                Role               @default(CLIENT)
+  clientType          ClientType         @default(STAFF)
+  status              UserStatus         @default(PENDING)
+  address             String?
+  phone               String?
+  verificationToken   String?
+  emailVerified       Boolean            @default(false)
+  image               String?
+  password            String?
+  resetPasswordToken  String?            @unique
+  resetPasswordExpires DateTime?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  accounts            Account[]
+  sessions            Session[]
+  notifications       Notification[]
+  inventoryMoves      InventoryMovement[]
+  serviceRequests     ServiceRequest[] @relation("TechnicianServiceRequests")
+  locationHistory     LocationHistory[]
+  prospects           Prospect[]
+  prospectActions     ProspectAction[]
+  quotes              Quote[]
+  reports             Report[]
+  kiosks              UserKiosk[]        // Many-to-many relationship with Kiosk model
+  
+  // New relations for enhanced Prospect model
+  convertedFromProspect Prospect?  @relation("ConvertedUser")
+  createdProspects      Prospect[] @relation("CreatedByUser")
+
+  contractsCreated     Contract[] @relation("ContractCreator")
+  contractsSigned      Contract[] @relation("ContractSigner")
+}
+
+
 // Contract model
 enum ClientType {
   PARTICULIER
