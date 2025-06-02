@@ -195,6 +195,44 @@ export async function getAllProformas(filters?: { status?: ProformaStatus; userI
   }
 }
 
+export async function getProformasByUser(userId: string) {
+  try {
+    const proformas = await prisma.proforma.findMany({
+      where: {
+        createdById: userId,
+      },
+      include: {
+        createdBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        contract: {
+          select: {
+            id: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    })
+
+    return {
+      success: true,
+      proformas,
+    }
+  } catch (error) {
+    console.error("Error fetching user proformas:", error)
+    return {
+      success: false,
+      error: "Failed to fetch user proformas",
+    }
+  }
+}
+
 // Get a single proforma by ID
 export async function getProforma(proformaId: string) {
   try {

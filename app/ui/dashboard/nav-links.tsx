@@ -42,8 +42,8 @@ const linksAdmin = [
 const linksCommercial = [
   { name: 'Gestion des Prospect', href: '/commercial', icon: HomeIcon },
   {
-    name: 'Opportunités',
-    href: '/commercial/opportunite',
+    name: 'proforma',
+    href: '/commercial/proforma',
     icon: UserGroupIcon,
   },
   { name: 'Contrats', 
