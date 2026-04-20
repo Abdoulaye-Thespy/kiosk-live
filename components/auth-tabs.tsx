@@ -4,22 +4,24 @@ import { useState } from "react"
 import { LoginForm } from "./login-form"
 import { SignupForm } from "./signup-form"
 import { Button } from "@/components/ui/button"
+import AcmeLogo from "@/app/ui/acme-logo"
+import Link from "next/link"
 
 export function AuthTabs() {
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login')
 
   return (
     <div className="w-full max-w-[400px] space-y-8">
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-2 text-[#ff6b4a]">
-          <span className="font-medium">Kiosk</span>
+      <Link className="mb-2 flex h-20 items-end justify-start rounded-md p-4" href="/">
+        <div className="w-32 text-white md:w-50">
+          <AcmeLogo />
         </div>
-      </div>
+      </Link>
       
       <div className="space-y-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight mb-1">
-            {activeTab === 'login' ? 'Bienvenue sur Kiosk' : 'Création de votre compte'}
+            {activeTab === 'login' ? 'Bienvenue sur KioskOnline' : 'Création de votre compte'}
           </h1>
           <p className="text-sm text-gray-500">
             {activeTab === 'login' 
