@@ -1,11 +1,11 @@
 "use client"
 import { useState, useEffect } from "react"
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, isSameDay } from "date-fns"
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, isSameDay, addMonths, subMonths } from "date-fns"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import { PlusIcon } from "@heroicons/react/24/outline"
+import { PlusIcon, ChevronLeftIcon, ChevronRightIcon, XMarkIcon } from "@heroicons/react/24/outline"
 import { getTechnicians } from "@/app/actions/fetchUserStats"
 import { getKiosksForTicket } from "@/app/actions/kiosk-actions"
 import { createServiceRequest, getServiceRequests } from "@/app/actions/ticketsactions"
@@ -59,6 +59,14 @@ export default function MaintenanceCalendar() {
       console.error("Error creating service request:", error)
       throw error
     }
+  }
+
+  const handlePreviousMonth = () => {
+    setCurrentMonth(prev => subMonths(prev, 1))
+  }
+
+  const handleNextMonth = () => {
+    setCurrentMonth(prev => addMonths(prev, 1))
   }
 
   const renderEventList = (day: Date) => {
@@ -126,6 +134,27 @@ export default function MaintenanceCalendar() {
           </Button>
         </div>
 
+        {/* Month Navigation */}
+        <div className="flex items-center justify-between mb-6">
+          <Button
+            onClick={handlePreviousMonth}
+            variant="outline"
+            className="border-orange-200 hover:bg-orange-50"
+          >
+            <ChevronLeftIcon className="h-5 w-5" />
+          </Button>
+          <div className="text-xl font-semibold text-orange-800">
+            {format(currentMonth, "MMMM yyyy")}
+          </div>
+          <Button
+            onClick={handleNextMonth}
+            variant="outline"
+            className="border-orange-200 hover:bg-orange-50"
+          >
+            <ChevronRightIcon className="h-5 w-5" />
+          </Button>
+        </div>
+
         <div className="grid grid-cols-7 gap-2">
           {["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"].map((day) => (
             <div key={day} className="text-center font-semibold py-2">
@@ -145,6 +174,18 @@ export default function MaintenanceCalendar() {
           ))}
         </div>
 
+        {/* Quick Stats - Optional */}
+        <div className="mt-6 pt-4 border-t">
+          <div className="text-sm text-gray-600">
+            Total des demandes: {serviceRequests.length} | 
+            Demandes ce mois: {
+              serviceRequests.filter(req => 
+                req.createdDate && isSameMonth(new Date(req.createdDate), currentMonth)
+              ).length
+            }
+          </div>
+        </div>
+
         <ServiceRequestForm
           isOpen={isNewRequestModalOpen}
           onOpenChange={setIsNewRequestModalOpen}
@@ -154,43 +195,75 @@ export default function MaintenanceCalendar() {
         />
 
         <Dialog open={isTicketDialogOpen} onOpenChange={setIsTicketDialogOpen}>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader className="border-b pb-4">
-              <DialogTitle className="text-xl font-semibold text-orange-700">
-                Détails de la demande de service
-              </DialogTitle>
+          <DialogContent className="sm:max-w-[550px] p-0 overflow-hidden">
+            <DialogHeader className="p-4 pb-2 border-b bg-orange-50">
+              <div className="flex items-center justify-between">
+                <DialogTitle className="text-lg font-semibold text-orange-700">
+                  Détails de la demande
+                </DialogTitle>
+                <DialogClose asChild>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <XMarkIcon className="h-4 w-4" />
+                  </Button>
+                </DialogClose>
+              </div>
             </DialogHeader>
+            
             {selectedTicket && (
-              <div className="space-y-6 py-4">
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-orange-700">Description du problème</Label>
-                  <p className="text-gray-700 bg-orange-50 p-3 rounded-md whitespace-pre-wrap">
+              <div className="p-4 space-y-3">
+                {/* Problem Description - Compact */}
+                <div className="bg-orange-50 p-2 rounded-md">
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap">
                     {selectedTicket.problemDescription}
                   </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium text-orange-700">Priorité</Label>
-                    <Badge className={`${getPriorityColor(selectedTicket.priority)} text-white`}>
+                {/* Priority & Status - Side by side */}
+                <div className="flex gap-3">
+                  <div className="flex-1 flex items-center justify-between bg-gray-50 p-2 rounded-md">
+                    <span className="text-xs font-medium text-gray-600">Priorité</span>
+                    <Badge className={`${getPriorityColor(selectedTicket.priority)} text-white text-xs px-2 py-0.5`}>
                       {selectedTicket.priority}
                     </Badge>
                   </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium text-orange-700">Statut</Label>
-                    <Badge className={`${getStatusColor(selectedTicket.status)} text-white`}>
+                  <div className="flex-1 flex items-center justify-between bg-gray-50 p-2 rounded-md">
+                    <span className="text-xs font-medium text-gray-600">Statut</span>
+                    <Badge className={`${getStatusColor(selectedTicket.status)} text-white text-xs px-2 py-0.5`}>
                       {selectedTicket.status}
                     </Badge>
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-orange-700">Technicien(e)(s) assigné(e)(s)</Label>
-                  <div className="bg-orange-50 p-3 rounded-md">
+                {/* Dates - Two columns */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-gray-50 p-2 rounded-md">
+                    <div className="text-xs font-medium text-gray-600 mb-1">Date de création</div>
+                    <div className="text-sm text-gray-800">
+                      {selectedTicket.createdDate && format(new Date(selectedTicket.createdDate), "dd/MM/yyyy")}
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 p-2 rounded-md">
+                    <div className="text-xs font-medium text-gray-600 mb-1">Date de résolution</div>
+                    <div className="text-sm text-gray-800">
+                      {selectedTicket.resolvedDate 
+                        ? format(new Date(selectedTicket.resolvedDate), "dd/MM/yyyy")
+                        : "Non résolu"}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Kiosk & Technicians */}
+                <div className="bg-gray-50 p-2 rounded-md">
+                  <div className="text-xs font-medium text-gray-600 mb-1">Kiosque</div>
+                  <div className="text-sm text-gray-800">{selectedTicket.kiosk.kioskName}</div>
+                </div>
+
+                <div className="bg-gray-50 p-2 rounded-md">
+                  <div className="text-xs font-medium text-gray-600 mb-1">Technicien(s)</div>
+                  <div className="text-sm text-gray-800">
                     {selectedTicket.technicians.length > 0 ? (
                       selectedTicket.technicians.map((technician, index) => (
-                        <span key={technician.id} className="text-gray-700">
+                        <span key={technician.id}>
                           {technician.name}
                           {index < selectedTicket.technicians.length - 1 ? ", " : ""}
                         </span>
@@ -201,35 +274,21 @@ export default function MaintenanceCalendar() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-orange-700">Kiosque</Label>
-                  <p className="text-gray-700 bg-orange-50 p-3 rounded-md">
-                    {selectedTicket.kiosk.kioskName}
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-orange-700">Date de résolution</Label>
-                  <p className="text-gray-700 bg-orange-50 p-3 rounded-md">
-                    {selectedTicket.resolvedDate 
-                      ? format(new Date(selectedTicket.resolvedDate), "PPP")
-                      : "Non résolu"}
-                  </p>
-                </div>
-
+                {/* Comments - Only if exists */}
                 {selectedTicket.comments && (
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium text-orange-700">Commentaires</Label>
-                    <p className="text-gray-700 bg-orange-50 p-3 rounded-md whitespace-pre-wrap">
+                  <div className="bg-gray-50 p-2 rounded-md">
+                    <div className="text-xs font-medium text-gray-600 mb-1">Commentaires</div>
+                    <div className="text-sm text-gray-700 whitespace-pre-wrap">
                       {selectedTicket.comments}
-                    </p>
+                    </div>
                   </div>
                 )}
               </div>
             )}
-            <DialogFooter className="border-t pt-4">
+            
+            <DialogFooter className="p-3 pt-2 border-t bg-gray-50">
               <DialogClose asChild>
-                <Button className="bg-orange-500 hover:bg-orange-600 text-white px-6">
+                <Button className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-1 h-8">
                   Fermer
                 </Button>
               </DialogClose>

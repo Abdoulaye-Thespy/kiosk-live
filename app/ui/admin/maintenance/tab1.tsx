@@ -65,8 +65,8 @@ export default function MaintenanceDashboard() {
       {
         title: "Kiosques en maintenance",
         value: data.kiosksInMaintenance.toString(),
-        subValue: "24",
-        subLabel: "à planifier",
+        subValue: "0",
+        // subLabel: "à planifier",
         trend: "up",
         color: "text-emerald-500",
       },
@@ -77,8 +77,8 @@ export default function MaintenanceDashboard() {
         trendValue: "9.1%",
         color: "text-emerald-500",
       },
-      { title: "Tickets Ouverts", value: data.openTicketsThisMonth.toString(), subLabel: "ce dernier mois" },
-      { title: "Tickets Complets", value: data.completedTicketsThisMonth.toString(), subLabel: "ce dernier mois" },
+      { title: "Tickets Ouverts", value: data.openTicketsThisMonth.toString(), subLabel: "" },
+      { title: "Tickets Completés", value: data.completedTicketsThisMonth.toString(), subLabel: "" },
     ])
   }
 
