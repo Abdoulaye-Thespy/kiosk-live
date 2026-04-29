@@ -23,10 +23,10 @@ const linksAdmin = [
     href: '/admin/utilisateurs',
     icon: UserGroupIcon,
   },
-  { name: 'Rapports', 
-    href: '/admin/rapports', 
-    icon: ChartPieIcon 
-  },
+  // { name: 'Rapports', 
+  //   href: '/admin/rapports', 
+  //   icon: ChartPieIcon 
+  // },
   { name: 'Kiosques', href: '/admin/kiosques', icon: BuildingOfficeIcon },
   { name: 'Contrats', href: '/admin/contrat', icon: ClipboardIcon },
   { name: 'Proforma', 

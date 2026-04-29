@@ -1,11 +1,10 @@
 "use server"
 
-import { hash } from "bcrypt"
-import { PrismaClient, type Role, type UserStatus, type ClientType } from "@prisma/client"
+import bcrypt from "bcryptjs"  // Import as default
+import { prisma } from "@/lib/prisma"
+import { type Role, type UserStatus, type ClientType } from "@prisma/client"
 import crypto from "crypto"
 import { sendTemporaryPasswordEmail, sendVerificationEmail } from "@/lib/email"
-
-const prisma = new PrismaClient()
 
 export async function createUserByAdmin(formData: {
   name: string
@@ -24,9 +23,11 @@ export async function createUserByAdmin(formData: {
       return { success: false, error: "Email already in use" }
     }
 
+     const finalClientType = clientType || "STAFF"
+
     // Generate a random password
-    const password = crypto.randomBytes(16).toString("hex")
-    const hashedPassword = await hash(password, 10)
+    const temporaryPassword = crypto.randomBytes(16).toString("hex")
+    const hashedPassword = await bcrypt.hash(temporaryPassword, 10)  // Use bcrypt.hash
 
     const verificationToken = crypto.randomUUID()
 
@@ -38,7 +39,7 @@ export async function createUserByAdmin(formData: {
         password: hashedPassword,
         phone,
         role: role as Role,
-        clientType,
+        clientType: finalClientType as ClientType,  // Use the default if empty
         address,
         status: status as UserStatus,
         emailVerified: false,
@@ -46,10 +47,9 @@ export async function createUserByAdmin(formData: {
       },
     })
 
-
     // Send email with temporary password and verification link
-    await sendVerificationEmail(email, verificationToken);
-    await sendTemporaryPasswordEmail(email, password);
+    await sendVerificationEmail(email, verificationToken)
+    await sendTemporaryPasswordEmail(email, temporaryPassword)
 
     return {
       success: true,
@@ -60,4 +60,3 @@ export async function createUserByAdmin(formData: {
     return { success: false, error: "An error occurred while creating the user" }
   }
 }
-

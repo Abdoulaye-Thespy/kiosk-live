@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server"
-import { PrismaClient } from "@prisma/client"
+import { prisma } from "@/lib/prisma"  // Import your singleton
 import crypto from "crypto"
-import bcrypt from "bcrypt"
-
-const prisma = new PrismaClient()
+import bcrypt from "bcryptjs"
 
 export async function POST(req: Request) {
   try {
@@ -41,4 +39,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "An error occurred while resetting your password" }, { status: 500 })
   }
 }
-

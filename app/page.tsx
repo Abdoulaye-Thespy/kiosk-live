@@ -20,7 +20,14 @@ export default function Home() {
   }, [session, status, router])
 
   if (isCheckingSession || status === "loading") {
-    return <div>Loading...</div>
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-[#ff6b4a] border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-gray-600">Chargement...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -58,4 +65,3 @@ export default function Home() {
     </div>
   )
 }
-

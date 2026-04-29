@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server"
-import { PrismaClient } from "@prisma/client"
+import { prisma } from "@/lib/prisma"  // Import your singleton
 import crypto from "crypto"
 import { sendPasswordResetEmail } from "@/lib/email"
-
-const prisma = new PrismaClient()
 
 export async function POST(req: Request) {
   try {

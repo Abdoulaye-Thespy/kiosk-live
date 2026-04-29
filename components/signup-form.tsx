@@ -6,12 +6,17 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Loader2, User, Mail, KeyRound, Eye, EyeOff } from "lucide-react"
+import { Loader2, User, Mail, KeyRound, Eye, EyeOff, CheckCircle, XCircle } from "lucide-react"
 import CheckEmailPage from "@/app/auth/check-email/page"
 
-export function SignupForm() {
+interface SignupFormProps {
+  onSwitchToLogin?: () => void
+}
+
+export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -21,10 +26,47 @@ export function SignupForm() {
   const [signupSuccess, setSignupSuccess] = useState(false)
   const router = useRouter()
 
+  // Password validation states
+  const [passwordValidation, setPasswordValidation] = useState({
+    minLength: false,
+    hasUpperCase: false,
+    hasLowerCase: false,
+    hasNumber: false,
+    hasSpecialChar: false,
+  })
+
+  // Validate password on change
+  const validatePassword = (pwd: string) => {
+    setPasswordValidation({
+      minLength: pwd.length >= 8,
+      hasUpperCase: /[A-Z]/.test(pwd),
+      hasLowerCase: /[a-z]/.test(pwd),
+      hasNumber: /[0-9]/.test(pwd),
+      hasSpecialChar: /[!@#$%^&*(),.?":{}|<>]/.test(pwd),
+    })
+  }
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newPassword = e.target.value
+    setPassword(newPassword)
+    validatePassword(newPassword)
+  }
+
+  const isPasswordValid = () => {
+    return Object.values(passwordValidation).every(v => v === true)
+  }
+
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault()
     setIsLoading(true)
     setError("")
+
+    // Validate password strength
+    if (!isPasswordValid()) {
+      setError("Veuillez entrer un mot de passe plus sécurisé")
+      setIsLoading(false)
+      return
+    }
 
     if (password !== confirmPassword) {
       setError("Les mots de passe ne correspondent pas.")
@@ -46,11 +88,11 @@ export function SignupForm() {
       if (response.ok) {
         setSignupSuccess(true)
       } else {
-        setError(data.error || "Failed to sign up. Please try again.")
+        setError(data.error || "Échec de l'inscription. Veuillez réessayer.")
       }
     } catch (error) {
       console.error(error)
-      setError("An error occurred during signup. Please try again.")
+      setError("Une erreur est survenue lors de l'inscription. Veuillez réessayer.")
     } finally {
       setIsLoading(false)
     }
@@ -77,7 +119,7 @@ export function SignupForm() {
             <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
             <Input
               type="text"
-              placeholder="John Doe"
+              placeholder="Jean Dupont"
               className="h-11 pl-10 border-gray-200"
               disabled={isLoading}
               value={name}
@@ -86,13 +128,14 @@ export function SignupForm() {
             />
           </div>
         </div>
+        
         <div>
           <label className="text-sm text-gray-700 mb-1.5 block">Email</label>
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
             <Input
               type="email"
-              placeholder="johndoe@mail.com"
+              placeholder="jean@mail.com"
               className="h-11 pl-10 border-gray-200"
               disabled={isLoading}
               value={email}
@@ -106,30 +149,30 @@ export function SignupForm() {
         <div>
           <label className="text-sm text-gray-700 mb-1.5 block">Type de client</label>
           <div className="flex gap-6 mt-2">
-            <div className="flex items-center">
+            <label className="flex items-center cursor-pointer">
               <input
-                type="checkbox"
-                id="particulier"
+                type="radio"
+                name="clientType"
                 checked={clientType === "PARTICULIER"}
                 onChange={() => setClientType("PARTICULIER")}
-                className="h-4 w-4 rounded border-gray-300 text-[#ff6b4a] focus:ring-[#ff6b4a]"
+                className="h-4 w-4 rounded-full border-gray-300 text-[#ff6b4a] focus:ring-[#ff6b4a]"
               />
-              <label htmlFor="particulier" className="ml-2 text-sm font-medium text-gray-700">
+              <span className="ml-2 text-sm font-medium text-gray-700">
                 PARTICULIER
-              </label>
-            </div>
-            <div className="flex items-center">
+              </span>
+            </label>
+            <label className="flex items-center cursor-pointer">
               <input
-                type="checkbox"
-                id="entreprise"
+                type="radio"
+                name="clientType"
                 checked={clientType === "ENTREPRISE"}
                 onChange={() => setClientType("ENTREPRISE")}
-                className="h-4 w-4 rounded border-gray-300 text-[#ff6b4a] focus:ring-[#ff6b4a]"
+                className="h-4 w-4 rounded-full border-gray-300 text-[#ff6b4a] focus:ring-[#ff6b4a]"
               />
-              <label htmlFor="entreprise" className="ml-2 text-sm font-medium text-gray-700">
+              <span className="ml-2 text-sm font-medium text-gray-700">
                 ENTREPRISE
-              </label>
-            </div>
+              </span>
+            </label>
           </div>
         </div>
 
@@ -139,11 +182,11 @@ export function SignupForm() {
             <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
             <Input
               type={showPassword ? "text" : "password"}
-              placeholder="Enter your password"
+              placeholder="Votre mot de passe"
               className="h-11 pl-10 pr-10 border-gray-200"
               disabled={isLoading}
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={handlePasswordChange}
               required
             />
             <button
@@ -154,17 +197,41 @@ export function SignupForm() {
               {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
             </button>
           </div>
-          <div className="mt-1">
-            <span className="text-sm text-gray-500">Minimum 8 caractères</span>
-          </div>
+          
+          {/* Password validation requirements */}
+          {password && (
+            <div className="mt-2 space-y-1 text-xs">
+              <div className={`flex items-center gap-1 ${passwordValidation.minLength ? 'text-green-600' : 'text-gray-500'}`}>
+                {passwordValidation.minLength ? <CheckCircle className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
+                <span>Au moins 8 caractères</span>
+              </div>
+              <div className={`flex items-center gap-1 ${passwordValidation.hasUpperCase ? 'text-green-600' : 'text-gray-500'}`}>
+                {passwordValidation.hasUpperCase ? <CheckCircle className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
+                <span>Au moins une lettre majuscule</span>
+              </div>
+              <div className={`flex items-center gap-1 ${passwordValidation.hasLowerCase ? 'text-green-600' : 'text-gray-500'}`}>
+                {passwordValidation.hasLowerCase ? <CheckCircle className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
+                <span>Au moins une lettre minuscule</span>
+              </div>
+              <div className={`flex items-center gap-1 ${passwordValidation.hasNumber ? 'text-green-600' : 'text-gray-500'}`}>
+                {passwordValidation.hasNumber ? <CheckCircle className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
+                <span>Au moins un chiffre</span>
+              </div>
+              <div className={`flex items-center gap-1 ${passwordValidation.hasSpecialChar ? 'text-green-600' : 'text-gray-500'}`}>
+                {passwordValidation.hasSpecialChar ? <CheckCircle className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
+                <span>Au moins un caractère spécial (!@#$%^&*)</span>
+              </div>
+            </div>
+          )}
         </div>
+        
         <div>
           <label className="text-sm text-gray-700 mb-1.5 block">Confirmer le mot de passe</label>
           <div className="relative">
             <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
             <Input
-              type={showPassword ? "text" : "password"}
-              placeholder="Confirm your password"
+              type={showConfirmPassword ? "text" : "password"}
+              placeholder="Confirmez votre mot de passe"
               className="h-11 pl-10 pr-10 border-gray-200"
               disabled={isLoading}
               value={confirmPassword}
@@ -173,20 +240,23 @@ export function SignupForm() {
             />
             <button
               type="button"
-              onClick={() => setShowPassword(!showPassword)}
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
             >
-              {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
             </button>
           </div>
+          {confirmPassword && password !== confirmPassword && (
+            <p className="text-red-500 text-xs mt-1">Les mots de passe ne correspondent pas</p>
+          )}
         </div>
       </div>
 
-      {error && <div className="text-red-500 text-md mt-2">{error}</div>}
+      {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
 
       <Button
         type="submit"
-        disabled={isLoading}
+        disabled={isLoading || (password !== "" && !isPasswordValid())}
         className="w-full h-11 bg-[#ff6b4a] hover:bg-[#ff5a36] text-white font-medium"
       >
         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
@@ -198,7 +268,7 @@ export function SignupForm() {
           <div className="w-full border-t border-gray-200" />
         </div>
         <div className="relative flex justify-center text-xs">
-          <span className="bg-white px-2 text-gray-500">Or</span>
+          <span className="bg-white px-2 text-gray-500">Ou</span>
         </div>
       </div>
 
@@ -207,18 +277,15 @@ export function SignupForm() {
         variant="outline"
         disabled={isLoading}
         className="w-full h-11 border-gray-200 bg-white hover:bg-gray-50"
+        onClick={onSwitchToLogin}
       >
         <div className="flex items-center justify-center gap-3">
-          <svg viewBox="0 0 24 24" className="h-5 w-5">
-            <path
-              fill="currentColor"
-              d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"
-            />
+          <svg className="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
           </svg>
-          <span>Sign Up with Google</span>
+          <span>Déjà inscrit ? Se connecter</span>
         </div>
       </Button>
     </form>
   )
 }
-

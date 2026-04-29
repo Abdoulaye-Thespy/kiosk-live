@@ -9,15 +9,14 @@ import Header from "@/app/ui/header"
 import { deleteKiosk, getKiosks } from "@/app/actions/kiosk-actions"
 
 const tabs = [
-  { id: "metrique", label: "Metriques" },
-  { id: "dashboard", label: "Vue des kiosque sur Tabeau" },
-  { id: "invoices", label: "Vue des kiosque sur Carte" },
+  { id: "metrique", label: "Métriques" },
+  { id: "dashboard", label: "Vue des kiosques sur Tableau" },
+  { id: "invoices", label: "Vue des kiosques sur Carte" },
 ]
-
 
 import { type Kiosk } from "@prisma/client"
 
-export default function InvoiceDashboard() {
+export default function KioskManagement() {
   const [activeTab, setActiveTab] = useState("dashboard")
   const [kiosks, setKiosks] = useState<Kiosk[]>([])
   const [totalPages, setTotalPages] = useState(1)
@@ -65,25 +64,22 @@ export default function InvoiceDashboard() {
   }
 
   const handleKioskDelete = async (kioskId: number) => {
-      try {
-        const result = await deleteKiosk(kioskId)
-        if (result.error) {
-          // You might want to add a toast notification here
-          console.error(result.error)
-        } else {
-          // Update local state only after successful deletion
-          setKiosks(kiosks.filter((kiosk) => kiosk.id !== kioskId))
-          // You might want to add a success toast notification here
-          console.log(result.message)
-        }
-      } catch (error) {
-        console.error("Error deleting kiosk:", error)
+    try {
+      const result = await deleteKiosk(kioskId)
+      if (result.error) {
+        console.error(result.error)
+      } else {
+        setKiosks(kiosks.filter((kiosk) => kiosk.id !== kioskId))
+        console.log(result.message)
       }
+    } catch (error) {
+      console.error("Error deleting kiosk:", error)
+    }
   }
 
   const handleKioskAdd = (newKiosk: Kiosk) => {
     setKiosks((prevKiosks) => [newKiosk, ...prevKiosks])
-    fetchKiosks() // Refresh the list to ensure we have the latest data
+    fetchKiosks()
   }
 
   return (
@@ -103,16 +99,17 @@ export default function InvoiceDashboard() {
             </button>
           ))}
         </nav>
-        <AddKioskDialog kiosks={kiosks} 
-        onSuccess={(addedKiosk) => {
-          handleKioskAdd(addedKiosk)
-        }}
+        <AddKioskDialog 
+          kiosks={kiosks} 
+          onSuccess={(addedKiosk) => {
+            handleKioskAdd(addedKiosk)
+          }}
         />
       </div>
 
       <div className="mt-4">
-        {activeTab === "dashboard" && (
-          <KioskTab3
+        {activeTab === "metrique" && (
+          <KioskTab1
             kiosks={kiosks}
             totalPages={totalPages}
             currentPage={currentPage}
@@ -128,8 +125,8 @@ export default function InvoiceDashboard() {
             onRefresh={fetchKiosks}
           />
         )}
-         {activeTab === "metrique" && (
-          <KioskTab1
+        {activeTab === "dashboard" && (
+          <KioskTab3
             kiosks={kiosks}
             totalPages={totalPages}
             currentPage={currentPage}
@@ -150,4 +147,3 @@ export default function InvoiceDashboard() {
     </div>
   )
 }
-

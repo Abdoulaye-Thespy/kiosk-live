@@ -1,0 +1,525 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ProformaStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+  CONVERTED
+  EXPIRED
+}
+
+enum KioskBrandingType {
+  MONO
+  GRAND
+  COMPARTIMENT
+}
+
+model Proforma {
+  id                String          @id @default(cuid())
+  proformaNumber    String          @unique
+  status            ProformaStatus  @default(DRAFT)
+  
+  // Client details
+  clientId          String?
+  clientName        String
+  clientEmail       String?
+  clientPhone       String?
+  clientAddress     String?
+  
+  // Multiple kiosk selections (replaces single kioskType and quantity)
+  kioskSelections   Json            // Array of kiosk selections with their configurations
+  
+  // Pricing breakdown
+  subtotal          Float           // Pre-tax total
+  dtsp              Float           // DTSP amount (3% of subtotal)
+  tva               Float           // TVA amount (19.25% of subtotal + DTSP)
+  dtspRate          Float           @default(3.0)    // DTSP rate (%)
+  tvaRate           Float           @default(19.25)  // TVA rate (%)
+  totalAmount       Float           // Final total including all taxes
+  
+  // Legacy fields (kept for backward compatibility, can be removed later)
+  kioskType         KioskBrandingType?
+  quantity          Int?
+  surfaces          Json?           // Legacy surfaces data
+  basePrice         Float?          // Legacy base price
+  brandingPrice     Float?          // Legacy branding price
+  
+  // Relationships
+  createdBy         User            @relation("ProformaCreator", fields: [createdById], references: [id])
+  createdById       String
+  
+  // If converted to contract
+  contract          Contract?       @relation("ProformaContract", fields: [contractId], references: [id])
+  contractId        String?         @unique
+  
+  // Timestamps
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  expiryDate        DateTime?       // 30 days from creation by default
+  sentDate          DateTime?
+  acceptedDate      DateTime?
+  rejectedDate      DateTime?
+  convertedDate     DateTime?
+  
+  // PDF document
+  pdfUrl            String?
+  
+  @@map("proformas")
+}
+
+model User {
+  id                  String             @id @default(cuid())
+  name                String
+  email               String             @unique
+  role                Role               @default(CLIENT)
+  clientType          ClientType         @default(STAFF)
+  status              UserStatus         @default(PENDING)
+  address             String?
+  phone               String?
+  verificationToken   String?
+  emailVerified       Boolean            @default(false)
+  image               String?
+  password            String?
+  resetPasswordToken  String?            @unique
+  resetPasswordExpires DateTime?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  accounts            Account[]
+  sessions            Session[]
+  notifications       Notification[]
+  inventoryMoves      InventoryMovement[]
+  serviceRequests     ServiceRequest[] @relation("TechnicianServiceRequests")
+  locationHistory     LocationHistory[]
+  prospects           Prospect[]
+  prospectActions     ProspectAction[]
+  quotes              Quote[]
+  reports             Report[]
+  kiosks              UserKiosk[]        // Many-to-many relationship with Kiosk model
+  
+  // New relations for enhanced Prospect model
+  convertedFromProspect Prospect?  @relation("ConvertedUser")
+  createdProspects      Prospect[] @relation("CreatedByUser")
+  proformasCreated  Proforma[]      @relation("ProformaCreator")
+  contractsCreated     Contract[] @relation("ContractCreator")
+  contractsSigned      Contract[] @relation("ContractSigner")
+}
+
+
+// Contract model
+enum ClientType {
+  PARTICULIER
+  ENTREPRISE
+  STAFF
+}
+
+// Contract model
+enum ContractStatus {
+  DRAFT
+  PENDING
+  CONFIRMED
+  ACTIVE
+  EXPIRED
+  TERMINATED
+  CANCELLED
+}
+
+model Contract {
+  id                String          @id @default(cuid())
+  contractNumber    String          @unique
+  title             String
+  status            ContractStatus  @default(DRAFT)
+  startDate         DateTime?
+  endDate           DateTime?
+  signatureDate     DateTime?
+  terminationDate   DateTime?
+  
+  // Contract details
+  clientName        String
+  clientIdNumber    String?
+  clientIdIssuedDate DateTime?
+  clientIdIssuedPlace String?
+  clientAddress     String?
+  clientPhone       String?
+  clientBusinessAddress String?
+  clientBusinessQuarter String?
+  clientBusinessLocation String?
+  
+  // Contract terms
+  contractDuration  Int             // Duration in months
+  paymentFrequency  String          // Monthly, Quarterly, Annually
+  paymentAmount     Float
+  totalAmount       Float
+  
+  // Kiosk details
+  kiosks            Kiosk[]
+  
+  // Relationships
+  createdBy         User            @relation("ContractCreator", fields: [createdById], references: [id])
+  createdById       String
+  signedBy          User?           @relation("ContractSigner", fields: [signedById], references: [id])
+  signedById        String?
+  
+  // Proforma relationship
+  proforma          Proforma?       @relation("ProformaContract")
+  
+  // Documents
+  contractDocument  String?         // URL to the PDF document
+  
+  // Timestamps
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  
+  // Related models
+  contractActions   ContractAction[]
+}
+
+model ContractAction {
+  id                String          @id @default(cuid())
+  action            String
+  description       String?
+  
+  // Relationships
+  contract          Contract        @relation(fields: [contractId], references: [id])
+  contractId        String
+  
+  // Timestamps
+  createdAt         DateTime        @default(now())
+}
+
+// Enhanced Prospect model
+enum ProspectStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  PROPOSAL_SENT
+  NEGOTIATION
+  CONVERTED
+  LOST
+}
+
+model Prospect {
+  id              String          @id @default(cuid())
+  name            String
+  contact         String?
+  address         String?
+  need            String?
+  prospectStatus  ProspectStatus  @default(NEW)
+  source          String?
+  estimatedValue  Decimal?
+  notes           String?
+  lastContactDate DateTime?
+  conversionDate  DateTime?
+  
+  // Relationship to User if converted
+  convertedUserId String?         @unique
+  convertedUser   User?           @relation("ConvertedUser", fields: [convertedUserId], references: [id])
+  
+  // Assignment relationship
+  assignedTo      User?           @relation(fields: [assignedToId], references: [id])
+  assignedToId    String?
+  
+  // Created by relationship
+  createdBy       User?           @relation("CreatedByUser", fields: [createdById], references: [id])
+  createdById     String?
+  
+  // Timestamps
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  
+  // Related models
+  actions         ProspectAction[]
+  quotes          Quote[]
+}
+
+model ProspectAction {
+  id            String    @id @default(cuid())
+  prospect      Prospect  @relation(fields: [prospectId], references: [id])
+  prospectId    String
+  user          User      @relation(fields: [userId], references: [id])
+  userId        String
+  actionType    String
+  actionDetails String?
+  createdAt     DateTime  @default(now())
+}
+
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?  @db.Text
+  access_token       String?  @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?  @db.Text
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Kiosk {
+  id                    Int      @id @default(autoincrement())
+  kioskName             String
+  kioskMatricule        String   @default("K-000-0000-000")
+  clientName            String?
+  kioskAddress          String?
+  gpsLatitude           Float?
+  gpsLongitude          Float?
+  kioskTown             KioskTown   @default(DOUALA)
+  productTypes          String?
+  managerName           String?
+  managerContacts       String?
+  locationId            String?
+  status                KioskStatus @default(REQUEST)
+  type                  KioskType    @default(ONE_COMPARTMENT_WITHOUT_BRANDING)
+  image                 String?
+  averageMonthlyRevenue Decimal?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  contracts             Contract[]
+  inventory             KioskInventory[]
+  inventoryMoves        InventoryMovement[]
+  serviceRequests       ServiceRequest[]
+  locationHistory       LocationHistory[]
+  users                 UserKiosk[]  // Many-to-many relationship with User model
+}
+
+enum KioskTown {
+  DOUALA
+  YAOUNDE
+}
+
+enum KioskState {
+  FREE
+  ONE_COMPARTMENT_OCCUPIED
+  TWO_COMPARTMENTS_OCCUPIED
+  FULLY_OCCUPIED
+}
+
+model UserKiosk {
+  id      String   @id @default(cuid())
+  userId  String
+  kioskId Int
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kiosk Kiosk @relation(fields: [kioskId], references: [id])
+
+  @@unique([userId, kioskId])
+}
+
+model Product {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  category    ProductCategory @relation(fields: [categoryId], references: [id])
+  categoryId  String
+  unitPrice   Decimal
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  inventory   KioskInventory[]
+  moves       InventoryMovement[]
+}
+
+model ServiceRequest {
+  id                  String    @id @default(cuid())
+  kiosk               Kiosk     @relation(fields: [kioskId], references: [id])
+  kioskId             Int
+  technicians         User[]    @relation("TechnicianServiceRequests")
+  problemDescription  String
+  comments            String?
+  status              RequestStatus @default(OPEN)
+  priority            RequestPriority @default(MEDIUM)
+  createdDate         DateTime  @default(now())
+  deadLine            DateTime?
+  resolvedDate        DateTime?
+  attachments         String?
+  updatedAt           DateTime  @updatedAt
+}
+
+model ProductCategory {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  products    Product[]
+}
+
+model KioskInventory {
+  id                String    @id @default(cuid())
+  kiosk             Kiosk     @relation(fields: [kioskId], references: [id])
+  kioskId           Int
+  product           Product   @relation(fields: [productId], references: [id])
+  productId         String
+  quantity          Int       @default(0)
+  lastRestocked     DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+model InventoryMovement {
+  id                String    @id @default(cuid())
+  kiosk             Kiosk     @relation(fields: [kioskId], references: [id])
+  kioskId           Int
+  product           Product   @relation(fields: [productId], references: [id])
+  productId         String
+  movementType      String
+  quantity          Int
+  reason            String?
+  createdBy         User      @relation(fields: [createdById], references: [id])
+  createdById       String
+  movementDate      DateTime  @default(now())
+}
+
+model LocationHistory {
+  id              String    @id @default(cuid())
+  kiosk           Kiosk     @relation(fields: [kioskId], references: [id])
+  kioskId         Int
+  oldLocation     String?
+  newLocation     String?
+  validatedBy     User?     @relation(fields: [validatedById], references: [id])
+  validatedById   String?
+  createdAt       DateTime  @default(now())
+}
+
+model Payment {
+  id              String    @id @default(cuid())
+  invoice         Invoice   @relation(fields: [invoiceId], references: [id])
+  invoiceId       String
+  amount          Decimal
+  paymentDate     DateTime
+  paymentMethod   String?
+}
+
+model Invoice {
+  id              String    @id @default(cuid())
+  clientOrVendor  String?
+  type            String?
+  issueDate       DateTime?
+  termsConditions String?
+  contractId      String
+  amount          Decimal
+  dueDate         DateTime?
+  status          InvoiceStatus @default(PENDING)
+  payments        Payment[]
+}
+
+model Notification {
+  id          String    @id @default(cuid())
+  user        User      @relation(fields: [userId], references: [id])
+  userId      String
+  message     String
+  status      NotificationStatus @default(SENT)
+}
+
+model Quote {
+  id          String    @id @default(cuid())
+  prospect    Prospect  @relation(fields: [prospectId], references: [id])
+  prospectId  String
+  createdBy   User      @relation(fields: [createdById], references: [id])
+  createdById String
+  services    String?
+  totalCost   Decimal?
+  deadlineDate DateTime?
+  pdfUrl      String?
+  createdAt   DateTime  @default(now())
+}
+
+model Report {
+  id              String    @id @default(cuid())
+  type            String
+  generatedBy     User      @relation(fields: [generatedById], references: [id])
+  generatedById   String
+  validationDate  DateTime?
+  createdAt       DateTime  @default(now())
+}
+
+enum Role {
+  CLIENT
+  RESPONSABLE
+  TECHNICIEN
+  SUPERADMIN
+  COMMERCIAL
+  ADMIN
+  JURIDIQUE
+  CLIENTADMIN
+  COMPTABLE
+}
+
+enum KioskType {
+  ONE_COMPARTMENT_WITH_BRANDING
+  THREE_COMPARTMENT_WITH_BRANDING
+  ONE_COMPARTMENT_WITHOUT_BRANDING
+  THREE_COMPARTMENT_WITHOUT_BRANDING
+}
+
+enum KioskStatus {
+  REQUEST
+  LOCALIZING
+  AVAILABLE
+  UNDER_MAINTENANCE
+  IN_STOCK
+  ACTIVE
+  UNACTIVE
+  ACTIVE_UNDER_MAINTENANCE
+  UNACTIVE_UNDER_MAINTENANCE
+}
+
+enum RequestStatus {
+  OPEN
+  IN_PROGRESS
+  UNDER_REVIEW
+  CLOSED
+}
+
+enum RequestPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum InvoiceStatus {
+  PAID
+  PENDING
+  OVERDUE
+}
+
+enum UserStatus {
+  PENDING
+  VERIFIED
+  ONLINE
+  OFFLINE
+}
+
+enum NotificationStatus {
+  SENT
+  VIEWED
+}

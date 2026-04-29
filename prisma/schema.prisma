@@ -7,6 +7,590 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model DeletedRecord {
+  id                  String            @id @default(cuid())
+  originalId          String
+  entityType          DeletedEntityType
+  entityData          Json
+  deletedBy           String
+  deletedByEmail      String
+  deletedAt           DateTime          @default(now())
+  deleteAction        DeleteActionType  @default(SOFT_DELETE)
+  restorationDate     DateTime?
+  restoredBy          String?
+  permanentDeleteDate DateTime?
+  reason              String?
+  ipAddress           String?
+  userAgent           String?
+
+  @@index([originalId])
+  @@index([entityType])
+  @@index([deletedBy])
+  @@index([deletedAt])
+  @@map("deleted_records")
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  action     String
+  entityType String
+  entityId   String
+  oldValues  Json?
+  newValues  Json?
+  userId     String
+  userEmail  String
+  userRole   Role
+  ipAddress  String?
+  userAgent  String?
+  timestamp  DateTime @default(now())
+  details    String?
+
+  @@index([entityType, entityId])
+  @@index([userId])
+  @@index([timestamp])
+  @@index([action])
+  @@map("audit_logs")
+}
+
+model User {
+  id                     String                       @id @default(cuid())
+  name                   String
+  email                  String                       @unique
+  role                   Role                         @default(CLIENT)
+  clientType             ClientType                   @default(STAFF)
+  status                 UserStatus                   @default(PENDING)
+  address                String?
+  phone                  String?
+  verificationToken      String?
+  emailVerified          Boolean                      @default(false)
+  image                  String?
+  password               String?
+  resetPasswordToken     String?                      @unique
+  resetPasswordExpires   DateTime?
+  deletedAt              DateTime?
+  deletedBy              String?
+  createdAt              DateTime                     @default(now())
+  updatedAt              DateTime                     @updatedAt
+  accounts               Account[]
+  contractsCreated       Contract[]                   @relation("ContractCreator")
+  contractsSigned        Contract[]                   @relation("ContractSigner")
+  inventoryMoves         InventoryMovement[]
+  kioskAssignments       KioskAssignment[]
+  compartmentAssignments KioskCompartmentAssignment[]
+  compartmentClients     KioskCompartment[]           @relation("CompartmentClient")
+  kioskRequests          KioskRequest[]               @relation("ClientRequests")
+  monoKiosks             Kiosk[]                      @relation("MonoKioskClient")
+  locationHistory        LocationHistory[]
+  notifications          Notification[]
+  proformasCreated       Proforma[]                   @relation("ProformaCreator")
+  prospectActions        ProspectAction[]
+  prospects              Prospect[]                   @relation("AssignedProspects")
+  convertedFromProspect  Prospect?                    @relation("ConvertedUser")
+  createdProspects       Prospect[]                   @relation("CreatedByUser")
+  quotes                 Quote[]
+  reports                Report[]
+  sessions               Session[]
+  serviceRequests        ServiceRequest[]             @relation("TechnicianServiceRequests")
+
+  @@index([email])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("users")
+}
+
+model KioskRequest {
+  id                    String             @id @default(cuid())
+  requestNumber         String             @unique
+  requestType           RequestType        @default(NEW_KIOSK)
+  status                KioskRequestStatus @default(PENDING)
+  clientId              String
+  clientName            String
+  clientEmail           String?
+  clientPhone           String?
+  requestedKioskType    KioskType?
+  requestedCompartments Json?
+  wantBranding          Boolean            @default(false)
+  kioskAddress          String?
+  productTypes          String?
+  managerName           String?
+  managerContacts       String?
+  estimatedPrice        Float?
+  notes                 String?
+  adminNotes            String?
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+  processedAt           DateTime?
+  processedBy           String?
+  assignedKioskId       Int?
+  assignedKiosk         Kiosk?             @relation(fields: [assignedKioskId], references: [id])
+  client                User               @relation("ClientRequests", fields: [clientId], references: [id])
+
+  @@index([clientId])
+  @@index([status])
+  @@index([requestNumber])
+  @@index([createdAt])
+  @@map("kiosk_requests")
+}
+
+model Kiosk {
+  id                    Int                 @id @default(autoincrement())
+  kioskName             String
+  kioskMatricule        String              @unique @default("K-000-0000-000")
+  kioskType             KioskType
+  kioskAddress          String?
+  gpsLatitude           Float?
+  gpsLongitude          Float?
+  kioskTown             KioskTown           @default(DOUALA)
+  productTypes          String?
+  managerName           String?
+  managerContacts       String?
+  locationId            String?
+  status                KioskStatus         @default(REQUEST)
+  image                 String?
+  averageMonthlyRevenue Decimal?
+  notes                 String?
+  monoClientId          String?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  inventoryMoves        InventoryMovement[]
+  assignments           KioskAssignment[]
+  compartments          KioskCompartment[]
+  kioskContracts        KioskContract[]
+  inventory             KioskInventory[]
+  requests              KioskRequest[]
+  monoClient            User?               @relation("MonoKioskClient", fields: [monoClientId], references: [id])
+  locationHistory       LocationHistory[]
+  serviceRequests       ServiceRequest[]
+
+  @@index([kioskMatricule])
+  @@index([status])
+  @@index([kioskType])
+  @@map("kiosks")
+}
+
+model KioskCompartment {
+  id              Int                          @id @default(autoincrement())
+  kioskId         Int
+  compartmentType CompartmentType              @default(SINGLE)
+  status          CompartmentStatus            @default(AVAILABLE)
+  clientId        String?
+  customName      String?
+  monthlyRevenue  Decimal?
+  notes           String?
+  assignedAt      DateTime?
+  assignedBy      String?
+  createdAt       DateTime                     @default(now())
+  updatedAt       DateTime                     @updatedAt
+  inventoryMoves  InventoryMovement[]
+  assignments     KioskCompartmentAssignment[]
+  client          User?                        @relation("CompartmentClient", fields: [clientId], references: [id])
+  kiosk           Kiosk                        @relation(fields: [kioskId], references: [id], onDelete: Cascade)
+  kioskContracts  KioskContract[]              @relation("CompartmentKioskContracts")
+  inventory       KioskInventory[]
+  serviceRequests ServiceRequest[]
+
+  @@unique([kioskId, compartmentType])
+  @@index([kioskId])
+  @@index([clientId])
+  @@index([status])
+  @@map("kiosk_compartments")
+}
+
+model KioskAssignment {
+  id         String   @id @default(cuid())
+  kioskId    Int
+  userId     String
+  role       String
+  assignedAt DateTime @default(now())
+  assignedBy String
+  isActive   Boolean  @default(true)
+  kiosk      Kiosk    @relation(fields: [kioskId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([kioskId, userId, role])
+  @@map("kiosk_assignments")
+}
+
+model KioskCompartmentAssignment {
+  id            String           @id @default(cuid())
+  compartmentId Int
+  userId        String
+  role          String
+  assignedAt    DateTime         @default(now())
+  assignedBy    String
+  isActive      Boolean          @default(true)
+  compartment   KioskCompartment @relation(fields: [compartmentId], references: [id], onDelete: Cascade)
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([compartmentId, userId, role])
+  @@map("kiosk_compartment_assignments")
+}
+
+model Contract {
+  id                     String           @id @default(cuid())
+  contractNumber         String           @unique
+  title                  String
+  status                 ContractStatus   @default(DRAFT)
+  startDate              DateTime?
+  endDate                DateTime?
+  signatureDate          DateTime?
+  terminationDate        DateTime?
+  clientName             String
+  clientIdNumber         String?
+  clientIdIssuedDate     DateTime?
+  clientIdIssuedPlace    String?
+  clientAddress          String?
+  clientPhone            String?
+  clientBusinessAddress  String?
+  clientBusinessQuarter  String?
+  clientBusinessLocation String?
+  contractDuration       Int
+  paymentFrequency       String
+  paymentAmount          Float
+  totalAmount            Float
+  deletedAt              DateTime?
+  deletedBy              String?
+  createdById            String
+  signedById             String?
+  contractDocument       String?
+  createdAt              DateTime         @default(now())
+  updatedAt              DateTime         @updatedAt
+  contractActions        ContractAction[]
+  createdBy              User             @relation("ContractCreator", fields: [createdById], references: [id])
+  signedBy               User?            @relation("ContractSigner", fields: [signedById], references: [id])
+  invoices               Invoice[]
+  kioskContracts         KioskContract[]
+  proforma               Proforma?        @relation("ProformaContract")
+
+  @@index([contractNumber])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("contracts")
+}
+
+model KioskContract {
+  id            String            @id @default(cuid())
+  contractId    String
+  kioskId       Int
+  compartmentId Int?
+  monthlyRent   Float
+  startDate     DateTime
+  endDate       DateTime?
+  isActive      Boolean           @default(true)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  compartment   KioskCompartment? @relation("CompartmentKioskContracts", fields: [compartmentId], references: [id])
+  contract      Contract          @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  kiosk         Kiosk             @relation(fields: [kioskId], references: [id])
+
+  @@unique([contractId, kioskId, compartmentId])
+  @@index([contractId])
+  @@index([kioskId])
+  @@index([compartmentId])
+  @@index([isActive])
+  @@map("kiosk_contracts")
+}
+
+model ContractAction {
+  id          String   @id @default(cuid())
+  action      String
+  description String?
+  contractId  String
+  createdAt   DateTime @default(now())
+  contract    Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  @@index([contractId])
+  @@map("contract_actions")
+}
+
+model Proforma {
+  id              String             @id @default(cuid())
+  proformaNumber  String             @unique
+  status          ProformaStatus     @default(DRAFT)
+  clientId        String?
+  clientName      String
+  clientEmail     String?
+  clientPhone     String?
+  clientAddress   String?
+  kioskSelections Json
+  subtotal        Float
+  dtsp            Float
+  tva             Float
+  dtspRate        Float              @default(3.0)
+  tvaRate         Float              @default(19.25)
+  totalAmount     Float
+  kioskType       KioskBrandingType?
+  quantity        Int?
+  surfaces        Json?
+  basePrice       Float?
+  brandingPrice   Float?
+  createdById     String
+  contractId      String?            @unique
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  expiryDate      DateTime?
+  sentDate        DateTime?
+  acceptedDate    DateTime?
+  rejectedDate    DateTime?
+  convertedDate   DateTime?
+  pdfUrl          String?
+  contract        Contract?          @relation("ProformaContract", fields: [contractId], references: [id])
+  createdBy       User               @relation("ProformaCreator", fields: [createdById], references: [id])
+
+  @@index([proformaNumber])
+  @@index([status])
+  @@index([clientId])
+  @@map("proformas")
+}
+
+model Prospect {
+  id              String           @id @default(cuid())
+  name            String
+  contact         String?
+  address         String?
+  need            String?
+  prospectStatus  ProspectStatus   @default(NEW)
+  source          String?
+  estimatedValue  Decimal?
+  notes           String?
+  lastContactDate DateTime?
+  conversionDate  DateTime?
+  deletedAt       DateTime?
+  deletedBy       String?
+  convertedUserId String?          @unique
+  assignedToId    String?
+  createdById     String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  actions         ProspectAction[]
+  assignedTo      User?            @relation("AssignedProspects", fields: [assignedToId], references: [id])
+  convertedUser   User?            @relation("ConvertedUser", fields: [convertedUserId], references: [id])
+  createdBy       User?            @relation("CreatedByUser", fields: [createdById], references: [id])
+  quotes          Quote[]
+
+  @@index([prospectStatus])
+  @@index([deletedAt])
+  @@map("prospects")
+}
+
+model ProspectAction {
+  id            String   @id @default(cuid())
+  prospectId    String
+  userId        String?
+  actionType    String
+  actionDetails String?
+  createdAt     DateTime @default(now())
+  prospect      Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  user          User?    @relation(fields: [userId], references: [id])
+
+  @@map("prospect_actions")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model Product {
+  id          String              @id @default(cuid())
+  name        String
+  description String?
+  categoryId  String
+  unitPrice   Decimal
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  moves       InventoryMovement[]
+  inventory   KioskInventory[]
+  category    ProductCategory     @relation(fields: [categoryId], references: [id])
+
+  @@map("products")
+}
+
+model ProductCategory {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  products    Product[]
+
+  @@map("product_categories")
+}
+
+model KioskInventory {
+  id            String            @id @default(cuid())
+  kioskId       Int
+  compartmentId Int?
+  productId     String
+  quantity      Int               @default(0)
+  lastRestocked DateTime?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  compartment   KioskCompartment? @relation(fields: [compartmentId], references: [id])
+  kiosk         Kiosk             @relation(fields: [kioskId], references: [id], onDelete: Cascade)
+  product       Product           @relation(fields: [productId], references: [id])
+
+  @@index([kioskId])
+  @@index([compartmentId])
+  @@map("kiosk_inventories")
+}
+
+model InventoryMovement {
+  id            String            @id @default(cuid())
+  kioskId       Int
+  compartmentId Int?
+  productId     String
+  movementType  String
+  quantity      Int
+  reason        String?
+  createdById   String?
+  movementDate  DateTime          @default(now())
+  compartment   KioskCompartment? @relation(fields: [compartmentId], references: [id])
+  createdBy     User?             @relation(fields: [createdById], references: [id])
+  kiosk         Kiosk             @relation(fields: [kioskId], references: [id], onDelete: Cascade)
+  product       Product           @relation(fields: [productId], references: [id])
+
+  @@index([kioskId])
+  @@index([compartmentId])
+  @@map("inventory_movements")
+}
+
+model ServiceRequest {
+  id                 String               @id @default(cuid())
+  kioskId            Int
+  compartmentId      Int?
+  problemDescription String
+  comments           String?
+  status             ServiceRequestStatus @default(OPEN)
+  priority           RequestPriority      @default(MEDIUM)
+  createdDate        DateTime             @default(now())
+  deadLine           DateTime?
+  resolvedDate       DateTime?
+  attachments        String?
+  updatedAt          DateTime             @updatedAt
+  compartment        KioskCompartment?    @relation(fields: [compartmentId], references: [id])
+  kiosk              Kiosk                @relation(fields: [kioskId], references: [id], onDelete: Cascade)
+  technicians        User[]               @relation("TechnicianServiceRequests")
+
+  @@index([status])
+  @@index([kioskId])
+  @@index([compartmentId])
+  @@map("service_requests")
+}
+
+model LocationHistory {
+  id            String   @id @default(cuid())
+  kioskId       Int
+  oldLocation   String?
+  newLocation   String?
+  validatedById String?
+  createdAt     DateTime @default(now())
+  kiosk         Kiosk    @relation(fields: [kioskId], references: [id], onDelete: Cascade)
+  validatedBy   User?    @relation(fields: [validatedById], references: [id])
+
+  @@map("location_histories")
+}
+
+model Invoice {
+  id              String        @id @default(cuid())
+  clientOrVendor  String?
+  type            String?
+  issueDate       DateTime?
+  termsConditions String?
+  contractId      String
+  amount          Decimal
+  dueDate         DateTime?
+  status          InvoiceStatus @default(PENDING)
+  contract        Contract      @relation(fields: [contractId], references: [id])
+  payments        Payment[]
+
+  @@index([status])
+  @@map("invoices")
+}
+
+model Payment {
+  id            String   @id @default(cuid())
+  invoiceId     String
+  amount        Decimal
+  paymentDate   DateTime
+  paymentMethod String?
+  invoice       Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+model Quote {
+  id           String    @id @default(cuid())
+  prospectId   String
+  createdById  String?
+  services     String?
+  totalCost    Decimal?
+  deadlineDate DateTime?
+  pdfUrl       String?
+  createdAt    DateTime  @default(now())
+  createdBy    User?     @relation(fields: [createdById], references: [id])
+  prospect     Prospect  @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+
+  @@map("quotes")
+}
+
+model Notification {
+  id        String             @id @default(cuid())
+  userId    String
+  message   String
+  status    NotificationStatus @default(SENT)
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+model Report {
+  id             String    @id @default(cuid())
+  type           String
+  generatedById  String?
+  validationDate DateTime?
+  createdAt      DateTime  @default(now())
+  generatedBy    User?     @relation(fields: [generatedById], references: [id])
+
+  @@map("reports")
+}
+
 enum ProformaStatus {
   DRAFT
   SENT
@@ -16,112 +600,25 @@ enum ProformaStatus {
   EXPIRED
 }
 
+enum RequestType {
+  NEW_KIOSK
+  NEW_COMPARTMENT
+  UPGRADE
+  MAINTENANCE
+}
+
 enum KioskBrandingType {
   MONO
   GRAND
   COMPARTIMENT
 }
 
-model Proforma {
-  id                String          @id @default(cuid())
-  proformaNumber    String          @unique
-  status            ProformaStatus  @default(DRAFT)
-  
-  // Client details
-  clientId          String?
-  clientName        String
-  clientEmail       String?
-  clientPhone       String?
-  clientAddress     String?
-  
-  // Multiple kiosk selections (replaces single kioskType and quantity)
-  kioskSelections   Json            // Array of kiosk selections with their configurations
-  
-  // Pricing breakdown
-  subtotal          Float           // Pre-tax total
-  dtsp              Float           // DTSP amount (3% of subtotal)
-  tva               Float           // TVA amount (19.25% of subtotal + DTSP)
-  dtspRate          Float           @default(3.0)    // DTSP rate (%)
-  tvaRate           Float           @default(19.25)  // TVA rate (%)
-  totalAmount       Float           // Final total including all taxes
-  
-  // Legacy fields (kept for backward compatibility, can be removed later)
-  kioskType         KioskBrandingType?
-  quantity          Int?
-  surfaces          Json?           // Legacy surfaces data
-  basePrice         Float?          // Legacy base price
-  brandingPrice     Float?          // Legacy branding price
-  
-  // Relationships
-  createdBy         User            @relation("ProformaCreator", fields: [createdById], references: [id])
-  createdById       String
-  
-  // If converted to contract
-  contract          Contract?       @relation("ProformaContract", fields: [contractId], references: [id])
-  contractId        String?         @unique
-  
-  // Timestamps
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
-  expiryDate        DateTime?       // 30 days from creation by default
-  sentDate          DateTime?
-  acceptedDate      DateTime?
-  rejectedDate      DateTime?
-  convertedDate     DateTime?
-  
-  // PDF document
-  pdfUrl            String?
-  
-  @@map("proformas")
-}
-
-model User {
-  id                  String             @id @default(cuid())
-  name                String
-  email               String             @unique
-  role                Role               @default(CLIENT)
-  clientType          ClientType         @default(STAFF)
-  status              UserStatus         @default(PENDING)
-  address             String?
-  phone               String?
-  verificationToken   String?
-  emailVerified       Boolean            @default(false)
-  image               String?
-  password            String?
-  resetPasswordToken  String?            @unique
-  resetPasswordExpires DateTime?
-  createdAt           DateTime           @default(now())
-  updatedAt           DateTime           @updatedAt
-
-  accounts            Account[]
-  sessions            Session[]
-  notifications       Notification[]
-  inventoryMoves      InventoryMovement[]
-  serviceRequests     ServiceRequest[] @relation("TechnicianServiceRequests")
-  locationHistory     LocationHistory[]
-  prospects           Prospect[]
-  prospectActions     ProspectAction[]
-  quotes              Quote[]
-  reports             Report[]
-  kiosks              UserKiosk[]        // Many-to-many relationship with Kiosk model
-  
-  // New relations for enhanced Prospect model
-  convertedFromProspect Prospect?  @relation("ConvertedUser")
-  createdProspects      Prospect[] @relation("CreatedByUser")
-  proformasCreated  Proforma[]      @relation("ProformaCreator")
-  contractsCreated     Contract[] @relation("ContractCreator")
-  contractsSigned      Contract[] @relation("ContractSigner")
-}
-
-
-// Contract model
 enum ClientType {
   PARTICULIER
   ENTREPRISE
   STAFF
 }
 
-// Contract model
 enum ContractStatus {
   DRAFT
   PENDING
@@ -132,352 +629,28 @@ enum ContractStatus {
   CANCELLED
 }
 
-model Contract {
-  id                String          @id @default(cuid())
-  contractNumber    String          @unique
-  title             String
-  status            ContractStatus  @default(DRAFT)
-  startDate         DateTime?
-  endDate           DateTime?
-  signatureDate     DateTime?
-  terminationDate   DateTime?
-  
-  // Contract details
-  clientName        String
-  clientIdNumber    String?
-  clientIdIssuedDate DateTime?
-  clientIdIssuedPlace String?
-  clientAddress     String?
-  clientPhone       String?
-  clientBusinessAddress String?
-  clientBusinessQuarter String?
-  clientBusinessLocation String?
-  
-  // Contract terms
-  contractDuration  Int             // Duration in months
-  paymentFrequency  String          // Monthly, Quarterly, Annually
-  paymentAmount     Float
-  totalAmount       Float
-  
-  // Kiosk details
-  kiosks            Kiosk[]
-  
-  // Relationships
-  createdBy         User            @relation("ContractCreator", fields: [createdById], references: [id])
-  createdById       String
-  signedBy          User?           @relation("ContractSigner", fields: [signedById], references: [id])
-  signedById        String?
-  
-  // Proforma relationship
-  proforma          Proforma?       @relation("ProformaContract")
-  
-  // Documents
-  contractDocument  String?         // URL to the PDF document
-  
-  // Timestamps
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
-  
-  // Related models
-  contractActions   ContractAction[]
-}
-
-model ContractAction {
-  id                String          @id @default(cuid())
-  action            String
-  description       String?
-  
-  // Relationships
-  contract          Contract        @relation(fields: [contractId], references: [id])
-  contractId        String
-  
-  // Timestamps
-  createdAt         DateTime        @default(now())
-}
-
-// Enhanced Prospect model
-enum ProspectStatus {
-  NEW
-  CONTACTED
-  QUALIFIED
-  PROPOSAL_SENT
-  NEGOTIATION
-  CONVERTED
-  LOST
-}
-
-model Prospect {
-  id              String          @id @default(cuid())
-  name            String
-  contact         String?
-  address         String?
-  need            String?
-  prospectStatus  ProspectStatus  @default(NEW)
-  source          String?
-  estimatedValue  Decimal?
-  notes           String?
-  lastContactDate DateTime?
-  conversionDate  DateTime?
-  
-  // Relationship to User if converted
-  convertedUserId String?         @unique
-  convertedUser   User?           @relation("ConvertedUser", fields: [convertedUserId], references: [id])
-  
-  // Assignment relationship
-  assignedTo      User?           @relation(fields: [assignedToId], references: [id])
-  assignedToId    String?
-  
-  // Created by relationship
-  createdBy       User?           @relation("CreatedByUser", fields: [createdById], references: [id])
-  createdById     String?
-  
-  // Timestamps
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-  
-  // Related models
-  actions         ProspectAction[]
-  quotes          Quote[]
-}
-
-model ProspectAction {
-  id            String    @id @default(cuid())
-  prospect      Prospect  @relation(fields: [prospectId], references: [id])
-  prospectId    String
-  user          User      @relation(fields: [userId], references: [id])
-  userId        String
-  actionType    String
-  actionDetails String?
-  createdAt     DateTime  @default(now())
-}
-
-model Account {
-  id                 String  @id @default(cuid())
-  userId             String
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String?  @db.Text
-  access_token       String?  @db.Text
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String?  @db.Text
-  session_state      String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
-}
-
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
-
-  @@unique([identifier, token])
-}
-
-model Kiosk {
-  id                    Int      @id @default(autoincrement())
-  kioskName             String
-  kioskMatricule        String   @default("K-000-0000-000")
-  clientName            String?
-  kioskAddress          String?
-  gpsLatitude           Float?
-  gpsLongitude          Float?
-  kioskTown             KioskTown   @default(DOUALA)
-  productTypes          String?
-  managerName           String?
-  managerContacts       String?
-  locationId            String?
-  status                KioskStatus @default(REQUEST)
-  type                  KioskType    @default(ONE_COMPARTMENT_WITHOUT_BRANDING)
-  image                 String?
-  averageMonthlyRevenue Decimal?
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
-  contracts             Contract[]
-  inventory             KioskInventory[]
-  inventoryMoves        InventoryMovement[]
-  serviceRequests       ServiceRequest[]
-  locationHistory       LocationHistory[]
-  users                 UserKiosk[]  // Many-to-many relationship with User model
-}
-
 enum KioskTown {
   DOUALA
   YAOUNDE
 }
 
-enum KioskState {
-  FREE
-  ONE_COMPARTMENT_OCCUPIED
-  TWO_COMPARTMENTS_OCCUPIED
-  FULLY_OCCUPIED
-}
-
-model UserKiosk {
-  id      String   @id @default(cuid())
-  userId  String
-  kioskId Int
-
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  kiosk Kiosk @relation(fields: [kioskId], references: [id])
-
-  @@unique([userId, kioskId])
-}
-
-model Product {
-  id          String    @id @default(cuid())
-  name        String
-  description String?
-  category    ProductCategory @relation(fields: [categoryId], references: [id])
-  categoryId  String
-  unitPrice   Decimal
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  inventory   KioskInventory[]
-  moves       InventoryMovement[]
-}
-
-model ServiceRequest {
-  id                  String    @id @default(cuid())
-  kiosk               Kiosk     @relation(fields: [kioskId], references: [id])
-  kioskId             Int
-  technicians         User[]    @relation("TechnicianServiceRequests")
-  problemDescription  String
-  comments            String?
-  status              RequestStatus @default(OPEN)
-  priority            RequestPriority @default(MEDIUM)
-  createdDate         DateTime  @default(now())
-  deadLine            DateTime?
-  resolvedDate        DateTime?
-  attachments         String?
-  updatedAt           DateTime  @updatedAt
-}
-
-model ProductCategory {
-  id          String    @id @default(cuid())
-  name        String
-  description String?
-  products    Product[]
-}
-
-model KioskInventory {
-  id                String    @id @default(cuid())
-  kiosk             Kiosk     @relation(fields: [kioskId], references: [id])
-  kioskId           Int
-  product           Product   @relation(fields: [productId], references: [id])
-  productId         String
-  quantity          Int       @default(0)
-  lastRestocked     DateTime?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-}
-
-model InventoryMovement {
-  id                String    @id @default(cuid())
-  kiosk             Kiosk     @relation(fields: [kioskId], references: [id])
-  kioskId           Int
-  product           Product   @relation(fields: [productId], references: [id])
-  productId         String
-  movementType      String
-  quantity          Int
-  reason            String?
-  createdBy         User      @relation(fields: [createdById], references: [id])
-  createdById       String
-  movementDate      DateTime  @default(now())
-}
-
-model LocationHistory {
-  id              String    @id @default(cuid())
-  kiosk           Kiosk     @relation(fields: [kioskId], references: [id])
-  kioskId         Int
-  oldLocation     String?
-  newLocation     String?
-  validatedBy     User?     @relation(fields: [validatedById], references: [id])
-  validatedById   String?
-  createdAt       DateTime  @default(now())
-}
-
-model Payment {
-  id              String    @id @default(cuid())
-  invoice         Invoice   @relation(fields: [invoiceId], references: [id])
-  invoiceId       String
-  amount          Decimal
-  paymentDate     DateTime
-  paymentMethod   String?
-}
-
-model Invoice {
-  id              String    @id @default(cuid())
-  clientOrVendor  String?
-  type            String?
-  issueDate       DateTime?
-  termsConditions String?
-  contractId      String
-  amount          Decimal
-  dueDate         DateTime?
-  status          InvoiceStatus @default(PENDING)
-  payments        Payment[]
-}
-
-model Notification {
-  id          String    @id @default(cuid())
-  user        User      @relation(fields: [userId], references: [id])
-  userId      String
-  message     String
-  status      NotificationStatus @default(SENT)
-}
-
-model Quote {
-  id          String    @id @default(cuid())
-  prospect    Prospect  @relation(fields: [prospectId], references: [id])
-  prospectId  String
-  createdBy   User      @relation(fields: [createdById], references: [id])
-  createdById String
-  services    String?
-  totalCost   Decimal?
-  deadlineDate DateTime?
-  pdfUrl      String?
-  createdAt   DateTime  @default(now())
-}
-
-model Report {
-  id              String    @id @default(cuid())
-  type            String
-  generatedBy     User      @relation(fields: [generatedById], references: [id])
-  generatedById   String
-  validationDate  DateTime?
-  createdAt       DateTime  @default(now())
-}
-
-enum Role {
-  CLIENT
-  RESPONSABLE
-  TECHNICIEN
-  SUPERADMIN
-  COMMERCIAL
-  ADMIN
-  JURIDIQUE
-  CLIENTADMIN
-  COMPTABLE
-}
-
 enum KioskType {
-  ONE_COMPARTMENT_WITH_BRANDING
-  THREE_COMPARTMENT_WITH_BRANDING
-  ONE_COMPARTMENT_WITHOUT_BRANDING
-  THREE_COMPARTMENT_WITHOUT_BRANDING
+  MONO
+  GRAND
+}
+
+enum CompartmentType {
+  LEFT
+  MIDDLE
+  RIGHT
+  SINGLE
+}
+
+enum CompartmentStatus {
+  AVAILABLE
+  OCCUPIED
+  RESERVED
+  UNDER_MAINTENANCE
 }
 
 enum KioskStatus {
@@ -492,7 +665,16 @@ enum KioskStatus {
   UNACTIVE_UNDER_MAINTENANCE
 }
 
-enum RequestStatus {
+enum KioskRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum ServiceRequestStatus {
   OPEN
   IN_PROGRESS
   UNDER_REVIEW
@@ -517,9 +699,49 @@ enum UserStatus {
   VERIFIED
   ONLINE
   OFFLINE
+  DELETED
 }
 
 enum NotificationStatus {
   SENT
   VIEWED
+}
+
+enum ProspectStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  PROPOSAL_SENT
+  NEGOTIATION
+  CONVERTED
+  LOST
+}
+
+enum Role {
+  CLIENT
+  RESPONSABLE
+  TECHNICIEN
+  SUPERADMIN
+  COMMERCIAL
+  ADMIN
+  JURIDIQUE
+  CLIENTADMIN
+  RESPONSABLEKIOSK
+  COMPTABLE
+}
+
+enum DeletedEntityType {
+  USER
+  CONTRACT
+  PROFORMA
+  PROSPECT
+  KIOSK
+  KIOSK_COMPARTMENT
+}
+
+enum DeleteActionType {
+  SOFT_DELETE
+  PERMANENT_DELETE
+  RESTORE
+  ARCHIVE
 }

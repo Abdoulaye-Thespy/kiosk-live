@@ -1,6 +1,6 @@
 'use server';
 
-import { hash } from 'bcrypt';
+import { hash } from 'bcryptjs';
 import { PrismaClient, Role, UserStatus } from '@prisma/client';
 import { NextResponse } from "next/server"
 import { sendVerificationEmail } from "@/lib/email"

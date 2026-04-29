@@ -1,9 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { PrismaClient } from "@prisma/client"
-import bcrypt from "bcrypt"
+import { prisma } from "@/lib/prisma"  // Import singleton, not new PrismaClient()
+import bcrypt from "bcryptjs"  // Changed from 'bcrypt' to 'bcryptjs'
+import crypto from "crypto"  // You were missing this import!
 import { sendVerificationEmail } from "@/lib/email"
-
-const prisma = new PrismaClient()
 
 export async function POST(req: NextRequest) {
   try {
@@ -26,7 +25,6 @@ export async function POST(req: NextRequest) {
     // Generate verification token
     const verificationToken = crypto.randomUUID()
 
-
     // Send verification email
     await sendVerificationEmail(email, verificationToken)
 
@@ -44,10 +42,16 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    return NextResponse.json({ success: true, message: "User created successfully" }, { status: 201 })
+    // Don't return the password in the response
+    const { password: _, ...userWithoutPassword } = user
+
+    return NextResponse.json({ 
+      success: true, 
+      message: "User created successfully",
+      user: userWithoutPassword 
+    }, { status: 201 })
   } catch (error) {
     console.error("Signup error:", error)
     return NextResponse.json({ error: "An error occurred during signup" }, { status: 500 })
   }
 }
-

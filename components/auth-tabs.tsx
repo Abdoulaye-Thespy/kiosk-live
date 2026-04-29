@@ -12,12 +12,14 @@ export function AuthTabs() {
 
   return (
     <div className="w-full max-w-[400px] space-y-8">
+      {/* Logo Section */}
       <Link className="mb-2 flex h-20 items-end justify-start rounded-md p-4" href="/">
         <div className="w-32 text-white md:w-50">
           <AcmeLogo />
         </div>
       </Link>
       
+      {/* Header Text */}
       <div className="space-y-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight mb-1">
@@ -30,6 +32,7 @@ export function AuthTabs() {
           </p>
         </div>
 
+        {/* Tab Buttons */}
         <div className="flex gap-2 mb-6">
           <Button
             variant="outline"
@@ -56,8 +59,10 @@ export function AuthTabs() {
         </div>
       </div>
 
-      {activeTab === 'login' ? <LoginForm /> : <SignupForm />}
+      {/* Forms */}
+      {activeTab === 'login' ? <LoginForm onSwitchToSignUp={() => setActiveTab('signup')} /> : <SignupForm onSwitchToLogin={() => setActiveTab('login')} />}
 
+      {/* Footer */}
       <div className="flex justify-between text-xs text-gray-500">
         <span>© 2024 Kiosk</span>
         <span>FR</span>
@@ -65,4 +70,3 @@ export function AuthTabs() {
     </div>
   )
 }
-

@@ -1,7 +1,7 @@
 import NextAuth, { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { compare } from 'bcrypt';
-import prisma from '@/lib/prisma';
+import { compare } from 'bcryptjs';
+import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
 // Declare MyRole outside of authOptions to make it accessible across scopes

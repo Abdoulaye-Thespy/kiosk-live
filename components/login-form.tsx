@@ -2,13 +2,16 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import Link from "next/link"
 import { signIn } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Loader2, Mail, KeyRound, Eye, EyeOff } from 'lucide-react'
 
-export function LoginForm() {
+interface LoginFormProps {
+  onSwitchToSignUp?: () => void
+}
+
+export function LoginForm({ onSwitchToSignUp }: LoginFormProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState("")
@@ -29,19 +32,41 @@ export function LoginForm() {
       })
 
       if (result?.error) {
-        setError(result.error || "Failed to sign in. Please try again.")
+        setError("Email ou mot de passe incorrect")
       } else {
-        // Fetch user data to get the role
-        const res = await fetch('/api/auth/session')
-        const session = await res.json()
-        const userRole = session.user.role.toLowerCase()
-        router.push(`/${userRole}`)
+        // Small delay to ensure session is properly set
+        await new Promise(resolve => setTimeout(resolve, 300))
+        
+        // Fetch user data to get the role with retry logic
+        let retries = 0
+        let session = null
+        
+        while (retries < 3 && !session) {
+          const res = await fetch('/api/auth/session')
+          session = await res.json()
+          
+          if (!session?.user) {
+            await new Promise(resolve => setTimeout(resolve, 200))
+            retries++
+          }
+        }
+        
+        if (session?.user?.role) {
+          const userRole = session.user.role.toLowerCase()
+          router.push(`/${userRole}`)
+        } else {
+          setError("Erreur lors de la récupération de votre session")
+          setIsLoading(false)
+        }
       }
     } catch (error) {
-      setError(error)
-      console.error(Error)
+      setError("Une erreur est survenue. Veuillez réessayer.")
+      console.error(error)
     } finally {
-      setIsLoading(false)
+      // Only set loading false if we're not redirecting
+      if (!error) {
+        setIsLoading(false)
+      }
     }
   }
 
@@ -93,12 +118,13 @@ export function LoginForm() {
             </button>
           </div>
           <div className="mt-1">
-            <Link
-              href="/auth/forgot-password"
+            <button
+              type="button"
+              onClick={() => window.location.href = '/auth/forgot-password'}
               className="text-sm text-[#ff6b4a] hover:text-[#ff5a36]"
             >
               Mot de passe oublié ?
-            </Link>
+            </button>
           </div>
         </div>
       </div>
@@ -132,18 +158,14 @@ export function LoginForm() {
       <Button
         type="button"
         variant="outline"
-        disabled={isLoading}
         className="w-full h-11 border-gray-200 bg-white hover:bg-gray-50"
-        onClick={() => signIn("google")}
+        onClick={onSwitchToSignUp}
       >
         <div className="flex items-center justify-center gap-3">
-          <svg viewBox="0 0 24 24" className="h-5 w-5">
-            <path
-              fill="currentColor"
-              d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"
-            />
+          <svg className="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
           </svg>
-          <span>Connexion avec Google</span>
+          <span>Créer un compte</span>
         </div>
       </Button>
     </form>

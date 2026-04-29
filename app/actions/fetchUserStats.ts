@@ -1,82 +1,63 @@
 "use server"
 
-import { PrismaClient } from "@prisma/client"
-
-const prisma = new PrismaClient()
+// app/actions/fetchUserStats.ts
+import { prisma } from "@/lib/prisma"
+import { Role, ClientType } from "@prisma/client"
 
 export async function fetchUserStats() {
   try {
-    const now = new Date()
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+    // Get all clients
+    const clients = await prisma.user.findMany({
+      where: { role: "CLIENT" },
+      select: { id: true, name: true, email: true, clientType: true, createdAt: true },
+    })
 
-    const [
-      totalUsers, 
-      usersThisMonth, 
-      usersBeforeThisMonth, 
-      lastNineUsers,
-      particulierCount,
-      entrepriseCount
-    ] = await Promise.all([
-      prisma.user.count(),
-      prisma.user.count({
-        where: {
-          createdAt: {
-            gte: startOfMonth,
-          },
-        },
-      }),
-      prisma.user.count({
-        where: {
-          createdAt: {
-            lt: startOfMonth,
-          },
-        },
-      }),
-      prisma.user.findMany({
-        take: 9,
-        orderBy: {
-          createdAt: "desc",
-        },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          createdAt: true,
-        },
-      }),
-      prisma.user.count({
-        where: {
-          clientType: "PARTICULIER",
-        },
-      }),
-      prisma.user.count({
-        where: {
-          clientType: "ENTREPRISE",
-        },
-      }),
-    ])
+    // Get total users
+    const totalUsers = await prisma.user.count()
+    const totalClients = clients.length
+    const staffCount = totalUsers - totalClients
 
-    let percentageGrowth = 0
-    if (usersBeforeThisMonth > 0) {
-      percentageGrowth = (usersThisMonth / usersBeforeThisMonth) * 100
-    } else if (usersThisMonth > 0) {
-      percentageGrowth = 100 // If there were no users before this month, growth is 100%
-    }
+    console.log(totalClients, totalUsers, staffCount);
+
+    // Client type breakdown
+    const particulierCount = clients.filter(c => c.clientType === "PARTICULIER").length
+    const entrepriseCount = clients.filter(c => c.clientType === "ENTREPRISE").length
+
+    // Last 9 users for recent users list
+    const lastNineUsers = await prisma.user.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 9,
+      select: { id: true, name: true, email: true, createdAt: true },
+    })
+
+    // Users added this month
+    const firstDayOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+    const usersThisMonth = await prisma.user.count({
+      where: { createdAt: { gte: firstDayOfMonth } }
+    })
 
     return {
       success: true,
       totalUsers,
-      usersThisMonth,
-      percentageGrowth: Number.parseFloat(percentageGrowth.toFixed(2)),
-      lastNineUsers,
+      staffCount,
+      clientCount: totalClients,
       particulierCount,
       entrepriseCount,
+      usersThisMonth,
+      lastNineUsers,
     }
   } catch (error) {
     console.error("Failed to fetch user stats:", error)
-    return { success: false, error: "Failed to fetch user stats" }
-  } finally {
-    await prisma.$disconnect()
+    return {
+      success: false,
+      totalUsers: 0,
+      staffCount: 0,
+      clientCount: 0,
+      particulierCount: 0,
+      entrepriseCount: 0,
+      usersThisMonth: 0,
+      lastNineUsers: [],
+    }
   }
 }
 
