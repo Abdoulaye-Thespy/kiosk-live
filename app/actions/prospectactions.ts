@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
-import { hash } from "bcrypt"
+import bcrypt from "bcryptjs"  // Changed from "bcrypt" to "bcryptjs"
 import { startOfMonth } from "date-fns"
 
 // Types
@@ -104,7 +104,7 @@ export async function convertProspectToUser(prospectId: string) {
 
     // Generate a temporary password
     const tempPassword = Math.random().toString(36).slice(-8)
-    const hashedPassword = await hash(tempPassword, 10)
+    const hashedPassword = await bcrypt.hash(tempPassword, 10)  // Using bcryptjs
 
     // Create a new user from the prospect
     const user = await prisma.user.create({
@@ -337,4 +337,3 @@ export async function getAllProspects() {
     }
   }
 }
-
