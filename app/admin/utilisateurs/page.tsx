@@ -41,7 +41,7 @@ type User = {
   address: string
   email: string
   phone: string
-  CreatedAt: Date
+  createdAt: Date
   status: string
   clientType: string
 }
@@ -64,7 +64,7 @@ export default function UserManagement() {
     role: "",
     address: "",
     status: "VERIFIED",
-    clientType: "", // Add this line
+    clientType: "",
   })
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -85,7 +85,7 @@ export default function UserManagement() {
       try {
         const response = await fetch("/api/users")
         const data: User[] = await response.json()
-        setUsers(data.sort((a, b) => new Date(b.CreatedAt).getTime() - new Date(a.CreatedAt).getTime()))
+        setUsers(data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()))
         setTotalUsers(data.length)
         console.log(data)
       } catch (error) {
@@ -132,7 +132,7 @@ export default function UserManagement() {
       const matchesRole = !filterRole || user.role === filterRole
       const matchesStatus = !filterStatus || user.status === filterStatus
       const matchesDate =
-        !filterDate || isEqual(new Date(user.CreatedAt), filterDate) || isAfter(new Date(user.CreatedAt), filterDate)
+        !filterDate || isEqual(new Date(user.createdAt), filterDate) || isAfter(new Date(user.createdAt), filterDate)
       return matchesSearch && matchesRole && matchesStatus && matchesDate
     })
   }, [users, searchTerm, filterRole, filterStatus, filterDate])
@@ -188,9 +188,9 @@ export default function UserManagement() {
         email: user.email,
         phone: user.phone,
         role: user.role,
-        address: user.address, // Assuming address is not in the User type
+        address: user.address,
         status: user.status,
-        clientType: user.clientType || "", // Add this line
+        clientType: user.clientType || "",
       })
       setIsEditing(true)
     } else {
@@ -202,7 +202,7 @@ export default function UserManagement() {
         role: "",
         address: "",
         status: "VERIFIED",
-        clientType: "", // Add this line
+        clientType: "",
       })
       setIsEditing(false)
     }
@@ -272,6 +272,17 @@ export default function UserManagement() {
       setError("Failed to submit user. Please try again.")
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  const getClientTypeLabel = (type: string) => {
+    switch(type) {
+      case "PARTICULIER":
+        return "Particulier"
+      case "ENTREPRISE":
+        return "Entreprise"
+      default:
+        return type || "-"
     }
   }
 
@@ -475,30 +486,6 @@ export default function UserManagement() {
           </div>
         </div>
         <div>
-          {/*
-{selectedUsers.length === 1 && (
-  <Button
-    onClick={() => handleDelete(user.id)}
-    className="bg-white border border-gray-500 text-black-500 font-medium py-2 px-4 rounded inline-flex items-center"
-  >
-    <TrashIcon className="h-4 w-4" />
-    Supprimer
-  </Button>
-)}
-*/}
-
-          {/*
-{selectedUsers.length === 1 && (
-  <Button
-    className="bg-white border border-gray-500 text-black-500 font-medium py-2 px-4 rounded inline-flex items-center ml-4"
-    onClick={() => openModal(users.find((user) => user.id === selectedUsers[0]))}
-  >
-    <PencilIcon className="h-4 w-4" />
-    Modifier
-  </Button>
-)}
-*/}
-
           {selectedUsers.length === 0 && (
             <div>
               <button className="p-2 hover:bg-gray-100 rounded-md">
@@ -589,9 +576,9 @@ export default function UserManagement() {
               </TableHead>
               <TableHead className="w-[200px]">Nom complet</TableHead>
               <TableHead>Rôle</TableHead>
+              <TableHead>Type</TableHead>
               <TableHead>Adresse Email</TableHead>
               <TableHead>Numéro</TableHead>
-              <TableHead>Date d&apos;insc.</TableHead>
               <TableHead>Statut</TableHead>
               <TableHead className="text-right"></TableHead>
             </TableRow>
@@ -618,22 +605,36 @@ export default function UserManagement() {
                   </Link>
                 </TableCell>
                 <TableCell>{user.role}</TableCell>
+                <TableCell>
+                  {user.role === "CLIENT" ? (
+                    <span className={`px-2 py-1 rounded-full text-xs ${
+                      user.clientType === "PARTICULIER" 
+                        ? "bg-blue-100 text-blue-800" 
+                        : user.clientType === "ENTREPRISE"
+                        ? "bg-purple-100 text-purple-800"
+                        : "bg-gray-100 text-gray-800"
+                    }`}>
+                      {getClientTypeLabel(user.clientType)}
+                    </span>
+                  ) : (
+                    <span className="text-gray-400">-</span>
+                  )}
+                </TableCell>
                 <TableCell className="font-medium">
                   <span className="text-[#E55210]">{user.email}</span>
                 </TableCell>
                 <TableCell className="font-medium">{user.phone}</TableCell>
-                <TableCell className="font-medium">{new Date(user.createdAt).toLocaleDateString()}</TableCell>
                 <TableCell>
                   <span
                     className={`px-2 py-1 rounded-full text-xs ${
                       user.status === "VERIFIED"
                         ? "bg-green-100 text-green-800"
                         : user.status === "PENDING"
-                          ? "bg-gray-100 text-gray-800"
+                          ? "bg-yellow-100 text-yellow-800"
                           : "bg-red-100 text-red-800"
                     }`}
                   >
-                    {user.status}
+                    {user.status === "VERIFIED" ? "Vérifié" : user.status === "PENDING" ? "En attente" : user.status}
                   </span>
                 </TableCell>
                 <TableCell className="text-right">
@@ -692,4 +693,3 @@ export default function UserManagement() {
     </div>
   )
 }
-
