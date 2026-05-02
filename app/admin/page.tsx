@@ -5,13 +5,11 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
-import { ArrowDownTrayIcon, ArrowUpCircleIcon } from "@heroicons/react/24/solid"
+import { ArrowDownTrayIcon } from "@heroicons/react/24/solid"
 import { 
   RefreshCw, 
   FileText, 
   Building2, 
-  Loader2, 
-  ShoppingCart, 
   Users, 
   LayoutGrid, 
   Warehouse,
@@ -19,7 +17,10 @@ import {
   UserCircle,
   TrendingUp,
   ClipboardList,
-  Mail
+  Mail,
+  Package,
+  Wrench,
+  CheckCircle
 } from "lucide-react"
 
 import styles from "@/app/ui/dashboard.module.css"
@@ -42,6 +43,45 @@ interface KioskRequest {
   clientEmail: string
 }
 
+// Interface pour les données formatées du serveur
+interface DashboardData {
+  totalKiosks: number
+  kiosksAddedThisMonth: number
+  percentageAddedThisMonth: number
+  mono: {
+    total: number
+    inStock: number
+    deployed: number
+    occupied: number
+    free: number
+    underMaintenance: number
+  }
+  grand: {
+    total: number
+    inStock: number
+    deployed: number
+  }
+  compartments: {
+    total: number
+    occupied: number
+    free: number
+    underMaintenance: number
+  }
+  totals: {
+    totalCompartments: number
+  }
+  towns: {
+    DOUALA: {
+      MONO: { total: number; available: number; occupied: number }
+      GRAND: { total: number; available: number; occupied: number }
+    }
+    YAOUNDE: {
+      MONO: { total: number; available: number; occupied: number }
+      GRAND: { total: number; available: number; occupied: number }
+    }
+  }
+}
+
 export default function AdminDashboard() {
   const [userStats, setUserStats] = useState({
     totalUsers: 0,
@@ -53,25 +93,10 @@ export default function AdminDashboard() {
     percentageGrowth: 0,
     lastNineUsers: [] as any[],
   })
-  const [kioskStats, setKioskStats] = useState({
-    totalKiosks: 0,
-    monoKiosks: 0,
-    grandKiosks: 0,
-    monoInStock: 0,
-    grandInStock: 0,
-    monoDeployed: 0,
-    grandDeployed: 0,
-    freeCompartments: 0,
-    occupiedCompartments: 0,
-    compartmentsUnderMaintenance: 0,
-    totalCompartments: 0,
-    monoOccupied: 0,
-    grandOccupiedCompartments: 0,
-    grandFreeCompartments: 0,
-    grandCompartmentsTotal: 0,
-    kiosksAddedThisMonth: 0,
-    percentageAddedThisMonth: 0,
-  })
+  
+  // État simplifié - plus de calculs nécessaires
+  const [kioskData, setKioskData] = useState<DashboardData | null>(null)
+  
   const [requestStats, setRequestStats] = useState({
     monoRequests: 0,
     grandRequests: 0,
@@ -84,7 +109,7 @@ export default function AdminDashboard() {
     async function loadStats() {
       setLoading(true)
       try {
-        const [userResult, kioskCountsResult, requestsResult] = await Promise.all([
+        const [userResult, kioskResult, requestsResult] = await Promise.all([
           fetchUserStats(), 
           getKioskCounts(),
           getAllKioskRequests({ status: "PENDING", limit: 1000 })
@@ -122,44 +147,9 @@ export default function AdminDashboard() {
           })
         }
         
-        if (kioskCountsResult) {
-          const monoDeployed = (kioskCountsResult.kiosks?.MONO?.ACTIVE || 0) + 
-                               (kioskCountsResult.kiosks?.MONO?.ACTIVE_UNDER_MAINTENANCE || 0)
-          const grandDeployed = (kioskCountsResult.kiosks?.GRAND?.ACTIVE || 0) + 
-                                (kioskCountsResult.kiosks?.GRAND?.ACTIVE_UNDER_MAINTENANCE || 0)
-          
-          const monoInStock = (kioskCountsResult.kiosks?.MONO?.IN_STOCK || 0) + 
-                              (kioskCountsResult.kiosks?.MONO?.AVAILABLE || 0)
-          const grandInStock = (kioskCountsResult.kiosks?.GRAND?.IN_STOCK || 0) + 
-                               (kioskCountsResult.kiosks?.GRAND?.AVAILABLE || 0)
-          
-          const grandCompartmentsTotal = (kioskCountsResult.kiosks?.GRAND?.totalKiosks || 0) * 3
-          const grandOccupiedCompartments = kioskCountsResult.compartments?.OCCUPIED || 0
-          const grandFreeCompartments = kioskCountsResult.compartments?.AVAILABLE || 0
-          
-          const totalCompartments = (kioskCountsResult.kiosks?.MONO?.totalKiosks || 0) + grandCompartmentsTotal
-          
-          const monoOccupied = (kioskCountsResult.kiosks?.MONO?.ACTIVE || 0)
-          
-          setKioskStats({
-            totalKiosks: kioskCountsResult.totalKiosks || 0,
-            monoKiosks: (kioskCountsResult.kiosks?.MONO?.total || 0),
-            grandKiosks: (kioskCountsResult.kiosks?.GRAND?.total || 0),
-            monoInStock: monoInStock,
-            grandInStock: grandInStock,
-            monoDeployed: monoDeployed,
-            grandDeployed: grandDeployed,
-            freeCompartments: kioskCountsResult.compartments?.AVAILABLE || 0,
-            occupiedCompartments: kioskCountsResult.compartments?.OCCUPIED || 0,
-            compartmentsUnderMaintenance: kioskCountsResult.compartments?.UNDER_MAINTENANCE || 0,
-            totalCompartments: totalCompartments,
-            monoOccupied: monoOccupied,
-            grandOccupiedCompartments: grandOccupiedCompartments,
-            grandFreeCompartments: grandFreeCompartments,
-            grandCompartmentsTotal: grandCompartmentsTotal,
-            kiosksAddedThisMonth: kioskCountsResult.kiosksAddedThisMonth || 0,
-            percentageAddedThisMonth: kioskCountsResult.percentageAddedThisMonth || 0,
-          })
+        // Utilisation directe des données formatées - PAS DE CALCULS ICI !
+        if (kioskResult && kioskResult.dashboard) {
+          setKioskData(kioskResult.dashboard)
         }
         
         setError(null)
@@ -181,6 +171,14 @@ export default function AdminDashboard() {
           <div className="w-12 h-12 border-4 border-[#ff6b4a] border-t-transparent rounded-full animate-spin"></div>
           <p className="text-gray-600">Chargement du tableau de bord...</p>
         </div>
+      </div>
+    )
+  }
+
+  if (!kioskData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <p className="text-red-600">Erreur de chargement des données</p>
       </div>
     )
   }
@@ -231,45 +229,46 @@ export default function AdminDashboard() {
           </div>
         </div>
         
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {/* Total Kiosks Card */}
+        {/* 4 cards avec données directement du serveur */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          {/* Card 1: Total Kiosques */}
           <Card className={`shadow-lg hover:shadow-xl transition-shadow duration-300 ${styles.carte}`}>
             <CardHeader className={`flex flex-col space-y-0 pb-2 shadow-md bg-gradient-to-r from-orange-50 to-orange-100 ${styles.carteEntete}`}>
               <CardTitle className="text-sm font-medium text-orange-700">Total Kiosques</CardTitle>
-              <div className="text-3xl font-bold mt-2 text-orange-600">{kioskStats.totalKiosks}</div>
+              <div className="text-3xl font-bold mt-2 text-orange-600">{kioskData.totalKiosks}</div>
             </CardHeader>
             <CardContent className="pt-4">
               <div className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-2 p-2 rounded-lg bg-orange-50">
                   <OneKioskSVG />
-                  <span className="text-gray-700">MONO: <strong className="text-orange-600">{kioskStats.monoKiosks}</strong></span>
+                  <span className="text-gray-700">MONO: <strong className="text-orange-600">{kioskData.mono.total}</strong></span>
                 </div>
                 <div className="flex items-center gap-2 p-2 rounded-lg bg-purple-50">
                   <ThreeKioskSVG />
-                  <span className="text-gray-700">GRAND: <strong className="text-purple-600">{kioskStats.grandKiosks}</strong></span>
+                  <span className="text-gray-700">GRAND: <strong className="text-purple-600">{kioskData.grand.total}</strong></span>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Kiosks in Stock Card */}
+          {/* Card 2: En Stock */}
           <Card className={`shadow-lg hover:shadow-xl transition-shadow duration-300 ${styles.carte}`}>
             <CardHeader className={`flex flex-col space-y-0 pb-2 shadow-md bg-gradient-to-r from-blue-50 to-blue-100 ${styles.carteEntete}`}>
-              <CardTitle className="text-sm font-medium text-blue-700">Kiosques en Stock</CardTitle>
+              <CardTitle className="text-sm font-medium text-blue-700 mb-2">En Stock</CardTitle>
               <div className="space-y-2 mt-2">
                 <div className="flex items-center justify-between p-2 rounded-lg bg-white">
                   <div className="flex items-center gap-2">
                     <OneKioskSVG />
                     <span className="text-sm text-gray-700">MONO</span>
                   </div>
-                  <span className="text-xl font-bold text-blue-600">{kioskStats.monoInStock}</span>
+                  <span className="text-xl font-bold text-blue-600">{kioskData.mono.inStock}</span>
                 </div>
                 <div className="flex items-center justify-between p-2 rounded-lg bg-white">
                   <div className="flex items-center gap-2">
                     <ThreeKioskSVG />
                     <span className="text-sm text-gray-700">GRAND</span>
                   </div>
-                  <span className="text-xl font-bold text-purple-600">{kioskStats.grandInStock}</span>
+                  <span className="text-xl font-bold text-purple-600">{kioskData.grand.inStock}</span>
                 </div>
               </div>
             </CardHeader>
@@ -281,31 +280,74 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
 
-          {/* Kiosks Deployed Card */}
+          {/* Card 3: Kiosques MONO - État */}
           <Card className={`shadow-lg hover:shadow-xl transition-shadow duration-300 ${styles.carte}`}>
-            <CardHeader className={`flex flex-col space-y-0 pb-2 shadow-md bg-gradient-to-r from-green-50 to-green-100 ${styles.carteEntete}`}>
-              <CardTitle className="text-sm font-medium text-green-700">Kiosques Déployés</CardTitle>
+            <CardHeader className={`flex flex-col space-y-0 pb-2 shadow-md bg-gradient-to-r from-green-50 to-emerald-100 ${styles.carteEntete}`}>
+              <CardTitle className="text-sm font-medium text-green-700 mb-2">Kiosques MONO</CardTitle>
               <div className="space-y-2 mt-2">
                 <div className="flex items-center justify-between p-2 rounded-lg bg-white">
                   <div className="flex items-center gap-2">
-                    <OneKioskSVG />
-                    <span className="text-sm text-gray-700">MONO</span>
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span className="text-sm text-gray-700">Occupés</span>
                   </div>
-                  <span className="text-xl font-bold text-green-600">{kioskStats.monoDeployed}</span>
+                  <span className="text-xl font-bold text-green-600">{kioskData.mono.occupied}</span>
                 </div>
                 <div className="flex items-center justify-between p-2 rounded-lg bg-white">
                   <div className="flex items-center gap-2">
-                    <ThreeKioskSVG />
-                    <span className="text-sm text-gray-700">GRAND</span>
+                    <Package className="h-4 w-4 text-blue-500" />
+                    <span className="text-sm text-gray-700">Libres</span>
                   </div>
-                  <span className="text-xl font-bold text-green-600">{kioskStats.grandDeployed}</span>
+                  <span className="text-xl font-bold text-blue-600">{kioskData.mono.free}</span>
+                </div>
+                <div className="flex items-center justify-between p-2 rounded-lg bg-white">
+                  <div className="flex items-center gap-2">
+                    <Wrench className="h-4 w-4 text-yellow-600" />
+                    <span className="text-sm text-gray-700">En maintenance</span>
+                  </div>
+                  <span className="text-xl font-bold text-yellow-600">{kioskData.mono.underMaintenance}</span>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="pt-4">
               <div className="flex items-center text-medium text-gray-600">
-                <TrendingUp className="h-4 w-4 mr-2 text-green-500" />
-                <span>Actuellement en activité</span>
+                <OneKioskSVG />
+                <span>Total: <strong>{kioskData.mono.total}</strong> kiosques</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Card 4: Compartiments GRAND - État */}
+          <Card className={`shadow-lg hover:shadow-xl transition-shadow duration-300 ${styles.carte}`}>
+            <CardHeader className={`flex flex-col space-y-0 pb-2 shadow-md bg-gradient-to-r from-purple-50 to-purple-100 ${styles.carteEntete}`}>
+              <CardTitle className="text-sm font-medium text-purple-700 mb-2">Compartiments (GRAND Kiosque)</CardTitle>
+              <div className="space-y-2 mt-2">
+                <div className="flex items-center justify-between p-2 rounded-lg bg-white">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span className="text-sm text-gray-700">Occupés</span>
+                  </div>
+                  <span className="text-xl font-bold text-green-600">{kioskData.compartments.occupied}</span>
+                </div>
+                <div className="flex items-center justify-between p-2 rounded-lg bg-white">
+                  <div className="flex items-center gap-2">
+                    <Package className="h-4 w-4 text-blue-500" />
+                    <span className="text-sm text-gray-700">Libres</span>
+                  </div>
+                  <span className="text-xl font-bold text-blue-600">{kioskData.compartments.free}</span>
+                </div>
+                <div className="flex items-center justify-between p-2 rounded-lg bg-white">
+                  <div className="flex items-center gap-2">
+                    <Wrench className="h-4 w-4 text-yellow-600" />
+                    <span className="text-sm text-gray-700">En maintenance</span>
+                  </div>
+                  <span className="text-xl font-bold text-yellow-600">{kioskData.compartments.underMaintenance}</span>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <div className="flex items-center text-medium text-gray-600">
+                <ThreeKioskSVG />
+                <span>Total: <strong>{kioskData.compartments.total}</strong> compartiments</span>
               </div>
             </CardContent>
           </Card>

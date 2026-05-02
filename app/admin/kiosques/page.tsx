@@ -6,7 +6,7 @@ import KioskTab2 from "@/app/ui/admin/kiosques/tab2"
 import KioskTab3 from "@/app/ui/admin/kiosques/tab3"
 import { AddKioskDialog } from "@/app/ui/admin/kiosques/nouveau"
 import Header from "@/app/ui/header"
-import { deleteKiosk, getKiosks } from "@/app/actions/kiosk-actions"
+import { deleteKiosk, getKiosks, getKioskCounts } from "@/app/actions/kiosk-actions"
 
 const tabs = [
   { id: "metrique", label: "Métriques" },
@@ -16,14 +16,57 @@ const tabs = [
 
 import { type Kiosk } from "@prisma/client"
 
+// Interface pour les données formatées du serveur
+interface DashboardData {
+  totalKiosks: number
+  kiosksAddedThisMonth: number
+  percentageAddedThisMonth: number
+  mono: {
+    total: number
+    inStock: number
+    deployed: number
+    occupied: number
+    free: number
+    underMaintenance: number
+  }
+  grand: {
+    total: number
+    inStock: number
+    deployed: number
+  }
+  compartments: {
+    total: number
+    occupied: number
+    free: number
+    underMaintenance: number
+  }
+  totals: {
+    totalCompartments: number
+  }
+  towns: {
+    DOUALA: {
+      MONO: { total: number; available: number; occupied: number }
+      GRAND: { total: number; available: number; occupied: number }
+    }
+    YAOUNDE: {
+      MONO: { total: number; available: number; occupied: number }
+      GRAND: { total: number; available: number; occupied: number }
+    }
+  }
+}
+
 export default function KioskManagement() {
-  const [activeTab, setActiveTab] = useState("dashboard")
+  const [activeTab, setActiveTab] = useState("metrique") // Changé pour afficher les métriques par défaut
   const [kiosks, setKiosks] = useState<Kiosk[]>([])
   const [totalPages, setTotalPages] = useState(1)
   const [currentPage, setCurrentPage] = useState(1)
   const [searchTerm, setSearchTerm] = useState("")
   const [filterStatus, setFilterStatus] = useState("")
   const [filterDate, setFilterDate] = useState<Date | undefined>(undefined)
+  
+  // État pour les métriques
+  const [metricsData, setMetricsData] = useState<DashboardData | null>(null)
+  const [metricsLoading, setMetricsLoading] = useState(true)
 
   const fetchKiosks = useCallback(async () => {
     const result = await getKiosks({
@@ -36,9 +79,34 @@ export default function KioskManagement() {
     setTotalPages(result.totalPages)
   }, [currentPage, searchTerm, filterStatus, filterDate])
 
+  // Fonction pour récupérer les métriques
+  const fetchMetrics = useCallback(async () => {
+    setMetricsLoading(true)
+    try {
+      const result = await getKioskCounts()
+      if (result && result.dashboard) {
+        setMetricsData(result.dashboard)
+      }
+    } catch (error) {
+      console.error("Error fetching metrics:", error)
+    } finally {
+      setMetricsLoading(false)
+    }
+  }, [])
+
   useEffect(() => {
     fetchKiosks()
   }, [fetchKiosks])
+
+  // Récupérer les métriques au montage
+  useEffect(() => {
+    fetchMetrics()
+    
+    // Rafraîchir les métriques toutes les 5 minutes
+    const interval = setInterval(fetchMetrics, 300000)
+    
+    return () => clearInterval(interval)
+  }, [fetchMetrics])
 
   const handleSearch = (term: string) => {
     setSearchTerm(term)
@@ -61,6 +129,8 @@ export default function KioskManagement() {
 
   const handleKioskUpdate = (updatedKiosk: Kiosk) => {
     setKiosks(kiosks.map((kiosk) => (kiosk.id === updatedKiosk.id ? updatedKiosk : kiosk)))
+    // Rafraîchir les métriques après une mise à jour
+    fetchMetrics()
   }
 
   const handleKioskDelete = async (kioskId: number) => {
@@ -71,6 +141,8 @@ export default function KioskManagement() {
       } else {
         setKiosks(kiosks.filter((kiosk) => kiosk.id !== kioskId))
         console.log(result.message)
+        // Rafraîchir les métriques après une suppression
+        fetchMetrics()
       }
     } catch (error) {
       console.error("Error deleting kiosk:", error)
@@ -80,6 +152,13 @@ export default function KioskManagement() {
   const handleKioskAdd = (newKiosk: Kiosk) => {
     setKiosks((prevKiosks) => [newKiosk, ...prevKiosks])
     fetchKiosks()
+    // Rafraîchir les métriques après un ajout
+    fetchMetrics()
+  }
+
+  const handleRefresh = () => {
+    fetchKiosks()
+    fetchMetrics()
   }
 
   return (
@@ -122,7 +201,10 @@ export default function KioskManagement() {
             onPageChange={handlePageChange}
             onKioskUpdate={handleKioskUpdate}
             onKioskDelete={handleKioskDelete}
-            onRefresh={fetchKiosks}
+            onRefresh={handleRefresh}
+            // Passer les métriques calculées
+            metricsData={metricsData}
+            metricsLoading={metricsLoading}
           />
         )}
         {activeTab === "dashboard" && (
@@ -139,7 +221,7 @@ export default function KioskManagement() {
             onPageChange={handlePageChange}
             onKioskUpdate={handleKioskUpdate}
             onKioskDelete={handleKioskDelete}
-            onRefresh={fetchKiosks}
+            onRefresh={handleRefresh}
           />
         )}
         {activeTab === "invoices" && <KioskTab2 />}

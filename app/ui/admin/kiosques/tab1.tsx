@@ -1,12 +1,60 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Loader2, ShoppingCart, LayoutGrid, Warehouse, TrendingUp, Building2, MapPin, Globe, BarChart3 } from "lucide-react"
-import { getKioskCounts } from "@/app/actions/kiosk-actions"
+import { 
+  LayoutGrid, 
+  Warehouse, 
+  TrendingUp, 
+  Building2, 
+  MapPin, 
+  Globe, 
+  BarChart3, 
+  Package, 
+  Wrench,
+  CheckCircle
+} from "lucide-react"
 import ThreeKioskSVG from "../../svg/threekiosks"
 import OneKioskSVG from "../../svg/onekiosks"
+
+// Interface pour les données formatées du serveur
+interface DashboardData {
+  totalKiosks: number
+  kiosksAddedThisMonth: number
+  percentageAddedThisMonth: number
+  mono: {
+    total: number
+    inStock: number
+    deployed: number
+    occupied: number
+    free: number
+    underMaintenance: number
+  }
+  grand: {
+    total: number
+    inStock: number
+    deployed: number
+  }
+  compartments: {
+    total: number
+    occupied: number
+    free: number
+    underMaintenance: number
+  }
+  totals: {
+    totalCompartments: number
+  }
+  towns: {
+    DOUALA: {
+      MONO: { total: number; available: number; occupied: number }
+      GRAND: { total: number; available: number; occupied: number }
+    }
+    YAOUNDE: {
+      MONO: { total: number; available: number; occupied: number }
+      GRAND: { total: number; available: number; occupied: number }
+    }
+  }
+}
 
 interface KioskTab1Props {
   kiosks?: any[]
@@ -22,6 +70,9 @@ interface KioskTab1Props {
   onKioskUpdate?: (kiosk: any) => void
   onKioskDelete?: (kioskId: number) => void
   onRefresh?: () => void
+  // Nouvelles props pour les métriques pré-calculées
+  metricsData?: DashboardData | null
+  metricsLoading?: boolean
 }
 
 export default function KioskTab1({
@@ -38,143 +89,33 @@ export default function KioskTab1({
   onKioskUpdate,
   onKioskDelete,
   onRefresh,
+  metricsData,
+  metricsLoading,
 }: KioskTab1Props) {
-  const [stats, setStats] = useState({
-    totalKiosks: 0,
-    totalCompartments: 0,
-    monoKiosks: 0,
-    grandKiosks: 0,
-    monoInStock: 0,
-    grandInStock: 0,
-    monoDeployed: 0,
-    grandDeployed: 0,
-    freeCompartments: 0,
-    occupiedCompartments: 0,
-    compartmentsUnderMaintenance: 0,
-    monoOccupied: 0,
-    grandOccupiedCompartments: 0,
-    grandFreeCompartments: 0,
-    grandCompartmentsTotal: 0,
-    kiosksAddedThisMonth: 0,
-    percentageAddedThisMonth: 0,
-  })
 
-  const [doualaStats, setDoualaStats] = useState({
-    totalKiosks: 0,
-    monoKiosks: 0,
-    grandKiosks: 0,
-    monoInStock: 0,
-    grandInStock: 0,
-    monoDeployed: 0,
-    grandDeployed: 0,
-    freeCompartments: 0,
-    occupiedCompartments: 0,
-    compartmentsUnderMaintenance: 0,
-    monoOccupied: 0,
-    grandOccupiedCompartments: 0,
-    grandFreeCompartments: 0,
-    totalCompartments: 0,
-  })
-
-  const [yaoundeStats, setYaoundeStats] = useState({
-    totalKiosks: 0,
-    monoKiosks: 0,
-    grandKiosks: 0,
-    monoInStock: 0,
-    grandInStock: 0,
-    monoDeployed: 0,
-    grandDeployed: 0,
-    freeCompartments: 0,
-    occupiedCompartments: 0,
-    compartmentsUnderMaintenance: 0,
-    monoOccupied: 0,
-    grandOccupiedCompartments: 0,
-    grandFreeCompartments: 0,
-    totalCompartments: 0,
-  })
-
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    async function loadStats() {
-      setLoading(true)
-      try {
-        const result = await getKioskCounts()
-        
-        if (result) {
-          // Overall stats
-          setStats({
-            totalKiosks: result.totalKiosks || 0,
-            totalCompartments: (result.kiosks?.MONO?.totalKiosks || 0) + ((result.kiosks?.GRAND?.totalKiosks || 0) * 3),
-            monoKiosks: result.kiosks.MONO?.total || 0,
-            grandKiosks: result.kiosks?.GRAND?.total || 0,
-            monoInStock: (result.kiosks?.MONO?.IN_STOCK || 0) + (result.kiosks?.MONO?.AVAILABLE || 0),
-            grandInStock: (result.kiosks?.GRAND?.IN_STOCK || 0) + (result.kiosks?.GRAND?.AVAILABLE || 0),
-            monoDeployed: (result.kiosks?.MONO?.ACTIVE || 0) + (result.kiosks?.MONO?.ACTIVE_UNDER_MAINTENANCE || 0),
-            grandDeployed: (result.kiosks?.GRAND?.ACTIVE || 0) + (result.kiosks?.GRAND?.ACTIVE_UNDER_MAINTENANCE || 0),
-            freeCompartments: result.compartments?.AVAILABLE || 0,
-            occupiedCompartments: result.compartments?.OCCUPIED || 0,
-            compartmentsUnderMaintenance: result.compartments?.UNDER_MAINTENANCE || 0,
-            monoOccupied: result.kiosks?.MONO?.ACTIVE || 0,
-            grandOccupiedCompartments: result.compartments?.OCCUPIED || 0,
-            grandFreeCompartments: result.compartments?.AVAILABLE || 0,
-            grandCompartmentsTotal: (result.kiosks?.GRAND?.totalKiosks || 0) * 3,
-            kiosksAddedThisMonth: result.kiosksAddedThisMonth || 0,
-            percentageAddedThisMonth: result.percentageAddedThisMonth || 0,
-          })
-
-          // Douala stats
-          setDoualaStats({
-            totalKiosks: result.towns?.DOUALA?.MONO?.total + result.towns?.DOUALA?.GRAND?.total || 0,
-            monoKiosks: result.towns?.DOUALA?.MONO?.total || 0,
-            grandKiosks: result.towns?.DOUALA?.GRAND?.total || 0,
-            monoInStock: result.towns?.DOUALA?.MONO?.available || 0,
-            grandInStock: result.towns?.DOUALA?.GRAND?.available || 0,
-            monoDeployed: result.kiosks?.MONO?.ACTIVE || 0,
-            grandDeployed: result.kiosks?.GRAND?.ACTIVE || 0,
-            freeCompartments: 0,
-            occupiedCompartments: 0,
-            compartmentsUnderMaintenance: 0,
-            monoOccupied: 0,
-            grandOccupiedCompartments: 0,
-            grandFreeCompartments: 0,
-            totalCompartments: 0,
-          })
-
-          // Yaounde stats
-          setYaoundeStats({
-            totalKiosks: result.towns?.YAOUNDE?.MONO?.total + result.towns?.YAOUNDE?.GRAND?.total || 0,
-            monoKiosks: result.towns?.YAOUNDE?.MONO?.total || 0,
-            grandKiosks: result.towns?.YAOUNDE?.GRAND?.total || 0,
-            monoInStock: result.towns?.YAOUNDE?.MONO?.available || 0,
-            grandInStock: result.towns?.YAOUNDE?.GRAND?.available || 0,
-            monoDeployed: 0,
-            grandDeployed: 0,
-            freeCompartments: 0,
-            occupiedCompartments: 0,
-            compartmentsUnderMaintenance: 0,
-            monoOccupied: 0,
-            grandOccupiedCompartments: 0,
-            grandFreeCompartments: 0,
-            totalCompartments: 0,
-          })
-        }
-      } catch (error) {
-        console.error("Error loading kiosk metrics:", error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    loadStats()
-  }, [])
-
-  if (loading) {
+  // Afficher le chargement si les métriques ne sont pas encore disponibles
+  if (metricsLoading) {
     return (
       <div className="flex justify-center items-center h-96">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-[#ff6b4a] border-t-transparent rounded-full animate-spin"></div>
           <p className="text-gray-600">Chargement des métriques...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!metricsData) {
+    return (
+      <div className="flex justify-center items-center h-96">
+        <div className="flex flex-col items-center gap-4">
+          <p className="text-red-600">Erreur de chargement des données</p>
+          <button 
+            onClick={onRefresh}
+            className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600"
+          >
+            Réessayer
+          </button>
         </div>
       </div>
     )
@@ -190,19 +131,19 @@ export default function KioskTab1({
     </Card>
   )
 
-  // Overall metrics row
+  // Overall metrics row (vue d'ensemble) - utilisant les données pré-calculées
   const OverallMetrics = () => (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       <MetricCard title="Total Kiosques">
-        <div className="text-3xl font-bold mt-2 text-orange-600">{stats.totalKiosks}</div>
+        <div className="text-3xl font-bold mt-2 text-orange-600">{metricsData.totalKiosks}</div>
         <div className="flex items-center justify-between text-sm mt-2">
           <div className="flex items-center gap-2 p-2 rounded-lg bg-orange-50">
             <OneKioskSVG />
-            <span>MONO: <strong className="text-orange-600">{stats.monoKiosks}</strong></span>
+            <span>MONO: <strong className="text-orange-600">{metricsData.mono.total}</strong></span>
           </div>
           <div className="flex items-center gap-2 p-2 rounded-lg bg-purple-50">
             <ThreeKioskSVG />
-            <span>GRAND: <strong className="text-purple-600">{stats.grandKiosks}</strong></span>
+            <span>GRAND: <strong className="text-purple-600">{metricsData.grand.total}</strong></span>
           </div>
         </div>
       </MetricCard>
@@ -214,14 +155,14 @@ export default function KioskTab1({
               <OneKioskSVG />
               <span className="text-sm">MONO</span>
             </div>
-            <span className="text-xl font-bold text-blue-600">{stats.monoInStock}</span>
+            <span className="text-xl font-bold text-blue-600">{metricsData.mono.inStock}</span>
           </div>
           <div className="flex items-center justify-between p-2 rounded-lg bg-purple-50">
             <div className="flex items-center gap-2">
               <ThreeKioskSVG />
               <span className="text-sm">GRAND</span>
             </div>
-            <span className="text-xl font-bold text-purple-600">{stats.grandInStock}</span>
+            <span className="text-xl font-bold text-purple-600">{metricsData.grand.inStock}</span>
           </div>
         </div>
         <div className="flex items-center text-medium text-gray-600 mt-3 pt-2 border-t">
@@ -230,129 +171,187 @@ export default function KioskTab1({
         </div>
       </MetricCard>
 
-      <MetricCard title="Déployés">
+      <MetricCard title="Kiosques MONO">
         <div className="space-y-2">
           <div className="flex items-center justify-between p-2 rounded-lg bg-green-50">
             <div className="flex items-center gap-2">
-              <OneKioskSVG />
-              <span className="text-sm">MONO</span>
+              <CheckCircle className="h-4 w-4 text-green-500" />
+              <span className="text-sm">Occupés</span>
             </div>
-            <span className="text-xl font-bold text-green-600">{stats.monoDeployed}</span>
+            <span className="text-xl font-bold text-green-600">{metricsData.mono.occupied}</span>
           </div>
-          <div className="flex items-center justify-between p-2 rounded-lg bg-green-50">
+          <div className="flex items-center justify-between p-2 rounded-lg bg-blue-50">
             <div className="flex items-center gap-2">
-              <ThreeKioskSVG />
-              <span className="text-sm">GRAND</span>
+              <Package className="h-4 w-4 text-blue-500" />
+              <span className="text-sm">Libres</span>
             </div>
-            <span className="text-xl font-bold text-green-600">{stats.grandDeployed}</span>
+            <span className="text-xl font-bold text-blue-600">{metricsData.mono.free}</span>
+          </div>
+          <div className="flex items-center justify-between p-2 rounded-lg bg-yellow-50">
+            <div className="flex items-center gap-2">
+              <Wrench className="h-4 w-4 text-yellow-600" />
+              <span className="text-sm">En maintenance</span>
+            </div>
+            <span className="text-xl font-bold text-yellow-600">{metricsData.mono.underMaintenance}</span>
           </div>
         </div>
         <div className="flex items-center text-medium text-gray-600 mt-3 pt-2 border-t">
-          <TrendingUp className="h-4 w-4 mr-2 text-green-500" />
-          <span>Actuellement en activité</span>
+          <OneKioskSVG />
+          <span>Total: <strong>{metricsData.mono.total}</strong> kiosques</span>
         </div>
       </MetricCard>
 
-      <MetricCard title="Compartiments">
+      <MetricCard title="Compartiments GRAND">
         <div className="space-y-2">
-          <div className="flex items-center justify-between p-2 rounded-lg bg-blue-50">
-            <span className="text-sm">Occupés</span>
-            <span className="text-xl font-bold text-blue-600">{stats.occupiedCompartments}</span>
-          </div>
           <div className="flex items-center justify-between p-2 rounded-lg bg-green-50">
-            <span className="text-sm">Libres</span>
-            <span className="text-xl font-bold text-green-600">{stats.freeCompartments}</span>
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-green-500" />
+              <span className="text-sm">Occupés</span>
+            </div>
+            <span className="text-xl font-bold text-green-600">{metricsData.compartments.occupied}</span>
+          </div>
+          <div className="flex items-center justify-between p-2 rounded-lg bg-blue-50">
+            <div className="flex items-center gap-2">
+              <Package className="h-4 w-4 text-blue-500" />
+              <span className="text-sm">Libres</span>
+            </div>
+            <span className="text-xl font-bold text-blue-600">{metricsData.compartments.free}</span>
           </div>
           <div className="flex items-center justify-between p-2 rounded-lg bg-yellow-50">
-            <span className="text-sm">En maintenance</span>
-            <span className="text-xl font-bold text-yellow-600">{stats.compartmentsUnderMaintenance}</span>
+            <div className="flex items-center gap-2">
+              <Wrench className="h-4 w-4 text-yellow-600" />
+              <span className="text-sm">En maintenance</span>
+            </div>
+            <span className="text-xl font-bold text-yellow-600">{metricsData.compartments.underMaintenance}</span>
           </div>
         </div>
         <div className="flex items-center text-medium text-gray-600 mt-3 pt-2 border-t">
-          <LayoutGrid className="h-4 w-4 mr-2 text-purple-500" />
-          <span>Total: {stats.totalCompartments}</span>
+          <ThreeKioskSVG />
+          <span>Total: <strong>{metricsData.compartments.total}</strong> compartiments</span>
         </div>
       </MetricCard>
     </div>
   )
 
-  // Town metrics row
-  const TownMetrics = ({ town, data }: { town: string; data: typeof doualaStats }) => (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      <MetricCard title={`Total Kiosques - ${town}`}>
-        <div className="text-3xl font-bold mt-2 text-orange-600">{data.totalKiosks}</div>
-        <div className="flex items-center justify-between text-sm mt-2">
-          <div className="flex items-center gap-2 p-2 rounded-lg bg-orange-50">
-            <OneKioskSVG />
-            <span>MONO: <strong className="text-orange-600">{data.monoKiosks}</strong></span>
+  // Mono metrics row (pour Douala et Yaoundé)
+  const MonoMetrics = ({ town, data }: { town: string; data: { total: number; available: number; occupied: number } }) => (
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <MetricCard title={`Total Kiosques MONO - ${town}`}>
+        <div className="text-3xl font-bold mt-2 text-orange-600">{data.total}</div>
+        <div className="flex items-center gap-2 mt-2 p-2 rounded-lg bg-orange-50">
+          <OneKioskSVG />
+          <span>Kiosques à 1 compartiment</span>
+        </div>
+      </MetricCard>
+
+      <MetricCard title={`État des Kiosques MONO - ${town}`}>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between p-2 rounded-lg bg-green-50">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-green-500" />
+              <span className="text-sm">Occupés (client)</span>
+            </div>
+            <span className="text-xl font-bold text-green-600">{data.occupied}</span>
           </div>
-          <div className="flex items-center gap-2 p-2 rounded-lg bg-purple-50">
-            <ThreeKioskSVG />
-            <span>GRAND: <strong className="text-purple-600">{data.grandKiosks}</strong></span>
+          <div className="flex items-center justify-between p-2 rounded-lg bg-blue-50">
+            <div className="flex items-center gap-2">
+              <Package className="h-4 w-4 text-blue-500" />
+              <span className="text-sm">Libres (disponibles)</span>
+            </div>
+            <span className="text-xl font-bold text-blue-600">{data.available}</span>
+          </div>
+          <div className="flex items-center justify-between p-2 rounded-lg bg-yellow-50">
+            <div className="flex items-center gap-2">
+              <Wrench className="h-4 w-4 text-yellow-600" />
+              <span className="text-sm">En maintenance</span>
+            </div>
+            <span className="text-xl font-bold text-yellow-600">0</span>
           </div>
         </div>
       </MetricCard>
 
-      <MetricCard title={`En Stock - ${town}`}>
+      <MetricCard title={`Stock & Déploiement - ${town}`}>
         <div className="space-y-2">
-          <div className="flex items-center justify-between p-2 rounded-lg bg-blue-50">
-            <div className="flex items-center gap-2">
-              <OneKioskSVG />
-              <span className="text-sm">MONO</span>
-            </div>
-            <span className="text-xl font-bold text-blue-600">{data.monoInStock}</span>
-          </div>
           <div className="flex items-center justify-between p-2 rounded-lg bg-purple-50">
             <div className="flex items-center gap-2">
-              <ThreeKioskSVG />
-              <span className="text-sm">GRAND</span>
+              <Warehouse className="h-4 w-4 text-purple-500" />
+              <span className="text-sm">En stock</span>
             </div>
-            <span className="text-xl font-bold text-purple-600">{data.grandInStock}</span>
-          </div>
-        </div>
-        <div className="flex items-center text-medium text-gray-600 mt-3 pt-2 border-t">
-          <Warehouse className="h-4 w-4 mr-2 text-blue-500" />
-          <span>Disponibles</span>
-        </div>
-      </MetricCard>
-
-      <MetricCard title={`Déployés - ${town}`}>
-        <div className="space-y-2">
-          <div className="flex items-center justify-between p-2 rounded-lg bg-green-50">
-            <div className="flex items-center gap-2">
-              <OneKioskSVG />
-              <span className="text-sm">MONO</span>
-            </div>
-            <span className="text-xl font-bold text-green-600">{data.monoDeployed}</span>
+            <span className="text-xl font-bold text-purple-600">{data.available}</span>
           </div>
           <div className="flex items-center justify-between p-2 rounded-lg bg-green-50">
             <div className="flex items-center gap-2">
-              <ThreeKioskSVG />
-              <span className="text-sm">GRAND</span>
+              <TrendingUp className="h-4 w-4 text-green-500" />
+              <span className="text-sm">Déployés</span>
             </div>
-            <span className="text-xl font-bold text-green-600">{data.grandDeployed}</span>
+            <span className="text-xl font-bold text-green-600">{data.occupied}</span>
           </div>
         </div>
         <div className="flex items-center text-medium text-gray-600 mt-3 pt-2 border-t">
-          <TrendingUp className="h-4 w-4 mr-2 text-green-500" />
-          <span>Actifs</span>
+          <Building2 className="h-4 w-4 mr-2 text-orange-500" />
+          <span>Kiosques MONO</span>
+        </div>
+      </MetricCard>
+    </div>
+  )
+
+  // Grand compartments metrics row (pour Douala et Yaoundé)
+  const GrandCompartmentsMetrics = ({ town, data }: { town: string; data: { total: number; available: number; occupied: number } }) => (
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <MetricCard title={`Total Compartiments GRAND - ${town}`}>
+        <div className="text-3xl font-bold mt-2 text-purple-600">{data.total * 3}</div>
+        <div className="flex items-center gap-2 mt-2 p-2 rounded-lg bg-purple-50">
+          <ThreeKioskSVG />
+          <span>{data.total} kiosques × 3 compartiments</span>
         </div>
       </MetricCard>
 
-      <MetricCard title={`Compartiments - ${town}`}>
+      <MetricCard title={`État des Compartiments - ${town}`}>
         <div className="space-y-2">
+          <div className="flex items-center justify-between p-2 rounded-lg bg-green-50">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-green-500" />
+              <span className="text-sm">Occupés (client)</span>
+            </div>
+            <span className="text-xl font-bold text-green-600">{data.occupied}</span>
+          </div>
           <div className="flex items-center justify-between p-2 rounded-lg bg-blue-50">
-            <span className="text-sm">Occupés</span>
-            <span className="text-xl font-bold text-blue-600">{data.occupiedCompartments}</span>
+            <div className="flex items-center gap-2">
+              <Package className="h-4 w-4 text-blue-500" />
+              <span className="text-sm">Libres (disponibles)</span>
+            </div>
+            <span className="text-xl font-bold text-blue-600">{data.available}</span>
+          </div>
+          <div className="flex items-center justify-between p-2 rounded-lg bg-yellow-50">
+            <div className="flex items-center gap-2">
+              <Wrench className="h-4 w-4 text-yellow-600" />
+              <span className="text-sm">En maintenance</span>
+            </div>
+            <span className="text-xl font-bold text-yellow-600">0</span>
+          </div>
+        </div>
+      </MetricCard>
+
+      <MetricCard title={`Stock & Déploiement - ${town}`}>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between p-2 rounded-lg bg-purple-50">
+            <div className="flex items-center gap-2">
+              <Warehouse className="h-4 w-4 text-purple-500" />
+              <span className="text-sm">Kiosques en stock</span>
+            </div>
+            <span className="text-xl font-bold text-purple-600">{data.available}</span>
           </div>
           <div className="flex items-center justify-between p-2 rounded-lg bg-green-50">
-            <span className="text-sm">Libres</span>
-            <span className="text-xl font-bold text-green-600">{data.freeCompartments}</span>
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-green-500" />
+              <span className="text-sm">Kiosques déployés</span>
+            </div>
+            <span className="text-xl font-bold text-green-600">{data.occupied}</span>
           </div>
         </div>
         <div className="flex items-center text-medium text-gray-600 mt-3 pt-2 border-t">
-          <LayoutGrid className="h-4 w-4 mr-2 text-purple-500" />
-          <span>Total: {data.totalCompartments}</span>
+          <Building2 className="h-4 w-4 mr-2 text-purple-500" />
+          <span>Kiosques GRAND</span>
         </div>
       </MetricCard>
     </div>
@@ -396,51 +395,58 @@ export default function KioskTab1({
           <OverallMetrics />
         </div>
 
-        {/* Additional metrics can be added here in the future */}
         <div className="mt-8 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
           <p className="text-sm text-gray-600 text-center">
-            📊 Plus de métriques seront ajoutées prochainement (taux d'occupation, revenus, etc.)
+            📊 Kiosques MONO : occupation client | Kiosques GRAND : occupation par compartiment
           </p>
         </div>
       </TabsContent>
 
-      <TabsContent value="douala" className="mt-6 space-y-6">
+      <TabsContent value="douala" className="mt-6 space-y-8">
         <div>
           <div className="flex items-center gap-2 mb-6">
             <div className="w-1 h-6 bg-gradient-to-b from-blue-500 to-blue-300 rounded-full"></div>
             <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
-              <Building2 className="h-5 w-5 text-blue-600" />
-              Douala - Métriques par Ville
+              <OneKioskSVG />
+              Douala - Kiosques MONO
             </h2>
           </div>
-          <TownMetrics town="Douala" data={doualaStats} />
+          <MonoMetrics town="Douala" data={metricsData.towns.DOUALA.MONO} />
         </div>
 
-        {/* Additional Douala-specific metrics can be added here */}
-        <div className="mt-8 p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg border border-blue-200">
-          <p className="text-sm text-gray-600 text-center">
-            📍 Douala : Centre économique - Plus de métriques disponibles prochainement
-          </p>
+        <div>
+          <div className="flex items-center gap-2 mb-6 mt-8">
+            <div className="w-1 h-6 bg-gradient-to-b from-purple-500 to-purple-300 rounded-full"></div>
+            <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+              <ThreeKioskSVG />
+              Douala - Compartiments GRAND
+            </h2>
+          </div>
+          <GrandCompartmentsMetrics town="Douala" data={metricsData.towns.DOUALA.GRAND} />
         </div>
       </TabsContent>
 
-      <TabsContent value="yaounde" className="mt-6 space-y-6">
+      <TabsContent value="yaounde" className="mt-6 space-y-8">
         <div>
           <div className="flex items-center gap-2 mb-6">
             <div className="w-1 h-6 bg-gradient-to-b from-green-500 to-green-300 rounded-full"></div>
             <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
-              <Building2 className="h-5 w-5 text-green-600" />
-              Yaoundé - Métriques par Ville
+              <OneKioskSVG />
+              Yaoundé - Kiosques MONO
             </h2>
           </div>
-          <TownMetrics town="Yaoundé" data={yaoundeStats} />
+          <MonoMetrics town="Yaoundé" data={metricsData.towns.YAOUNDE.MONO} />
         </div>
 
-        {/* Additional Yaoundé-specific metrics can be added here */}
-        <div className="mt-8 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
-          <p className="text-sm text-gray-600 text-center">
-            📍 Yaoundé : Capitale politique - Plus de métriques disponibles prochainement
-          </p>
+        <div>
+          <div className="flex items-center gap-2 mb-6 mt-8">
+            <div className="w-1 h-6 bg-gradient-to-b from-purple-500 to-purple-300 rounded-full"></div>
+            <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+              <ThreeKioskSVG />
+              Yaoundé - Compartiments GRAND
+            </h2>
+          </div>
+          <GrandCompartmentsMetrics town="Yaoundé" data={metricsData.towns.YAOUNDE.GRAND} />
         </div>
       </TabsContent>
     </Tabs>

@@ -254,7 +254,7 @@ export async function getKioskCounts() {
       const type = kioskType as keyof typeof counts.kiosks;
       if (counts.kiosks[type] && counts.kiosks[type][status] !== undefined) {
         counts.kiosks[type][status] += _count._all
-        counts.kiosks[type].total += _count._all // Add to total
+        counts.kiosks[type].total += _count._all
       }
       
       if (kioskTown && counts.towns[kioskTown]) {
@@ -280,7 +280,103 @@ export async function getKioskCounts() {
       occupiedCompartmentsByKiosk.map(k => k.kioskId)
     );
 
-    return counts
+    // ==============================================
+    // TOUS LES CALCULS POUR LE DASHBOARD ICI
+    // ==============================================
+    
+    // Métriques MONO
+    const monoTotal = counts.kiosks.MONO.total || 0
+    const monoActive = counts.kiosks.MONO.ACTIVE || 0
+    const monoUnderMaintenance = counts.kiosks.MONO.ACTIVE_UNDER_MAINTENANCE || 0
+    const monoInStock = (counts.kiosks.MONO.IN_STOCK || 0) + (counts.kiosks.MONO.AVAILABLE || 0)
+    const monoFree = monoInStock + (counts.kiosks.MONO.LOCALIZING || 0) + (counts.kiosks.MONO.REQUEST || 0)
+    const monoDeployed = monoActive + monoUnderMaintenance
+    
+    // Métriques GRAND (kiosques)
+    const grandTotal = counts.kiosks.GRAND.total || 0
+    const grandActive = counts.kiosks.GRAND.ACTIVE || 0
+    const grandUnderMaintenance = counts.kiosks.GRAND.ACTIVE_UNDER_MAINTENANCE || 0
+    const grandInStock = (counts.kiosks.GRAND.IN_STOCK || 0) + (counts.kiosks.GRAND.AVAILABLE || 0)
+    const grandDeployed = grandActive + grandUnderMaintenance
+    
+    // Métriques GRAND (compartiments)
+    const grandCompartmentsTotal = grandTotal * 3
+    const grandOccupied = counts.compartments.OCCUPIED || 0
+    const grandFree = counts.compartments.AVAILABLE || 0
+    const grandCompartmentsUnderMaintenance = counts.compartments.UNDER_MAINTENANCE || 0
+    
+    const totalCompartments = monoTotal + grandCompartmentsTotal
+
+    // Retourner les données formatées pour le frontend
+    return {
+      // Données brutes (si nécessaire pour d'autres composants)
+      raw: counts,
+      
+      // Données formatées pour le dashboard
+      dashboard: {
+        totalKiosks,
+        kiosksAddedThisMonth,
+        percentageAddedThisMonth,
+        
+        // Kiosques MONO
+        mono: {
+          total: monoTotal,
+          inStock: monoInStock,
+          deployed: monoDeployed,
+          occupied: monoActive,
+          free: monoFree,
+          underMaintenance: monoUnderMaintenance,
+        },
+        
+        // Kiosques GRAND
+        grand: {
+          total: grandTotal,
+          inStock: grandInStock,
+          deployed: grandDeployed,
+        },
+        
+        // Compartiments GRAND
+        compartments: {
+          total: grandCompartmentsTotal,
+          occupied: grandOccupied,
+          free: grandFree,
+          underMaintenance: grandCompartmentsUnderMaintenance,
+        },
+        
+        // Totaux combinés
+        totals: {
+          totalCompartments: totalCompartments,
+        },
+        
+        // Données par ville
+        towns: {
+          DOUALA: {
+            MONO: {
+              total: counts.towns.DOUALA.MONO.total || 0,
+              available: counts.towns.DOUALA.MONO.available || 0,
+              occupied: counts.towns.DOUALA.MONO.occupied || 0,
+            },
+            GRAND: {
+              total: counts.towns.DOUALA.GRAND.total || 0,
+              available: counts.towns.DOUALA.GRAND.available || 0,
+              occupied: counts.towns.DOUALA.GRAND.occupied || 0,
+            },
+          },
+          YAOUNDE: {
+            MONO: {
+              total: counts.towns.YAOUNDE.MONO.total || 0,
+              available: counts.towns.YAOUNDE.MONO.available || 0,
+              occupied: counts.towns.YAOUNDE.MONO.occupied || 0,
+            },
+            GRAND: {
+              total: counts.towns.YAOUNDE.GRAND.total || 0,
+              available: counts.towns.YAOUNDE.GRAND.available || 0,
+              occupied: counts.towns.YAOUNDE.GRAND.occupied || 0,
+            },
+          },
+        },
+      },
+    }
   } catch (error) {
     console.error("Error counting kiosks:", error)
     throw new Error("Une erreur est survenue lors du comptage des kiosques.")
