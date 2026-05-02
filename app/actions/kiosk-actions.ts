@@ -178,7 +178,6 @@ export async function addKioskByStaff(formData: FormData) {
 export async function getKioskCounts() {
   try {
     const totalKiosks = await prisma.kiosk.count()
-    console.log("this is total number of kiosks", totalKiosks);
 
     const now = new Date()
     const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
@@ -189,8 +188,6 @@ export async function getKioskCounts() {
         },
       },
     })
-
-    console.log("these are the kiosks added this month", kiosksAddedThisMonth);
 
     const percentageAddedThisMonth = totalKiosks > 0 ? (kiosksAddedThisMonth / totalKiosks) * 100 : 0
 
@@ -212,6 +209,7 @@ export async function getKioskCounts() {
       percentageAddedThisMonth,
       kiosks: {
         MONO: {
+          total: 0,
           REQUEST: 0,
           IN_STOCK: 0,
           ACTIVE: 0,
@@ -222,6 +220,7 @@ export async function getKioskCounts() {
           LOCALIZING: 0,
         },
         GRAND: {
+          total: 0,
           REQUEST: 0,
           IN_STOCK: 0,
           ACTIVE: 0,
@@ -255,6 +254,7 @@ export async function getKioskCounts() {
       const type = kioskType as keyof typeof counts.kiosks;
       if (counts.kiosks[type] && counts.kiosks[type][status] !== undefined) {
         counts.kiosks[type][status] += _count._all
+        counts.kiosks[type].total += _count._all // Add to total
       }
       
       if (kioskTown && counts.towns[kioskTown]) {

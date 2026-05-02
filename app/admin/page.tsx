@@ -103,7 +103,6 @@ export default function AdminDashboard() {
           })
         }
         
-        // Process request counts by type
         if (requestsResult && requestsResult.requests) {
           let monoCount = 0
           let grandCount = 0
@@ -123,9 +122,7 @@ export default function AdminDashboard() {
           })
         }
         
-        // Update kiosk stats with real data
         if (kioskCountsResult) {
-          // Calculate deployed vs in stock
           const monoDeployed = (kioskCountsResult.kiosks?.MONO?.ACTIVE || 0) + 
                                (kioskCountsResult.kiosks?.MONO?.ACTIVE_UNDER_MAINTENANCE || 0)
           const grandDeployed = (kioskCountsResult.kiosks?.GRAND?.ACTIVE || 0) + 
@@ -136,20 +133,18 @@ export default function AdminDashboard() {
           const grandInStock = (kioskCountsResult.kiosks?.GRAND?.IN_STOCK || 0) + 
                                (kioskCountsResult.kiosks?.GRAND?.AVAILABLE || 0)
           
-          // Calculate compartment stats for GRAND kiosks
           const grandCompartmentsTotal = (kioskCountsResult.kiosks?.GRAND?.totalKiosks || 0) * 3
           const grandOccupiedCompartments = kioskCountsResult.compartments?.OCCUPIED || 0
           const grandFreeCompartments = kioskCountsResult.compartments?.AVAILABLE || 0
           
           const totalCompartments = (kioskCountsResult.kiosks?.MONO?.totalKiosks || 0) + grandCompartmentsTotal
           
-          // MONO kiosks count as 1 occupied if active
           const monoOccupied = (kioskCountsResult.kiosks?.MONO?.ACTIVE || 0)
           
           setKioskStats({
             totalKiosks: kioskCountsResult.totalKiosks || 0,
-            monoKiosks: (kioskCountsResult.kiosks?.MONO?.totalKiosks || 0),
-            grandKiosks: (kioskCountsResult.kiosks?.GRAND?.totalKiosks || 0),
+            monoKiosks: (kioskCountsResult.kiosks?.MONO?.total || 0),
+            grandKiosks: (kioskCountsResult.kiosks?.GRAND?.total || 0),
             monoInStock: monoInStock,
             grandInStock: grandInStock,
             monoDeployed: monoDeployed,
@@ -179,7 +174,6 @@ export default function AdminDashboard() {
     loadStats()
   }, [])
 
-  // If loading, show full page spinner
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -223,281 +217,222 @@ export default function AdminDashboard() {
       <hr />
 
       <div className="p-6">
-        {/* First Row: Kiosk Overview (Total, Stock, Deployed) - 3 cards */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {/* SECTION 1 : APERÇU DES KIOSQUES */}
+        <div className="mb-4 mt-4">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-1 h-8 bg-gradient-to-b from-orange-500 to-orange-300 rounded-full"></div>
+            <h2 className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-orange-500 bg-clip-text text-transparent">
+              Aperçu des Kiosques
+            </h2>
+            <div className="flex gap-1">
+              <OneKioskSVG />
+              <ThreeKioskSVG />
+            </div>
+          </div>
+        </div>
+        
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {/* Total Kiosks Card */}
-          <Card className={`shadow-md ${styles.carte}`}>
-            <CardHeader className={`flex flex-col space-y-0 pb-2 shadow-md ${styles.carteEntete}`}>
-              <CardTitle className="text-sm font-medium">Total Kiosques</CardTitle>
+          <Card className={`shadow-lg hover:shadow-xl transition-shadow duration-300 ${styles.carte}`}>
+            <CardHeader className={`flex flex-col space-y-0 pb-2 shadow-md bg-gradient-to-r from-orange-50 to-orange-100 ${styles.carteEntete}`}>
+              <CardTitle className="text-sm font-medium text-orange-700">Total Kiosques</CardTitle>
               <div className="text-3xl font-bold mt-2 text-orange-600">{kioskStats.totalKiosks}</div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-4">
               <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-orange-50">
                   <OneKioskSVG />
-                  <span>MONO: <strong>{kioskStats.monoKiosks}</strong></span>
+                  <span className="text-gray-700">MONO: <strong className="text-orange-600">{kioskStats.monoKiosks}</strong></span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-purple-50">
                   <ThreeKioskSVG />
-                  <span>GRAND: <strong>{kioskStats.grandKiosks}</strong></span>
+                  <span className="text-gray-700">GRAND: <strong className="text-purple-600">{kioskStats.grandKiosks}</strong></span>
                 </div>
-              </div>
-              <div className="flex items-center text-medium text-gray-600 mt-2">
-                <TrendingUp className="h-4 w-4 mr-2" />
-                <span>+{kioskStats.kiosksAddedThisMonth} ce mois-ci ({kioskStats.percentageAddedThisMonth.toFixed(1)}%)</span>
               </div>
             </CardContent>
           </Card>
 
           {/* Kiosks in Stock Card */}
-          <Card className={`shadow-md ${styles.carte}`}>
-            <CardHeader className={`flex flex-col space-y-0 pb-2 shadow-md ${styles.carteEntete}`}>
-              <CardTitle className="text-sm font-medium">Kiosques en Stock</CardTitle>
+          <Card className={`shadow-lg hover:shadow-xl transition-shadow duration-300 ${styles.carte}`}>
+            <CardHeader className={`flex flex-col space-y-0 pb-2 shadow-md bg-gradient-to-r from-blue-50 to-blue-100 ${styles.carteEntete}`}>
+              <CardTitle className="text-sm font-medium text-blue-700">Kiosques en Stock</CardTitle>
               <div className="space-y-2 mt-2">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between p-2 rounded-lg bg-white">
                   <div className="flex items-center gap-2">
                     <OneKioskSVG />
-                    <span className="text-sm">MONO</span>
+                    <span className="text-sm text-gray-700">MONO</span>
                   </div>
                   <span className="text-xl font-bold text-blue-600">{kioskStats.monoInStock}</span>
                 </div>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between p-2 rounded-lg bg-white">
                   <div className="flex items-center gap-2">
                     <ThreeKioskSVG />
-                    <span className="text-sm">GRAND</span>
+                    <span className="text-sm text-gray-700">GRAND</span>
                   </div>
                   <span className="text-xl font-bold text-purple-600">{kioskStats.grandInStock}</span>
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-4">
               <div className="flex items-center text-medium text-gray-600">
-                <Warehouse className="h-4 w-4 mr-2" />
+                <Warehouse className="h-4 w-4 mr-2 text-blue-500" />
                 <span>Disponibles en inventaire</span>
               </div>
             </CardContent>
           </Card>
 
           {/* Kiosks Deployed Card */}
-          <Card className={`shadow-md ${styles.carte}`}>
-            <CardHeader className={`flex flex-col space-y-0 pb-2 shadow-md ${styles.carteEntete}`}>
-              <CardTitle className="text-sm font-medium">Kiosques Déployés</CardTitle>
+          <Card className={`shadow-lg hover:shadow-xl transition-shadow duration-300 ${styles.carte}`}>
+            <CardHeader className={`flex flex-col space-y-0 pb-2 shadow-md bg-gradient-to-r from-green-50 to-green-100 ${styles.carteEntete}`}>
+              <CardTitle className="text-sm font-medium text-green-700">Kiosques Déployés</CardTitle>
               <div className="space-y-2 mt-2">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between p-2 rounded-lg bg-white">
                   <div className="flex items-center gap-2">
                     <OneKioskSVG />
-                    <span className="text-sm">MONO</span>
+                    <span className="text-sm text-gray-700">MONO</span>
                   </div>
                   <span className="text-xl font-bold text-green-600">{kioskStats.monoDeployed}</span>
                 </div>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between p-2 rounded-lg bg-white">
                   <div className="flex items-center gap-2">
                     <ThreeKioskSVG />
-                    <span className="text-sm">GRAND</span>
+                    <span className="text-sm text-gray-700">GRAND</span>
                   </div>
                   <span className="text-xl font-bold text-green-600">{kioskStats.grandDeployed}</span>
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-4">
               <div className="flex items-center text-medium text-gray-600">
-                <TrendingUp className="h-4 w-4 mr-2" />
+                <TrendingUp className="h-4 w-4 mr-2 text-green-500" />
                 <span>Actuellement en activité</span>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Second Row: Compartments Status */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mt-4">
-          {/* MONO Kiosks */}
-          <Card className={`shadow-md ${styles.carte}`}>
-            <CardHeader className={`flex flex-column space-y-0 pb-2 shadow-md ${styles.carteEntete}`}>
-              <CardTitle className="text-sm font-medium">Kiosques MONO</CardTitle>
-              <div className="flex items-baseline justify-between mt-2">
-                <div className="flex items-center gap-2">
-                  <OneKioskSVG />
-                  <span className="text-sm">Occupés</span>
-                </div>
-                <span className="text-2xl font-bold text-blue-600">{kioskStats.monoOccupied}</span>
-              </div>
-              <div className="flex items-baseline justify-between mt-1">
-                <div className="flex items-center gap-2">
-                  <OneKioskSVG />
-                  <span className="text-sm">Libres</span>
-                </div>
-                <span className="text-2xl font-bold text-green-600">{kioskStats.monoInStock}</span>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center text-medium text-gray-600">
-                <LayoutGrid className="h-4 w-4 mr-2" />
-                <span>{kioskStats.monoKiosks} kiosques MONO au total</span>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* GRAND Kiosks - Complete Status */}
-          <Card className={`shadow-md ${styles.carte}`}>
-            <CardHeader className={`flex flex-column space-y-0 pb-2 shadow-md ${styles.carteEntete}`}>
-              <CardTitle className="text-sm font-medium">Kiosques GRAND</CardTitle>
-              <div className="space-y-2 mt-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <ThreeKioskSVG />
-                    <span className="text-sm">Compartiments occupés</span>
-                  </div>
-                  <span className="text-xl font-bold text-blue-600">{kioskStats.grandOccupiedCompartments}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <ThreeKioskSVG />
-                    <span className="text-sm">Compartiments libres</span>
-                  </div>
-                  <span className="text-xl font-bold text-green-600">{kioskStats.grandFreeCompartments}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <ThreeKioskSVG />
-                    <span className="text-sm">En maintenance</span>
-                  </div>
-                  <span className="text-xl font-bold text-red-600">{kioskStats.compartmentsUnderMaintenance}</span>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center text-medium text-gray-600">
-                <LayoutGrid className="h-4 w-4 mr-2" />
-                <span>{kioskStats.grandCompartmentsTotal} compartiments au total</span>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Summary Card */}
-          <Card className={`shadow-md ${styles.carte}`}>
-            <CardHeader className={`flex flex-column space-y-0 pb-2 shadow-md ${styles.carteEntete}`}>
-              <CardTitle className="text-sm font-medium">Résumé des Compartiments</CardTitle>
-              <div className="space-y-2 mt-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Total compartiments</span>
-                  <span className="text-xl font-bold text-orange-600">{kioskStats.totalCompartments}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Taux d'occupation</span>
-                  <span className="text-xl font-bold text-green-600">
-                    {kioskStats.totalCompartments > 0 
-                      ? Math.round((kioskStats.occupiedCompartments / kioskStats.totalCompartments) * 100) 
-                      : 0}%
-                  </span>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center text-medium text-gray-600">
-                <TrendingUp className="h-4 w-4 mr-2" />
-                <span>Compartiments MONO + GRAND</span>
-              </div>
-            </CardContent>
-          </Card>
+        {/* SECTION 2 : STATISTIQUES UTILISATEURS */}
+        <div className="mb-4 mt-12">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-1 h-8 bg-gradient-to-b from-blue-500 to-cyan-500 rounded-full"></div>
+            <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+              Statistiques Utilisateurs
+            </h2>
+            <Users className="h-6 w-6 text-blue-500" />
+          </div>
         </div>
 
-        {/* Third Row: User Statistics */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2 mt-4">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
           {/* Staff Card */}
-          <Card className={`shadow-md ${styles.carte}`}>
-            <CardHeader className={`flex flex-column space-y-0 pb-2 shadow-md ${styles.carteEntete}`}>
-              <CardTitle className="text-sm font-medium">Staff</CardTitle>
-              <div className="text-3xl font-bold mt-2 text-blue-600">{userStats.staffCount}</div>
+          <Card className={`shadow-lg hover:shadow-xl transition-shadow duration-300 ${styles.carte}`}>
+            <CardHeader className={`flex flex-col space-y-0 pb-2 shadow-md bg-gradient-to-r from-indigo-50 to-indigo-100 ${styles.carteEntete}`}>
+              <CardTitle className="text-sm font-medium text-indigo-700">Staff</CardTitle>
+              <div className="text-3xl font-bold mt-2 text-indigo-600">{userStats.staffCount}</div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-4">
               <div className="flex items-center text-medium text-gray-600">
-                <Briefcase className="h-4 w-4 mr-2" />
+                <Briefcase className="h-4 w-4 mr-2 text-indigo-500" />
                 <span>Administrateurs et responsables</span>
               </div>
-              {/* <div className="flex items-center text-medium text-gray-600 mt-2">
-                <Users className="h-4 w-4 mr-2" />
-                <span>Total utilisateurs: {userStats.totalUsers}</span>
-              </div> */}
             </CardContent>
           </Card>
 
-          {/* Clients Card with breakdown */}
-          <Card className={`shadow-md ${styles.carte}`}>
-            <CardHeader className={`flex flex-column space-y-0 pb-2 shadow-md ${styles.carteEntete}`}>
-              <CardTitle className="text-sm font-medium">Clients</CardTitle>
-              <div className="text-3xl font-bold mt-2 text-green-600">{userStats.clientCount}</div>
-              <div className="space-y-2 mt-2">
-                <div className="flex items-center justify-between">
+          {/* Clients Card */}
+          <Card className={`shadow-lg hover:shadow-xl transition-shadow duration-300 ${styles.carte}`}>
+            <CardHeader className={`flex flex-col space-y-0 pb-2 shadow-md bg-gradient-to-r from-emerald-50 to-teal-100 ${styles.carteEntete}`}>
+              <CardTitle className="text-sm font-medium text-emerald-700">Clients</CardTitle>
+              <div className="text-3xl font-bold mt-2 text-emerald-600">{userStats.clientCount}</div>
+              <div className="space-y-2 mt-3">
+                <div className="flex items-center justify-between p-2 rounded-lg bg-white">
                   <div className="flex items-center gap-2">
-                    <UserCircle className="h-4 w-4 text-green-500" />
-                    <span className="text-sm">Particuliers</span>
+                    <UserCircle className="h-4 w-4 text-emerald-500" />
+                    <span className="text-sm text-gray-700">Particuliers</span>
                   </div>
-                  <span className="text-xl font-bold text-green-600">{userStats.particulierCount}</span>
+                  <span className="text-xl font-bold text-emerald-600">{userStats.particulierCount}</span>
                 </div>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between p-2 rounded-lg bg-white">
                   <div className="flex items-center gap-2">
                     <Building2 className="h-4 w-4 text-blue-500" />
-                    <span className="text-sm">Entreprises</span>
+                    <span className="text-sm text-gray-700">Entreprises</span>
                   </div>
                   <span className="text-xl font-bold text-blue-600">{userStats.entrepriseCount}</span>
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
-              {/* <div className="flex items-center text-medium text-gray-600">
-                <Users className="h-4 w-4 mr-2" />
-                <span>+{userStats.usersThisMonth} nouveaux ce mois-ci ({userStats.percentageGrowth.toFixed(1)}%)</span>
-              </div> */}
+            <CardContent className="pt-4">
+              <div className="flex items-center text-medium text-gray-600">
+                <Users className="h-4 w-4 mr-2 text-emerald-500" />
+                <span>Total utilisateurs: <strong className="text-emerald-600">{userStats.totalUsers}</strong></span>
+              </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Fourth Row: Client Requests - Nouveaux clients */}
-        <div className="grid gap-4 md:grid-cols-1 mt-4">
-          <Card className="shadow-md border-2 border-orange-200 bg-gradient-to-r from-orange-50 to-orange-100">
-            <CardHeader className="bg-orange-100 rounded-t-lg">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <ClipboardList className="h-5 w-5 text-orange-600" />
-                  <CardTitle className="text-lg font-semibold text-orange-800">
-                    Demandes de Nouveaux Clients
+        {/* SECTION 3 : DEMANDES NOUVEAUX CLIENTS */}
+        <div className="mb-8 mt-12">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-1 h-8 bg-gradient-to-b from-orange-500 to-red-500 rounded-full"></div>
+            <h2 className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+              Demandes Nouveaux Clients
+            </h2>
+            <ClipboardList className="h-6 w-6 text-orange-500" />
+          </div>
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-1">
+          <Card className="shadow-xl border-2 border-orange-200 bg-gradient-to-br from-orange-50 via-orange-50 to-amber-50 hover:shadow-2xl transition-shadow duration-300">
+            <CardHeader className="bg-gradient-to-r from-orange-100 to-amber-100 rounded-t-lg">
+              <div className="flex justify-between items-center flex-wrap gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-orange-200 rounded-lg">
+                    <ClipboardList className="h-5 w-5 text-orange-700" />
+                  </div>
+                  <CardTitle className="text-lg font-bold text-orange-800">
+                    Demandes en Attente
                   </CardTitle>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-orange-500" />
-                  <span className="text-sm text-orange-600">
-                    Total: <strong className="text-xl">{requestStats.totalRequests}</strong> demandes en attente
+                <div className="flex items-center gap-2 px-4 py-2 bg-orange-200 rounded-full">
+                  <Mail className="h-4 w-4 text-orange-600" />
+                  <span className="text-sm text-orange-700 font-semibold">
+                    Total: <strong className="text-2xl text-orange-600 ml-1">{requestStats.totalRequests}</strong>
                   </span>
                 </div>
               </div>
-              <p className="text-sm text-orange-700 mt-1">
-                Ces demandes sont des requêtes faites par de nouveaux clients souhaitant obtenir un kiosque.
-                Elles ne représentent pas des kiosques existants.
+              <p className="text-xs text-orange-600 mt-2 ml-2">
+                ⚠️ Requêtes de nouveaux clients souhaitant obtenir un kiosque
               </p>
             </CardHeader>
             <CardContent className="p-6">
-              <div className="grid grid-cols-2 gap-6">
-                <div className="text-center p-4 bg-white rounded-lg shadow-sm">
-                  <div className="flex justify-center mb-3">
-                    <OneKioskSVG />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Demandes MONO */}
+                <div className="text-center p-6 bg-gradient-to-br from-orange-100 to-orange-50 rounded-xl shadow-md hover:shadow-lg transition-all duration-300">
+                  <div className="flex justify-center mb-4">
+                    <div className="p-3 bg-orange-200 rounded-full">
+                      <OneKioskSVG />
+                    </div>
                   </div>
-                  <div className="text-3xl font-bold text-orange-600">{requestStats.monoRequests}</div>
-                  <p className="text-sm text-gray-600 mt-1">Demandes de kiosques MONO</p>
-                  <p className="text-xs text-gray-400">(1 compartiment)</p>
+                  <div className="text-4xl font-bold text-orange-600 mb-2">{requestStats.monoRequests}</div>
+                  <p className="text-sm font-semibold text-gray-700">Demandes MONO</p>
+                  <p className="text-xs text-gray-500">Kiosque 1 compartiment</p>
                 </div>
-                <div className="text-center p-4 bg-white rounded-lg shadow-sm">
-                  <div className="flex justify-center mb-3">
-                    <ThreeKioskSVG />
+                
+                {/* Demandes GRAND */}
+                <div className="text-center p-6 bg-gradient-to-br from-purple-100 to-purple-50 rounded-xl shadow-md hover:shadow-lg transition-all duration-300">
+                  <div className="flex justify-center mb-4">
+                    <div className="p-3 bg-purple-200 rounded-full">
+                      <ThreeKioskSVG />
+                    </div>
                   </div>
-                  <div className="text-3xl font-bold text-orange-600">{requestStats.grandRequests}</div>
-                  <p className="text-sm text-gray-600 mt-1">Demandes de kiosques GRAND</p>
-                  <p className="text-xs text-gray-400">(3 compartiments)</p>
+                  <div className="text-4xl font-bold text-purple-600 mb-2">{requestStats.grandRequests}</div>
+                  <p className="text-sm font-semibold text-gray-700">Demandes GRAND</p>
+                  <p className="text-xs text-gray-500">Kiosque 3 compartiments</p>
                 </div>
               </div>
+              
               {requestStats.totalRequests > 0 && (
-                <div className="mt-4 p-3 bg-orange-200 rounded-lg text-center">
-                  <p className="text-sm text-orange-800 font-medium">
-                    {requestStats.totalRequests} client(s) en attente de traitement
+                <div className="mt-6 p-4 bg-gradient-to-r from-orange-200 to-amber-200 rounded-lg text-center animate-pulse">
+                  <p className="text-sm text-orange-800 font-bold">
+                    📋 {requestStats.totalRequests} client(s) en attente de traitement
                   </p>
                 </div>
               )}
