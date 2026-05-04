@@ -289,7 +289,7 @@ export async function getKioskCounts() {
     const monoActive = counts.kiosks.MONO.ACTIVE || 0
     const monoUnderMaintenance = counts.kiosks.MONO.ACTIVE_UNDER_MAINTENANCE || 0
     const monoInStock = (counts.kiosks.MONO.IN_STOCK || 0) + (counts.kiosks.MONO.AVAILABLE || 0)
-    const monoFree = monoInStock + (counts.kiosks.MONO.LOCALIZING || 0) + (counts.kiosks.MONO.REQUEST || 0)
+    const monoFree = monoInStock + (counts.kiosks.MONO.LOCALIZING || 0) + (counts.kiosks.MONO.REQUEST || 0) + (counts.kiosks.MONO.UNACTIVE || 0)
     const monoDeployed = monoActive + monoUnderMaintenance
     
     // Métriques GRAND (kiosques)
@@ -302,7 +302,7 @@ export async function getKioskCounts() {
     // Métriques GRAND (compartiments)
     const grandCompartmentsTotal = grandTotal * 3
     const grandOccupied = counts.compartments.OCCUPIED || 0
-    const grandFree = counts.compartments.AVAILABLE || 0
+    const grandFree = ( counts.compartments.AVAILABLE || 0 ) - monoTotal
     const grandCompartmentsUnderMaintenance = counts.compartments.UNDER_MAINTENANCE || 0
     
     const totalCompartments = monoTotal + grandCompartmentsTotal
