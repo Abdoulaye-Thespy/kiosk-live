@@ -193,7 +193,7 @@ export async function getKioskCounts() {
 
     // Get compartment counts
     const compartmentCounts = await prisma.kioskCompartment.groupBy({
-      by: ["status", "compartmentType"],
+      by: ["status"],
       _count: { _all: true }
     })
 
@@ -201,6 +201,16 @@ export async function getKioskCounts() {
     const kioskCounts = await prisma.kiosk.groupBy({
       by: ["kioskType", "status", "kioskTown"],
       _count: { _all: true },
+    })
+
+    // Récupérer la liste des kiosques GRAND avec leurs compartiments pour les statistiques par ville
+    const grandKiosksWithCompartments = await prisma.kiosk.findMany({
+      where: {
+        kioskType: "GRAND"
+      },
+      include: {
+        compartments: true
+      }
     })
 
     const counts = {
@@ -239,12 +249,12 @@ export async function getKioskCounts() {
       },
       towns: {
         DOUALA: {
-          MONO: { total: 0, available: 0, occupied: 0 },
-          GRAND: { total: 0, available: 0, occupied: 0 },
+          MONO: { total: 0, available: 0, occupied: 0, underMaintenance: 0 },
+          GRAND: { total: 0, available: 0, occupied: 0, underMaintenance: 0 },
         },
         YAOUNDE: {
-          MONO: { total: 0, available: 0, occupied: 0 },
-          GRAND: { total: 0, available: 0, occupied: 0 },
+          MONO: { total: 0, available: 0, occupied: 0, underMaintenance: 0 },
+          GRAND: { total: 0, available: 0, occupied: 0, underMaintenance: 0 },
         },
       },
     }
@@ -257,42 +267,59 @@ export async function getKioskCounts() {
         counts.kiosks[type].total += _count._all
       }
       
+      // Traitement par ville - Même logique que pour les MONO global
       if (kioskTown && counts.towns[kioskTown]) {
         counts.towns[kioskTown][type].total += _count._all
+        
+        // Classification des statuts (comme pour les MONO global)
+        if (status === "ACTIVE" || status === "ACTIVE_UNDER_MAINTENANCE") {
+          counts.towns[kioskTown][type].occupied += _count._all
+        } else if (status === "IN_STOCK" || status === "AVAILABLE") {
+          counts.towns[kioskTown][type].available += _count._all
+        } else if (status === "ACTIVE_UNDER_MAINTENANCE" || status === "UNACTIVE_UNDER_MAINTENANCE") {
+          counts.towns[kioskTown][type].underMaintenance += _count._all
+        }
       }
     })
 
-    // Process compartment counts
+    // Process compartment counts globally
     compartmentCounts.forEach(({ status, _count }) => {
       if (counts.compartments[status] !== undefined) {
         counts.compartments[status] += _count._all
       }
     })
 
-    // Calculate available and occupied for towns
-    const occupiedCompartmentsByKiosk = await prisma.kioskCompartment.groupBy({
-      by: ["kioskId", "status"],
-      where: { status: "OCCUPIED" },
-      _count: true
-    });
-
-    const kiosksWithOccupiedCompartments = new Set(
-      occupiedCompartmentsByKiosk.map(k => k.kioskId)
-    );
+    // Calcul des statistiques des compartiments par ville pour les GRAND kiosques
+    grandKiosksWithCompartments.forEach(kiosk => {
+      const town = kiosk.kioskTown as keyof typeof counts.towns
+      if (!town) return
+      
+      const compartments = kiosk.compartments
+      compartments.forEach(compartment => {
+        if (compartment.status === "AVAILABLE") {
+          counts.towns[town].GRAND.available++
+        } else if (compartment.status === "OCCUPIED") {
+          counts.towns[town].GRAND.occupied++
+        } else if (compartment.status === "UNDER_MAINTENANCE") {
+          counts.towns[town].GRAND.underMaintenance++
+        }
+      })
+    })
 
     // ==============================================
-    // TOUS LES CALCULS POUR LE DASHBOARD ICI
+    // CALCULS POUR LE DASHBOARD
     // ==============================================
     
-    // Métriques MONO
+    // Métriques MONO globales
     const monoTotal = counts.kiosks.MONO.total || 0
     const monoActive = counts.kiosks.MONO.ACTIVE || 0
     const monoUnderMaintenance = counts.kiosks.MONO.ACTIVE_UNDER_MAINTENANCE || 0
     const monoInStock = (counts.kiosks.MONO.IN_STOCK || 0) + (counts.kiosks.MONO.AVAILABLE || 0)
+    // Disponible = en stock + en localisation + en requête + inactif
     const monoFree = monoInStock + (counts.kiosks.MONO.LOCALIZING || 0) + (counts.kiosks.MONO.REQUEST || 0) + (counts.kiosks.MONO.UNACTIVE || 0)
     const monoDeployed = monoActive + monoUnderMaintenance
     
-    // Métriques GRAND (kiosques)
+    // Métriques GRAND globales (kiosques)
     const grandTotal = counts.kiosks.GRAND.total || 0
     const grandActive = counts.kiosks.GRAND.ACTIVE || 0
     const grandUnderMaintenance = counts.kiosks.GRAND.ACTIVE_UNDER_MAINTENANCE || 0
@@ -300,19 +327,17 @@ export async function getKioskCounts() {
     const grandDeployed = grandActive + grandUnderMaintenance
     
     // Métriques GRAND (compartiments)
-    const grandCompartmentsTotal = grandTotal * 3
+    const grandCompartmentsTotal = counts.compartments.AVAILABLE + counts.compartments.OCCUPIED + counts.compartments.UNDER_MAINTENANCE
     const grandOccupied = counts.compartments.OCCUPIED || 0
-    const grandFree = ( counts.compartments.AVAILABLE || 0 ) - monoTotal
+    const grandFree = counts.compartments.AVAILABLE || 0
     const grandCompartmentsUnderMaintenance = counts.compartments.UNDER_MAINTENANCE || 0
     
     const totalCompartments = monoTotal + grandCompartmentsTotal
 
     // Retourner les données formatées pour le frontend
     return {
-      // Données brutes (si nécessaire pour d'autres composants)
       raw: counts,
       
-      // Données formatées pour le dashboard
       dashboard: {
         totalKiosks,
         kiosksAddedThisMonth,
@@ -355,11 +380,20 @@ export async function getKioskCounts() {
               total: counts.towns.DOUALA.MONO.total || 0,
               available: counts.towns.DOUALA.MONO.available || 0,
               occupied: counts.towns.DOUALA.MONO.occupied || 0,
+              underMaintenance: counts.towns.DOUALA.MONO.underMaintenance || 0,
             },
             GRAND: {
               total: counts.towns.DOUALA.GRAND.total || 0,
-              available: counts.towns.DOUALA.GRAND.available || 0,
-              occupied: counts.towns.DOUALA.GRAND.occupied || 0,
+              available: counts.towns.DOUALA.GRAND.available || 0, // kiosques GRAND disponibles
+              occupied: counts.towns.DOUALA.GRAND.occupied || 0,   // kiosques GRAND occupés
+              underMaintenance: counts.towns.DOUALA.GRAND.underMaintenance || 0,
+              // Compartiments
+              compartmentsAvailable: counts.towns.DOUALA.GRAND.available || 0,
+              compartmentsOccupied: counts.towns.DOUALA.GRAND.occupied || 0,
+              compartmentsUnderMaintenance: counts.towns.DOUALA.GRAND.underMaintenance || 0,
+              compartmentsTotal: (counts.towns.DOUALA.GRAND.available || 0) + 
+                                 (counts.towns.DOUALA.GRAND.occupied || 0) + 
+                                 (counts.towns.DOUALA.GRAND.underMaintenance || 0),
             },
           },
           YAOUNDE: {
@@ -367,11 +401,20 @@ export async function getKioskCounts() {
               total: counts.towns.YAOUNDE.MONO.total || 0,
               available: counts.towns.YAOUNDE.MONO.available || 0,
               occupied: counts.towns.YAOUNDE.MONO.occupied || 0,
+              underMaintenance: counts.towns.YAOUNDE.MONO.underMaintenance || 0,
             },
             GRAND: {
               total: counts.towns.YAOUNDE.GRAND.total || 0,
               available: counts.towns.YAOUNDE.GRAND.available || 0,
               occupied: counts.towns.YAOUNDE.GRAND.occupied || 0,
+              underMaintenance: counts.towns.YAOUNDE.GRAND.underMaintenance || 0,
+              // Compartiments
+              compartmentsAvailable: counts.towns.YAOUNDE.GRAND.available || 0,
+              compartmentsOccupied: counts.towns.YAOUNDE.GRAND.occupied || 0,
+              compartmentsUnderMaintenance: counts.towns.YAOUNDE.GRAND.underMaintenance || 0,
+              compartmentsTotal: (counts.towns.YAOUNDE.GRAND.available || 0) + 
+                                 (counts.towns.YAOUNDE.GRAND.occupied || 0) + 
+                                 (counts.towns.YAOUNDE.GRAND.underMaintenance || 0),
             },
           },
         },
