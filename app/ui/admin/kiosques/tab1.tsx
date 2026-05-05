@@ -12,7 +12,8 @@ import {
   BarChart3, 
   Package, 
   Wrench,
-  CheckCircle
+  CheckCircle,
+  Boxes
 } from "lucide-react"
 import ThreeKioskSVG from "../../svg/threekiosks"
 import OneKioskSVG from "../../svg/onekiosks"
@@ -46,12 +47,36 @@ interface DashboardData {
   }
   towns: {
     DOUALA: {
-      MONO: { total: number; available: number; occupied: number }
-      GRAND: { total: number; available: number; occupied: number }
+      MONO: { total: number; available: number; occupied: number; underMaintenance: number; instock: number }
+      GRAND: { 
+        total: number
+        available: number
+        occupied: number
+        underMaintenance: number
+        instock: number
+        compartments: {
+          available: number
+          occupied: number
+          underMaintenance: number
+          total: number
+        }
+      }
     }
     YAOUNDE: {
-      MONO: { total: number; available: number; occupied: number }
-      GRAND: { total: number; available: number; occupied: number }
+      MONO: { total: number; available: number; occupied: number; underMaintenance: number; instock: number }
+      GRAND: { 
+        total: number
+        available: number
+        occupied: number
+        underMaintenance: number
+        instock: number
+        compartments: {
+          available: number
+          occupied: number
+          underMaintenance: number
+          total: number
+        }
+      }
     }
   }
 }
@@ -70,7 +95,6 @@ interface KioskTab1Props {
   onKioskUpdate?: (kiosk: any) => void
   onKioskDelete?: (kioskId: number) => void
   onRefresh?: () => void
-  // Nouvelles props pour les métriques pré-calculées
   metricsData?: DashboardData | null
   metricsLoading?: boolean
 }
@@ -93,7 +117,6 @@ export default function KioskTab1({
   metricsLoading,
 }: KioskTab1Props) {
 
-  // Afficher le chargement si les métriques ne sont pas encore disponibles
   if (metricsLoading) {
     return (
       <div className="flex justify-center items-center h-96">
@@ -121,7 +144,6 @@ export default function KioskTab1({
     )
   }
 
-  // Card component for reusability
   const MetricCard = ({ title, children }: { title: string; children: React.ReactNode }) => (
     <Card className="shadow-md hover:shadow-lg transition-shadow duration-300">
       <CardHeader className="pb-2 bg-gradient-to-r from-gray-50 to-white rounded-t-lg">
@@ -131,9 +153,9 @@ export default function KioskTab1({
     </Card>
   )
 
-  // Overall metrics row (vue d'ensemble) - utilisant les données pré-calculées
   const OverallMetrics = () => (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {/* Carte 1: Total Kiosques */}
       <MetricCard title="Total Kiosques">
         <div className="text-3xl font-bold mt-2 text-orange-600">{metricsData.totalKiosks}</div>
         <div className="flex items-center justify-between text-sm mt-2">
@@ -148,29 +170,8 @@ export default function KioskTab1({
         </div>
       </MetricCard>
 
-      <MetricCard title="En Stock">
-        <div className="space-y-2">
-          <div className="flex items-center justify-between p-2 rounded-lg bg-blue-50">
-            <div className="flex items-center gap-2">
-              <OneKioskSVG />
-              <span className="text-sm">MONO</span>
-            </div>
-            <span className="text-xl font-bold text-blue-600">{metricsData.mono.inStock}</span>
-          </div>
-          <div className="flex items-center justify-between p-2 rounded-lg bg-purple-50">
-            <div className="flex items-center gap-2">
-              <ThreeKioskSVG />
-              <span className="text-sm">GRAND</span>
-            </div>
-            <span className="text-xl font-bold text-purple-600">{metricsData.grand.inStock}</span>
-          </div>
-        </div>
-        <div className="flex items-center text-medium text-gray-600 mt-3 pt-2 border-t">
-          <Warehouse className="h-4 w-4 mr-2 text-blue-500" />
-          <span>Disponibles en inventaire</span>
-        </div>
-      </MetricCard>
 
+      {/* Carte 3: Kiosques MONO */}
       <MetricCard title="Kiosques MONO">
         <div className="space-y-2">
           <div className="flex items-center justify-between p-2 rounded-lg bg-green-50">
@@ -194,6 +195,13 @@ export default function KioskTab1({
             </div>
             <span className="text-xl font-bold text-yellow-600">{metricsData.mono.underMaintenance}</span>
           </div>
+          <div className="flex items-center justify-between p-2 rounded-lg bg-purple-50">
+            <div className="flex items-center gap-2">
+              <Warehouse className="h-4 w-4 text-purple-500" />
+              <span className="text-sm">En stock</span>
+            </div>
+            <span className="text-xl font-bold text-purple-600">{metricsData.mono.inStock}</span>
+          </div>
         </div>
         <div className="flex items-center text-medium text-gray-600 mt-3 pt-2 border-t">
           <OneKioskSVG />
@@ -201,6 +209,7 @@ export default function KioskTab1({
         </div>
       </MetricCard>
 
+      {/* Carte 4: Compartiments GRAND */}
       <MetricCard title="Compartiments GRAND">
         <div className="space-y-2">
           <div className="flex items-center justify-between p-2 rounded-lg bg-green-50">
@@ -224,6 +233,13 @@ export default function KioskTab1({
             </div>
             <span className="text-xl font-bold text-yellow-600">{metricsData.compartments.underMaintenance}</span>
           </div>
+          <div className="flex items-center justify-between p-2 rounded-lg bg-purple-50">
+            <div className="flex items-center gap-2">
+              <Warehouse className="h-4 w-4 text-purple-500" />
+              <span className="text-sm">En stock (kiosques GRAND)</span>
+            </div>
+            <span className="text-xl font-bold text-purple-600">{metricsData.grand.inStock}</span>
+          </div>
         </div>
         <div className="flex items-center text-medium text-gray-600 mt-3 pt-2 border-t">
           <ThreeKioskSVG />
@@ -234,7 +250,7 @@ export default function KioskTab1({
   )
 
   // Mono metrics row (pour Douala et Yaoundé)
-  const MonoMetrics = ({ town, data }: { town: string; data: { total: number; available: number; occupied: number } }) => (
+  const MonoMetrics = ({ town, data }: { town: string; data: { total: number; available: number; occupied: number; underMaintenance: number; instock: number } }) => (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       <MetricCard title={`Total Kiosques MONO - ${town}`}>
         <div className="text-3xl font-bold mt-2 text-orange-600">{data.total}</div>
@@ -265,7 +281,14 @@ export default function KioskTab1({
               <Wrench className="h-4 w-4 text-yellow-600" />
               <span className="text-sm">En maintenance</span>
             </div>
-            <span className="text-xl font-bold text-yellow-600">0</span>
+            <span className="text-xl font-bold text-yellow-600">{data.underMaintenance}</span>
+          </div>
+          <div className="flex items-center justify-between p-2 rounded-lg bg-purple-50">
+            <div className="flex items-center gap-2">
+              <Warehouse className="h-4 w-4 text-purple-500" />
+              <span className="text-sm">En stock</span>
+            </div>
+            <span className="text-xl font-bold text-purple-600">{data.instock}</span>
           </div>
         </div>
       </MetricCard>
@@ -277,7 +300,7 @@ export default function KioskTab1({
               <Warehouse className="h-4 w-4 text-purple-500" />
               <span className="text-sm">En stock</span>
             </div>
-            <span className="text-xl font-bold text-purple-600">{data.available}</span>
+            <span className="text-xl font-bold text-purple-600">{data.instock}</span>
           </div>
           <div className="flex items-center justify-between p-2 rounded-lg bg-green-50">
             <div className="flex items-center gap-2">
@@ -296,13 +319,25 @@ export default function KioskTab1({
   )
 
   // Grand compartments metrics row (pour Douala et Yaoundé)
-  const GrandCompartmentsMetrics = ({ town, data }: { town: string; data: { total: number; available: number; occupied: number } }) => (
+  const GrandCompartmentsMetrics = ({ town, data }: { town: string; data: { 
+    total: number
+    available: number
+    occupied: number
+    underMaintenance: number
+    instock: number
+    compartments: {
+      available: number
+      occupied: number
+      underMaintenance: number
+      total: number
+    }
+  } }) => (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       <MetricCard title={`Total Compartiments GRAND - ${town}`}>
-        <div className="text-3xl font-bold mt-2 text-purple-600">{data.total * 3}</div>
+        <div className="text-3xl font-bold mt-2 text-purple-600">{data.compartments.total}</div>
         <div className="flex items-center gap-2 mt-2 p-2 rounded-lg bg-purple-50">
           <ThreeKioskSVG />
-          <span>{data.total} kiosques × 3 compartiments</span>
+          <span>{data.total} kiosques GRAND</span>
         </div>
       </MetricCard>
 
@@ -313,21 +348,28 @@ export default function KioskTab1({
               <CheckCircle className="h-4 w-4 text-green-500" />
               <span className="text-sm">Occupés (client)</span>
             </div>
-            <span className="text-xl font-bold text-green-600">{data.occupied}</span>
+            <span className="text-xl font-bold text-green-600">{data.compartments.occupied}</span>
           </div>
           <div className="flex items-center justify-between p-2 rounded-lg bg-blue-50">
             <div className="flex items-center gap-2">
               <Package className="h-4 w-4 text-blue-500" />
               <span className="text-sm">Libres (disponibles)</span>
             </div>
-            <span className="text-xl font-bold text-blue-600">{data.available}</span>
+            <span className="text-xl font-bold text-blue-600">{data.compartments.available}</span>
           </div>
           <div className="flex items-center justify-between p-2 rounded-lg bg-yellow-50">
             <div className="flex items-center gap-2">
               <Wrench className="h-4 w-4 text-yellow-600" />
               <span className="text-sm">En maintenance</span>
             </div>
-            <span className="text-xl font-bold text-yellow-600">0</span>
+            <span className="text-xl font-bold text-yellow-600">{data.compartments.underMaintenance}</span>
+          </div>
+          <div className="flex items-center justify-between p-2 rounded-lg bg-purple-50">
+            <div className="flex items-center gap-2">
+              <Warehouse className="h-4 w-4 text-purple-500" />
+              <span className="text-sm">Kiosques GRAND en stock</span>
+            </div>
+            <span className="text-xl font-bold text-purple-600">{data.instock}</span>
           </div>
         </div>
       </MetricCard>
@@ -339,7 +381,7 @@ export default function KioskTab1({
               <Warehouse className="h-4 w-4 text-purple-500" />
               <span className="text-sm">Kiosques en stock</span>
             </div>
-            <span className="text-xl font-bold text-purple-600">{data.available}</span>
+            <span className="text-xl font-bold text-purple-600">{data.instock}</span>
           </div>
           <div className="flex items-center justify-between p-2 rounded-lg bg-green-50">
             <div className="flex items-center gap-2">

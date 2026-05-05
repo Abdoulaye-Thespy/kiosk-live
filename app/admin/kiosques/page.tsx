@@ -45,18 +45,42 @@ interface DashboardData {
   }
   towns: {
     DOUALA: {
-      MONO: { total: number; available: number; occupied: number }
-      GRAND: { total: number; available: number; occupied: number }
+      MONO: { total: number; available: number; occupied: number; underMaintenance: number; instock: number }
+      GRAND: { 
+        total: number
+        available: number
+        occupied: number
+        underMaintenance: number
+        instock: number
+        compartments: {
+          available: number
+          occupied: number
+          underMaintenance: number
+          total: number
+        }
+      }
     }
     YAOUNDE: {
-      MONO: { total: number; available: number; occupied: number }
-      GRAND: { total: number; available: number; occupied: number }
+      MONO: { total: number; available: number; occupied: number; underMaintenance: number; instock: number }
+      GRAND: { 
+        total: number
+        available: number
+        occupied: number
+        underMaintenance: number
+        instock: number
+        compartments: {
+          available: number
+          occupied: number
+          underMaintenance: number
+          total: number
+        }
+      }
     }
   }
 }
 
 export default function KioskManagement() {
-  const [activeTab, setActiveTab] = useState("metrique") // Changé pour afficher les métriques par défaut
+  const [activeTab, setActiveTab] = useState("metrique")
   const [kiosks, setKiosks] = useState<Kiosk[]>([])
   const [totalPages, setTotalPages] = useState(1)
   const [currentPage, setCurrentPage] = useState(1)
@@ -64,7 +88,6 @@ export default function KioskManagement() {
   const [filterStatus, setFilterStatus] = useState("")
   const [filterDate, setFilterDate] = useState<Date | undefined>(undefined)
   
-  // État pour les métriques
   const [metricsData, setMetricsData] = useState<DashboardData | null>(null)
   const [metricsLoading, setMetricsLoading] = useState(true)
 
@@ -79,7 +102,6 @@ export default function KioskManagement() {
     setTotalPages(result.totalPages)
   }, [currentPage, searchTerm, filterStatus, filterDate])
 
-  // Fonction pour récupérer les métriques
   const fetchMetrics = useCallback(async () => {
     setMetricsLoading(true)
     try {
@@ -98,13 +120,9 @@ export default function KioskManagement() {
     fetchKiosks()
   }, [fetchKiosks])
 
-  // Récupérer les métriques au montage
   useEffect(() => {
     fetchMetrics()
-    
-    // Rafraîchir les métriques toutes les 5 minutes
     const interval = setInterval(fetchMetrics, 300000)
-    
     return () => clearInterval(interval)
   }, [fetchMetrics])
 
@@ -129,7 +147,6 @@ export default function KioskManagement() {
 
   const handleKioskUpdate = (updatedKiosk: Kiosk) => {
     setKiosks(kiosks.map((kiosk) => (kiosk.id === updatedKiosk.id ? updatedKiosk : kiosk)))
-    // Rafraîchir les métriques après une mise à jour
     fetchMetrics()
   }
 
@@ -140,8 +157,6 @@ export default function KioskManagement() {
         console.error(result.error)
       } else {
         setKiosks(kiosks.filter((kiosk) => kiosk.id !== kioskId))
-        console.log(result.message)
-        // Rafraîchir les métriques après une suppression
         fetchMetrics()
       }
     } catch (error) {
@@ -152,7 +167,6 @@ export default function KioskManagement() {
   const handleKioskAdd = (newKiosk: Kiosk) => {
     setKiosks((prevKiosks) => [newKiosk, ...prevKiosks])
     fetchKiosks()
-    // Rafraîchir les métriques après un ajout
     fetchMetrics()
   }
 
@@ -202,7 +216,6 @@ export default function KioskManagement() {
             onKioskUpdate={handleKioskUpdate}
             onKioskDelete={handleKioskDelete}
             onRefresh={handleRefresh}
-            // Passer les métriques calculées
             metricsData={metricsData}
             metricsLoading={metricsLoading}
           />
