@@ -27,7 +27,7 @@ interface DashboardData {
     deployed: number
     occupied: number
     free: number
-    underMaintenance: number
+    maintenance: number
   }
   grand: {
     total: number
@@ -38,40 +38,40 @@ interface DashboardData {
     total: number
     occupied: number
     free: number
-    underMaintenance: number
+    maintenance: number
   }
   totals: {
     totalCompartments: number
   }
   towns: {
     DOUALA: {
-      MONO: { total: number; available: number; occupied: number; underMaintenance: number; instock: number }
+      MONO: { total: number; available: number; occupied: number; maintenance: number; inStock: number }
       GRAND: { 
         total: number
         available: number
         occupied: number
-        underMaintenance: number
-        instock: number
+        maintenance: number
+        inStock: number
         compartments: {
           available: number
           occupied: number
-          underMaintenance: number
+          maintenance: number
           total: number
         }
       }
     }
     YAOUNDE: {
-      MONO: { total: number; available: number; occupied: number; underMaintenance: number; instock: number }
+      MONO: { total: number; available: number; occupied: number; maintenance: number; inStock: number }
       GRAND: { 
         total: number
         available: number
         occupied: number
-        underMaintenance: number
+        maintenance: number
         instock: number
         compartments: {
           available: number
           occupied: number
-          underMaintenance: number
+          maintenance: number
           total: number
         }
       }

@@ -13,8 +13,15 @@ import {
   Package, 
   Wrench,
   CheckCircle,
-  Boxes
+  Boxes,
+  Info
 } from "lucide-react"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import ThreeKioskSVG from "../../svg/threekiosks"
 import OneKioskSVG from "../../svg/onekiosks"
 
@@ -29,7 +36,7 @@ interface DashboardData {
     deployed: number
     occupied: number
     free: number
-    underMaintenance: number
+    maintenance: number
   }
   grand: {
     total: number
@@ -40,40 +47,40 @@ interface DashboardData {
     total: number
     occupied: number
     free: number
-    underMaintenance: number
+    maintenance: number
   }
   totals: {
     totalCompartments: number
   }
   towns: {
     DOUALA: {
-      MONO: { total: number; available: number; occupied: number; underMaintenance: number; instock: number }
+      MONO: { total: number; available: number; occupied: number; maintenance: number; instock: number }
       GRAND: { 
         total: number
         available: number
         occupied: number
-        underMaintenance: number
+        maintenance: number
         instock: number
         compartments: {
           available: number
           occupied: number
-          underMaintenance: number
+          maintenance: number
           total: number
         }
       }
     }
     YAOUNDE: {
-      MONO: { total: number; available: number; occupied: number; underMaintenance: number; instock: number }
+      MONO: { total: number; available: number; occupied: number; maintenance: number; instock: number }
       GRAND: { 
         total: number
         available: number
         occupied: number
-        underMaintenance: number
+        maintenance: number
         instock: number
         compartments: {
           available: number
           occupied: number
-          underMaintenance: number
+          maintenance: number
           total: number
         }
       }
@@ -98,6 +105,35 @@ interface KioskTab1Props {
   metricsData?: DashboardData | null
   metricsLoading?: boolean
 }
+
+// Composant pour une ligne avec tooltip
+const MetricRowWithTooltip = ({ label, value, color, icon: Icon, tooltip }: { 
+  label: string
+  value: number
+  color: string
+  icon: any
+  tooltip: string
+}) => (
+  <div className="flex items-center justify-between p-2 rounded-lg bg-white">
+    <div className="flex items-center gap-2">
+      <Icon className={`h-4 w-4 ${color}`} />
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="text-sm text-gray-700 cursor-help flex items-center gap-1">
+              {label}
+              <Info className="h-3 w-3 text-gray-400" />
+            </span>
+          </TooltipTrigger>
+          <TooltipContent className="max-w-xs bg-gray-800 text-white p-2 rounded-lg">
+            <p className="text-xs">{tooltip}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    </div>
+    <span className={`text-xl font-bold ${color}`}>{value}</span>
+  </div>
+)
 
 export default function KioskTab1({
   kiosks,
@@ -170,38 +206,37 @@ export default function KioskTab1({
         </div>
       </MetricCard>
 
-
-      {/* Carte 3: Kiosques MONO */}
+      {/* Carte 2: Kiosques MONO */}
       <MetricCard title="Kiosques MONO">
         <div className="space-y-2">
-          <div className="flex items-center justify-between p-2 rounded-lg bg-green-50">
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-500" />
-              <span className="text-sm">Occupés</span>
-            </div>
-            <span className="text-xl font-bold text-green-600">{metricsData.mono.occupied}</span>
-          </div>
-          <div className="flex items-center justify-between p-2 rounded-lg bg-blue-50">
-            <div className="flex items-center gap-2">
-              <Package className="h-4 w-4 text-blue-500" />
-              <span className="text-sm">Libres</span>
-            </div>
-            <span className="text-xl font-bold text-blue-600">{metricsData.mono.free}</span>
-          </div>
-          <div className="flex items-center justify-between p-2 rounded-lg bg-yellow-50">
-            <div className="flex items-center gap-2">
-              <Wrench className="h-4 w-4 text-yellow-600" />
-              <span className="text-sm">En maintenance</span>
-            </div>
-            <span className="text-xl font-bold text-yellow-600">{metricsData.mono.underMaintenance}</span>
-          </div>
-          <div className="flex items-center justify-between p-2 rounded-lg bg-purple-50">
-            <div className="flex items-center gap-2">
-              <Warehouse className="h-4 w-4 text-purple-500" />
-              <span className="text-sm">En stock</span>
-            </div>
-            <span className="text-xl font-bold text-purple-600">{metricsData.mono.inStock}</span>
-          </div>
+          <MetricRowWithTooltip 
+            label="Occupés"
+            value={metricsData.mono.occupied}
+            color="text-green-600"
+            icon={CheckCircle}
+            tooltip="Mono Kiosque hors de l'entrepôt avec un client actif"
+          />
+          <MetricRowWithTooltip 
+            label="Libres"
+            value={metricsData.mono.free}
+            color="text-blue-600"
+            icon={Package}
+            tooltip="Kiosque hors de l'entrepôt mais sans client actuellement"
+          />
+          <MetricRowWithTooltip 
+            label="En maintenance"
+            value={metricsData.mono.maintenance}
+            color="text-yellow-600"
+            icon={Wrench}
+            tooltip="Kiosque hors de l'entrepôt avec un ticket de maintenance ouvert"
+          />
+          <MetricRowWithTooltip 
+            label="En stock"
+            value={metricsData.mono.inStock}
+            color="text-purple-600"
+            icon={Warehouse}
+            tooltip="Kiosque encore à l'entrepôt, non déployé"
+          />
         </div>
         <div className="flex items-center text-medium text-gray-600 mt-3 pt-2 border-t">
           <OneKioskSVG />
@@ -209,37 +244,37 @@ export default function KioskTab1({
         </div>
       </MetricCard>
 
-      {/* Carte 4: Compartiments GRAND */}
+      {/* Carte 3: Compartiments GRAND */}
       <MetricCard title="Compartiments GRAND">
         <div className="space-y-2">
-          <div className="flex items-center justify-between p-2 rounded-lg bg-green-50">
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-500" />
-              <span className="text-sm">Occupés</span>
-            </div>
-            <span className="text-xl font-bold text-green-600">{metricsData.compartments.occupied}</span>
-          </div>
-          <div className="flex items-center justify-between p-2 rounded-lg bg-blue-50">
-            <div className="flex items-center gap-2">
-              <Package className="h-4 w-4 text-blue-500" />
-              <span className="text-sm">Libres</span>
-            </div>
-            <span className="text-xl font-bold text-blue-600">{metricsData.compartments.free}</span>
-          </div>
-          <div className="flex items-center justify-between p-2 rounded-lg bg-yellow-50">
-            <div className="flex items-center gap-2">
-              <Wrench className="h-4 w-4 text-yellow-600" />
-              <span className="text-sm">En maintenance</span>
-            </div>
-            <span className="text-xl font-bold text-yellow-600">{metricsData.compartments.underMaintenance}</span>
-          </div>
-          <div className="flex items-center justify-between p-2 rounded-lg bg-purple-50">
-            <div className="flex items-center gap-2">
-              <Warehouse className="h-4 w-4 text-purple-500" />
-              <span className="text-sm">En stock (kiosques GRAND)</span>
-            </div>
-            <span className="text-xl font-bold text-purple-600">{metricsData.grand.inStock}</span>
-          </div>
+          <MetricRowWithTooltip 
+            label="Occupés"
+            value={metricsData.compartments.occupied}
+            color="text-green-600"
+            icon={CheckCircle}
+            tooltip="Compartiment hors de l'entrepôt avec un client actif"
+          />
+          <MetricRowWithTooltip 
+            label="Libres"
+            value={metricsData.compartments.free}
+            color="text-blue-600"
+            icon={Package}
+            tooltip="Compartiment hors de l'entrepôt mais sans client actuellement"
+          />
+          <MetricRowWithTooltip 
+            label="En maintenance"
+            value={metricsData.compartments.maintenance}
+            color="text-yellow-600"
+            icon={Wrench}
+            tooltip="Compartiment hors de l'entrepôt avec un ticket de maintenance ouvert"
+          />
+          <MetricRowWithTooltip 
+            label="En stock (kiosques GRAND)"
+            value={metricsData.grand.inStock}
+            color="text-purple-600"
+            icon={Warehouse}
+            tooltip={`${metricsData.grand.inStock} kiosque(s) GRAND × 3 compartiments = ${metricsData.grand.inStock * 3} compartiments encore à l'entrepôt`}
+          />
         </div>
         <div className="flex items-center text-medium text-gray-600 mt-3 pt-2 border-t">
           <ThreeKioskSVG />
@@ -250,8 +285,8 @@ export default function KioskTab1({
   )
 
   // Mono metrics row (pour Douala et Yaoundé)
-  const MonoMetrics = ({ town, data }: { town: string; data: { total: number; available: number; occupied: number; underMaintenance: number; instock: number } }) => (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+  const MonoMetrics = ({ town, data }: { town: string; data: { total: number; available: number; occupied: number; maintenance: number; instock: number } }) => (
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
       <MetricCard title={`Total Kiosques MONO - ${town}`}>
         <div className="text-3xl font-bold mt-2 text-orange-600">{data.total}</div>
         <div className="flex items-center gap-2 mt-2 p-2 rounded-lg bg-orange-50">
@@ -262,57 +297,34 @@ export default function KioskTab1({
 
       <MetricCard title={`État des Kiosques MONO - ${town}`}>
         <div className="space-y-2">
-          <div className="flex items-center justify-between p-2 rounded-lg bg-green-50">
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-500" />
-              <span className="text-sm">Occupés (client)</span>
-            </div>
-            <span className="text-xl font-bold text-green-600">{data.occupied}</span>
-          </div>
-          <div className="flex items-center justify-between p-2 rounded-lg bg-blue-50">
-            <div className="flex items-center gap-2">
-              <Package className="h-4 w-4 text-blue-500" />
-              <span className="text-sm">Libres (disponibles)</span>
-            </div>
-            <span className="text-xl font-bold text-blue-600">{data.available}</span>
-          </div>
-          <div className="flex items-center justify-between p-2 rounded-lg bg-yellow-50">
-            <div className="flex items-center gap-2">
-              <Wrench className="h-4 w-4 text-yellow-600" />
-              <span className="text-sm">En maintenance</span>
-            </div>
-            <span className="text-xl font-bold text-yellow-600">{data.underMaintenance}</span>
-          </div>
-          <div className="flex items-center justify-between p-2 rounded-lg bg-purple-50">
-            <div className="flex items-center gap-2">
-              <Warehouse className="h-4 w-4 text-purple-500" />
-              <span className="text-sm">En stock</span>
-            </div>
-            <span className="text-xl font-bold text-purple-600">{data.instock}</span>
-          </div>
-        </div>
-      </MetricCard>
-
-      <MetricCard title={`Stock & Déploiement - ${town}`}>
-        <div className="space-y-2">
-          <div className="flex items-center justify-between p-2 rounded-lg bg-purple-50">
-            <div className="flex items-center gap-2">
-              <Warehouse className="h-4 w-4 text-purple-500" />
-              <span className="text-sm">En stock</span>
-            </div>
-            <span className="text-xl font-bold text-purple-600">{data.instock}</span>
-          </div>
-          <div className="flex items-center justify-between p-2 rounded-lg bg-green-50">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-green-500" />
-              <span className="text-sm">Déployés</span>
-            </div>
-            <span className="text-xl font-bold text-green-600">{data.occupied}</span>
-          </div>
-        </div>
-        <div className="flex items-center text-medium text-gray-600 mt-3 pt-2 border-t">
-          <Building2 className="h-4 w-4 mr-2 text-orange-500" />
-          <span>Kiosques MONO</span>
+          <MetricRowWithTooltip 
+            label="Occupés (client)"
+            value={data.occupied}
+            color="text-green-600"
+            icon={CheckCircle}
+            tooltip="Mono Kiosque hors de l'entrepôt avec un client actif"
+          />
+          <MetricRowWithTooltip 
+            label="Libres (disponibles)"
+            value={data.available}
+            color="text-blue-600"
+            icon={Package}
+            tooltip="Kiosque hors de l'entrepôt mais sans client actuellement"
+          />
+          <MetricRowWithTooltip 
+            label="En maintenance"
+            value={data.maintenance}
+            color="text-yellow-600"
+            icon={Wrench}
+            tooltip="Kiosque hors de l'entrepôt avec un ticket de maintenance ouvert"
+          />
+          <MetricRowWithTooltip 
+            label="En stock"
+            value={data.inStock}
+            color="text-purple-600"
+            icon={Warehouse}
+            tooltip="Kiosque encore à l'entrepôt, non déployé"
+          />
         </div>
       </MetricCard>
     </div>
@@ -323,12 +335,12 @@ export default function KioskTab1({
     total: number
     available: number
     occupied: number
-    underMaintenance: number
+    maintenance: number
     instock: number
     compartments: {
       available: number
       occupied: number
-      underMaintenance: number
+      maintenance: number
       total: number
     }
   } }) => (
@@ -343,34 +355,34 @@ export default function KioskTab1({
 
       <MetricCard title={`État des Compartiments - ${town}`}>
         <div className="space-y-2">
-          <div className="flex items-center justify-between p-2 rounded-lg bg-green-50">
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-500" />
-              <span className="text-sm">Occupés (client)</span>
-            </div>
-            <span className="text-xl font-bold text-green-600">{data.compartments.occupied}</span>
-          </div>
-          <div className="flex items-center justify-between p-2 rounded-lg bg-blue-50">
-            <div className="flex items-center gap-2">
-              <Package className="h-4 w-4 text-blue-500" />
-              <span className="text-sm">Libres (disponibles)</span>
-            </div>
-            <span className="text-xl font-bold text-blue-600">{data.compartments.available}</span>
-          </div>
-          <div className="flex items-center justify-between p-2 rounded-lg bg-yellow-50">
-            <div className="flex items-center gap-2">
-              <Wrench className="h-4 w-4 text-yellow-600" />
-              <span className="text-sm">En maintenance</span>
-            </div>
-            <span className="text-xl font-bold text-yellow-600">{data.compartments.underMaintenance}</span>
-          </div>
-          <div className="flex items-center justify-between p-2 rounded-lg bg-purple-50">
-            <div className="flex items-center gap-2">
-              <Warehouse className="h-4 w-4 text-purple-500" />
-              <span className="text-sm">Kiosques GRAND en stock</span>
-            </div>
-            <span className="text-xl font-bold text-purple-600">{data.instock}</span>
-          </div>
+          <MetricRowWithTooltip 
+            label="Occupés (client)"
+            value={data.compartments.occupied}
+            color="text-green-600"
+            icon={CheckCircle}
+            tooltip="Compartiment hors de l'entrepôt avec un client actif"
+          />
+          <MetricRowWithTooltip 
+            label="Libres (disponibles)"
+            value={data.compartments.available}
+            color="text-blue-600"
+            icon={Package}
+            tooltip="Compartiment hors de l'entrepôt mais sans client actuellement"
+          />
+          <MetricRowWithTooltip 
+            label="En maintenance"
+            value={data.compartments.maintenance}
+            color="text-yellow-600"
+            icon={Wrench}
+            tooltip="Compartiment hors de l'entrepôt avec un ticket de maintenance ouvert"
+          />
+          <MetricRowWithTooltip 
+            label="Kiosques GRAND en stock"
+            value={data.instock}
+            color="text-purple-600"
+            icon={Warehouse}
+            tooltip={`${data.instock} kiosque(s) GRAND × 3 compartiments = ${data.instock * 3} compartiments encore à l'entrepôt`}
+          />
         </div>
       </MetricCard>
 

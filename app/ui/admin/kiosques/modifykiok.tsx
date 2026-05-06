@@ -34,6 +34,31 @@ interface UpdateKioskDialogAdminProps {
   onSuccess: (updatedKiosk: Kiosk) => void
 }
 
+// Mapping des catégories vers les statuts Prisma
+const categoryStatusMap: Record<string, string[]> = {
+  "🏚️ EN STOCK": ["IN_STOCK"],
+  "🟢 OCCUPÉ": ["ACTIVE"],
+  "🔵 LIBRE": ["AVAILABLE", "REQUEST", "LOCALIZING", "UNACTIVE"],
+  "🟡 MAINTENANCE": ["ACTIVE_UNDER_MAINTENANCE", "UNACTIVE_UNDER_MAINTENANCE"],
+}
+
+// Mapping inverse : statut Prisma -> catégorie
+const getCategoryFromStatus = (status: string): string => {
+  if (status === "IN_STOCK") return "🏚️ EN STOCK"
+  if (status === "ACTIVE") return "🟢 OCCUPÉ"
+  if (["AVAILABLE", "REQUEST", "LOCALIZING", "UNACTIVE"].includes(status)) return "🔵 LIBRE"
+  if (["ACTIVE_UNDER_MAINTENANCE", "UNACTIVE_UNDER_MAINTENANCE"].includes(status)) return "🟡 MAINTENANCE"
+  return "🏚️ EN STOCK"
+}
+
+// Liste des catégories pour le select
+const categories = [
+  { label: "🏚️ EN STOCK", value: "IN_STOCK", default: true },
+  { label: "🟢 OCCUPÉ", value: "ACTIVE", default: false },
+  { label: "🔵 LIBRE", value: "AVAILABLE", default: false },
+  { label: "🟡 MAINTENANCE", value: "ACTIVE_UNDER_MAINTENANCE", default: false },
+]
+
 export function UpdateKioskDialogAdmin({
   isOpen,
   onOpenChange,
@@ -50,7 +75,6 @@ export function UpdateKioskDialogAdmin({
   const [selectedClientName, setSelectedClientName] = useState<string>("")
   const [openClientSelect, setOpenClientSelect] = useState(false)
 
-  // Add these new state variables after the other state declarations
   const [initialClientId, setInitialClientId] = useState<string>("")
   const [initialClientName, setInitialClientName] = useState<string>("")
 
@@ -68,8 +92,11 @@ export function UpdateKioskDialogAdmin({
     managerContacts: "",
     productTypes: "",
     userId: "",
-    status: "REQUEST",
+    status: "IN_STOCK",
   })
+
+  // Catégorie sélectionnée pour l'affichage
+  const [selectedCategory, setSelectedCategory] = useState<string>("🏚️ EN STOCK")
 
   useEffect(() => {
     const getClients = async () => {
@@ -84,15 +111,15 @@ export function UpdateKioskDialogAdmin({
     getClients()
   }, [])
 
-  // Modify the useEffect that sets the form data when kiosk changes
   useEffect(() => {
     if (kiosk) {
-      console.log(kiosk)
       setFormData(kiosk)
       setSelectedClientId(kiosk.userId || "")
       setSelectedClientName(kiosk.clientName || "")
       setInitialClientId(kiosk.userId || "")
       setInitialClientName(kiosk.clientName || "")
+      // Définir la catégorie en fonction du statut actuel
+      setSelectedCategory(getCategoryFromStatus(kiosk.status || "IN_STOCK"))
     } else {
       setFormData({
         kioskName: "",
@@ -106,14 +133,26 @@ export function UpdateKioskDialogAdmin({
         managerContacts: "",
         productTypes: "",
         userId: "",
-        status: "REQUEST",
+        status: "IN_STOCK",
       })
       setSelectedClientId("")
       setSelectedClientName("")
       setInitialClientId("")
       setInitialClientName("")
+      setSelectedCategory("🏚️ EN STOCK")
     }
   }, [kiosk])
+
+  const handleCategoryChange = (categoryLabel: string) => {
+    setSelectedCategory(categoryLabel)
+    // Récupérer le premier statut Prisma correspondant à la catégorie
+    const prismaStatuses = categoryStatusMap[categoryLabel]
+    if (prismaStatuses && prismaStatuses.length > 0) {
+      setFormData({ ...formData, status: prismaStatuses[0] as Kiosk["status"] })
+    }
+  }
+
+  // Dans UpdateKioskDialogAdmin, modifier handleSubmit
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -121,10 +160,35 @@ export function UpdateKioskDialogAdmin({
     setError(null)
     setSuccess(null)
 
+    // Déterminer le statut Prisma à envoyer en fonction de la catégorie sélectionnée
+    let prismaStatus = formData.status
+
+    // Si on a sélectionné une catégorie, prendre le premier statut correspondant
+    if (selectedCategory) {
+      const statuses = categoryStatusMap[selectedCategory]
+      if (statuses && statuses.length > 0) {
+        prismaStatus = statuses[0] as Kiosk["status"]
+      }
+    }
+
+    // Pour un kiosque MONO avec client, forcer le statut ACTIVE
+    const isMonoWithClient = formData.kioskType === "MONO" && selectedClientId
+    if (isMonoWithClient) {
+      prismaStatus = "ACTIVE"
+    }
+
+    // Pour un kiosque MONO sans client, déterminer le statut approprié
+    const isMonoWithoutClient = formData.kioskType === "MONO" && !selectedClientId
+    if (isMonoWithoutClient) {
+      const hasGpsCoordinates = formData.gpsLatitude && formData.gpsLongitude
+      prismaStatus = hasGpsCoordinates ? "UNACTIVE" : "AVAILABLE"
+    }
+
     const updatedData = {
       ...formData,
       userId: selectedClientId,
       clientName: selectedClientName,
+      status: prismaStatus,
     }
 
     try {
@@ -137,7 +201,7 @@ export function UpdateKioskDialogAdmin({
         onSuccess(updatedKiosk)
         setTimeout(() => {
           onOpenChange(false)
-        }, 2000) // Close the dialog after 2 seconds
+        }, 2000)
       }
     } catch (err) {
       setError("Une erreur est survenue lors de la modification du kiosque.")
@@ -181,24 +245,20 @@ export function UpdateKioskDialogAdmin({
 
             <div>
               <Label htmlFor="kiosk-status">Statut du kiosque</Label>
-              <Select
-                name="status"
-                value={formData.status}
-                onValueChange={(value) => setFormData({ ...formData, status: value as Kiosk["status"] })}
-              >
+              <Select value={selectedCategory} onValueChange={handleCategoryChange}>
                 <SelectTrigger className="w-full mt-1">
                   <SelectValue placeholder="Sélectionnez le statut" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="REQUEST">Demande</SelectItem>
-                  <SelectItem value="IN_STOCK">En stock</SelectItem>
-                  <SelectItem value="ACTIVE">Actif</SelectItem>
-                  <SelectItem value="UNACTIVE">Inactif</SelectItem>
-                  <SelectItem value="ACTIVE_UNDER_MAINTENANCE">Actif en maintenance</SelectItem>
-                  <SelectItem value="UNACTIVE_UNDER_MAINTENANCE">Inactif en maintenance</SelectItem>
+                  {categories.map((category) => (
+                    <SelectItem key={category.label} value={category.label}>
+                      {category.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
+
             <div>
               <Label htmlFor="client-select">Sélectionner un client</Label>
               <Popover open={openClientSelect} onOpenChange={setOpenClientSelect}>
@@ -244,12 +304,14 @@ export function UpdateKioskDialogAdmin({
                 </PopoverContent>
               </Popover>
             </div>
+
             {initialClientName && (
               <div>
                 <Label htmlFor="initial-client">Client initial</Label>
                 <Input id="initial-client" type="text" value={initialClientName} readOnly className="bg-gray-50" />
               </div>
             )}
+
             {selectedClientId !== initialClientId && selectedClientName && (
               <div>
                 <Label htmlFor="new-client" className="text-orange-500">
@@ -264,6 +326,7 @@ export function UpdateKioskDialogAdmin({
                 />
               </div>
             )}
+
             <div>
               <Label htmlFor="kiosk-address">Adresse du kiosque</Label>
               <Input
@@ -274,6 +337,7 @@ export function UpdateKioskDialogAdmin({
                 onChange={(e) => setFormData({ ...formData, kioskAddress: e.target.value })}
               />
             </div>
+
             <div>
               <Label htmlFor="latitude">Latitude</Label>
               <Input
@@ -289,6 +353,7 @@ export function UpdateKioskDialogAdmin({
                 }
               />
             </div>
+
             <div>
               <Label htmlFor="longitude">Longitude</Label>
               <Input
@@ -304,6 +369,7 @@ export function UpdateKioskDialogAdmin({
                 }
               />
             </div>
+
             <div>
               <Label htmlFor="products-services">Produits/Services</Label>
               <Input
@@ -314,8 +380,9 @@ export function UpdateKioskDialogAdmin({
                 onChange={(e) => setFormData({ ...formData, productTypes: e.target.value })}
               />
             </div>
+
             <div>
-              <Label htmlFor="manager-name">Nom du gestionaire</Label>
+              <Label htmlFor="manager-name">Nom du gestionnaire</Label>
               <Input
                 id="manager-name"
                 type="text"
@@ -324,8 +391,9 @@ export function UpdateKioskDialogAdmin({
                 onChange={(e) => setFormData({ ...formData, managerName: e.target.value })}
               />
             </div>
+
             <div>
-              <Label htmlFor="manager-contact">Contact du gestionaire</Label>
+              <Label htmlFor="manager-contact">Contact du gestionnaire</Label>
               <Input
                 id="manager-contact"
                 type="text"
@@ -333,19 +401,6 @@ export function UpdateKioskDialogAdmin({
                 value={formData.managerContacts || ""}
                 onChange={(e) => setFormData({ ...formData, managerContacts: e.target.value })}
               />
-            </div>
-
-            <div>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Enregistrement...
-                  </>
-                ) : (
-                  "Enregistrer"
-                )}
-              </Button>
             </div>
           </form>
         </ScrollArea>
