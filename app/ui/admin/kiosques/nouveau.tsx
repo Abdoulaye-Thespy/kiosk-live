@@ -17,12 +17,13 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { fetchClients } from "@/app/actions/fetchUserStats"
-import type { KioskTown } from "@prisma/client"
+import type { KioskTown, KioskType } from "@prisma/client"
 
 interface Client {
   id: string
   name: string
   email: string
+  phone?: string
 }
 
 import type { Kiosk } from "@prisma/client"
@@ -41,6 +42,8 @@ export function AddKioskDialog({ kiosks, onSuccess }: AddKioskDialogProps) {
   const [selectedClientId, setSelectedClientId] = useState<string>("")
   const [selectedClientName, setSelectedClientName] = useState<string>("")
   const [openClientSelect, setOpenClientSelect] = useState(false)
+  const [isLoadingClients, setIsLoadingClients] = useState(false)
+  const [clientsLoaded, setClientsLoaded] = useState(false)
 
   const initialFormData = {
     kioskName: "",
@@ -52,25 +55,35 @@ export function AddKioskDialog({ kiosks, onSuccess }: AddKioskDialogProps) {
     managerName: "",
     managerContacts: "",
     kioskMatricule: "",
-    kioskTown: "DOUALA" as KioskTown, // Default town is DOUALA
+    kioskTown: "DOUALA" as KioskTown,
   }
 
   const [formData, setFormData] = useState(initialFormData)
   const router = useRouter()
   const [fieldErrors, setFieldErrors] = useState<Record<string, boolean>>({})
 
+  // Charger les clients
   useEffect(() => {
     const getClients = async () => {
+      if (clientsLoaded) return
+      
+      setIsLoadingClients(true)
       try {
         const data = await fetchClients()
-        setClients(data.clients)
+        setClients(data.clients || [])
+        setClientsLoaded(true)
       } catch (error) {
         console.error("Error fetching clients:", error)
+        setClients([])
+      } finally {
+        setIsLoadingClients(false)
       }
     }
 
-    getClients()
-  }, [])
+    if (isOpen) {
+      getClients()
+    }
+  }, [isOpen, clientsLoaded])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -78,6 +91,21 @@ export function AddKioskDialog({ kiosks, onSuccess }: AddKioskDialogProps) {
       ...prevData,
       [name]: value,
     }))
+    // Clear field error when user starts typing
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => ({ ...prev, [name]: false }))
+    }
+  }
+
+  const handleRadioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    setFormData((prevData) => ({
+      ...prevData,
+      [name]: value,
+    }))
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => ({ ...prev, [name]: false }))
+    }
   }
 
   const handleSelectChange = (name: string, value: string) => {
@@ -87,16 +115,39 @@ export function AddKioskDialog({ kiosks, onSuccess }: AddKioskDialogProps) {
     }))
   }
 
+  const resetForm = () => {
+    setFormData(initialFormData)
+    setSelectedClientId("")
+    setSelectedClientName("")
+    setFieldErrors({})
+    setError(null)
+    setSuccess(null)
+  }
+
+  // Fonction pour obtenir l'affichage du client sélectionné
+  const getSelectedClientDisplay = () => {
+    if (!selectedClientId) {
+      return "Sélectionner un client (optionnel)"
+    }
+    
+    const foundClient = clients.find((client) => client.id === selectedClientId)
+    if (foundClient) {
+      return foundClient.name
+    }
+    
+    return selectedClientName || "Client sélectionné"
+  }
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setIsSubmitting(true)
     setError(null)
     setSuccess(null)
 
-    const requiredFields = ["kioskType", "kioskMatricule"]
+    const requiredFields = ["kioskType", "kioskMatricule", "kioskName", "kioskAddress"]
     const newFieldErrors = requiredFields.reduce(
       (acc, field) => {
-        acc[field] = !formData[field]
+        acc[field] = !formData[field as keyof typeof formData]
         return acc
       },
       {} as Record<string, boolean>,
@@ -112,28 +163,27 @@ export function AddKioskDialog({ kiosks, onSuccess }: AddKioskDialogProps) {
 
     const submitData = new FormData()
     Object.entries(formData).forEach(([key, value]) => {
-      submitData.append(key, value)
+      if (value) {
+        submitData.append(key, value)
+      }
     })
-    submitData.append("userId", selectedClientId)
-    submitData.append("clientName", selectedClientName)
+    if (selectedClientId) {
+      submitData.append("userId", selectedClientId)
+      submitData.append("clientName", selectedClientName)
+    }
 
     try {
       const result = await addKioskByStaff(submitData)
       if (result.error) {
         setError(result.error)
       } else {
-        // Add the new kiosk to the kiosks array
-
         const addedKiosk = result.kiosk
-        // onKioskAdd(kioskAdded)
         onSuccess(addedKiosk)
-
-        setFormData(initialFormData)
-        setSelectedClientId("")
-        setSelectedClientName("")
+        resetForm()
         setSuccess("Le kiosque a été ajouté avec succès.")
         setTimeout(() => {
           setIsOpen(false)
+          resetForm()
         }, 2000)
       }
     } catch (err) {
@@ -158,13 +208,22 @@ export function AddKioskDialog({ kiosks, onSuccess }: AddKioskDialogProps) {
             fill="none"
             className="mr-2"
           >
-            {/* SVG path data */}
+            <path
+              d="M8 2v12M2 8h12"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
           Ajouter un nouveau kiosque
         </Button>
       </div>
 
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <Dialog open={isOpen} onOpenChange={(open) => {
+        setIsOpen(open)
+        if (!open) resetForm()
+      }}>
         <DialogContent className="sm:max-w-[500px] max-h-[80vh] flex flex-col">
           <DialogHeader className="flex-shrink-0">
             <DialogTitle className="text-xl font-semibold">Ajouter un nouveau kiosque</DialogTitle>
@@ -190,7 +249,7 @@ export function AddKioskDialog({ kiosks, onSuccess }: AddKioskDialogProps) {
               </p>
 
               <div>
-                <Label htmlFor="client-select">Sélectionner un client</Label>
+                <Label htmlFor="client-select">Client (optionnel)</Label>
                 <Popover open={openClientSelect} onOpenChange={setOpenClientSelect}>
                   <PopoverTrigger asChild>
                     <Button
@@ -199,9 +258,7 @@ export function AddKioskDialog({ kiosks, onSuccess }: AddKioskDialogProps) {
                       aria-expanded={openClientSelect}
                       className="w-full justify-between"
                     >
-                      {selectedClientId
-                        ? clients.find((client) => client.id === selectedClientId)?.name
-                        : "Sélectionner un client"}
+                      {getSelectedClientDisplay()}
                       <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                   </PopoverTrigger>
@@ -209,20 +266,30 @@ export function AddKioskDialog({ kiosks, onSuccess }: AddKioskDialogProps) {
                     <Command>
                       <CommandInput placeholder="Rechercher un client..." />
                       <CommandList>
-                        <CommandEmpty>Aucun client trouvé.</CommandEmpty>
+                        <CommandEmpty>
+                          {isLoadingClients ? "Chargement des clients..." : "Aucun client trouvé."}
+                        </CommandEmpty>
                         <CommandGroup>
-                          {clients.map((client) => (
-                            <CommandItem
-                              key={client.id}
-                              onSelect={() => {
-                                setSelectedClientId(client.id)
-                                setSelectedClientName(client.name)
-                                setOpenClientSelect(false)
-                              }}
-                            >
-                              {client.name} ({client.email})
-                            </CommandItem>
-                          ))}
+                          {clients && clients.length > 0 ? (
+                            clients.map((client) => (
+                              <CommandItem
+                                key={client.id}
+                                onSelect={() => {
+                                  setSelectedClientId(client.id)
+                                  setSelectedClientName(client.name)
+                                  setOpenClientSelect(false)
+                                }}
+                              >
+                                {client.name} ({client.email})
+                              </CommandItem>
+                            ))
+                          ) : (
+                            !isLoadingClients && (
+                              <div className="px-2 py-2 text-sm text-gray-500">
+                                Aucun client disponible
+                              </div>
+                            )
+                          )}
                         </CommandGroup>
                       </CommandList>
                     </Command>
@@ -239,12 +306,13 @@ export function AddKioskDialog({ kiosks, onSuccess }: AddKioskDialogProps) {
                   name="kioskName"
                   value={formData.kioskName}
                   onChange={handleChange}
-                  placeholder="Kiosk 639"
+                  placeholder="Nom du kiosque"
                   className={`w-full mt-1 ${fieldErrors.kioskName ? "border-red-500" : ""}`}
                 />
               </div>
+
               <div>
-                <Label htmlFor="kiosk-matricule" className={fieldErrors.kioskName ? "text-red-500" : ""}>
+                <Label htmlFor="kiosk-matricule" className={fieldErrors.kioskMatricule ? "text-red-500" : ""}>
                   Matricule du kiosque *
                 </Label>
                 <Input
@@ -252,8 +320,8 @@ export function AddKioskDialog({ kiosks, onSuccess }: AddKioskDialogProps) {
                   name="kioskMatricule"
                   value={formData.kioskMatricule}
                   onChange={handleChange}
-                  placeholder="Kiosk 639"
-                  className={`w-full mt-1 ${fieldErrors.kioskName ? "border-red-500" : ""}`}
+                  placeholder="K-000-0000-000"
+                  className={`w-full mt-1 ${fieldErrors.kioskMatricule ? "border-red-500" : ""}`}
                 />
               </div>
 
@@ -272,7 +340,7 @@ export function AddKioskDialog({ kiosks, onSuccess }: AddKioskDialogProps) {
               </div>
 
               <div>
-                <Label htmlFor="kiosk-town">Ville du kiosque *</Label>
+                <Label htmlFor="kiosk-town">Ville du kiosque</Label>
                 <Select value={formData.kioskTown} onValueChange={(value) => handleSelectChange("kioskTown", value)}>
                   <SelectTrigger className="w-full mt-1">
                     <SelectValue placeholder="Sélectionner une ville" />
@@ -285,14 +353,14 @@ export function AddKioskDialog({ kiosks, onSuccess }: AddKioskDialogProps) {
               </div>
 
               <div>
-                <Label>Coordonnées GPS</Label>
+                <Label>Coordonnées GPS (optionnel)</Label>
                 <div className="flex gap-4 mt-1">
                   <Input
                     id="latitude"
                     name="latitude"
                     value={formData.latitude}
                     onChange={handleChange}
-                    placeholder="Latitude (optionnel)"
+                    placeholder="Latitude"
                     className="w-full"
                   />
                   <Input
@@ -300,7 +368,7 @@ export function AddKioskDialog({ kiosks, onSuccess }: AddKioskDialogProps) {
                     name="longitude"
                     value={formData.longitude}
                     onChange={handleChange}
-                    placeholder="Longitude (optionnel)"
+                    placeholder="Longitude"
                     className="w-full"
                   />
                 </div>
@@ -320,40 +388,24 @@ export function AddKioskDialog({ kiosks, onSuccess }: AddKioskDialogProps) {
                     </Tooltip>
                   </TooltipProvider>
                 </div>
-                <div className={`grid grid-cols-2 gap-2 mt-1 ${fieldErrors.kioskType ? "text-red-500" : ""}`}>
+                <div className={`grid grid-cols-1 md:grid-cols-2 gap-2 mt-1 ${fieldErrors.kioskType ? "border-red-500 p-2 rounded" : ""}`}>
                   {[
-                    {
-                      type: "un compartiment avec marque",
-                      description: "Kiosque de base avec les services essentiels",
-                      value: "ONE_COMPARTMENT_WITH_BRANDING",
-                    },
-                    {
-                      type: "un compartiment sans_marque",
-                      description: "Kiosque amélioré avec des services supplémentaires",
-                      value: "ONE_COMPARTMENT_WITHOUT_BRANDING",
-                    },
-                    {
-                      type: "trois compartiments sans_marque",
-                      description: "Kiosque haut de gamme avec tous les services disponibles",
-                      value: "THREE_COMPARTMENT_WITHOUT_BRANDING",
-                    },
-                    {
-                      type: "trois compartiments avec_marque",
-                      description: "Kiosque personnalisé selon les besoins spécifiques du client",
-                      value: "THREE_COMPARTMENT_WITH_BRANDING",
-                    },
-                  ].map(({ type, description, value }) => (
+                    { type: "MONO", label: "MONO (1 compartiment)", description: "Kiosque à 1 compartiment" },
+                    { type: "GRAND", label: "GRAND (3 compartiments)", description: "Kiosque à 3 compartiments" },
+                  ].map(({ type, label, description }) => (
                     <div key={type} className="flex items-center space-x-2">
                       <input
                         type="radio"
                         id={`type-${type}`}
                         name="kioskType"
-                        value={value}
-                        checked={formData.kioskType === value}
-                        onChange={handleChange}
+                        value={type}
+                        checked={formData.kioskType === type}
+                        onChange={handleRadioChange}
                         className="h-4 w-4 border-gray-300 text-orange-600 focus:ring-orange-600"
                       />
-                      <Label htmlFor={`type-${type}`}>{type}</Label>
+                      <Label htmlFor={`type-${type}`} className="cursor-pointer">
+                        {label}
+                      </Label>
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -370,37 +422,37 @@ export function AddKioskDialog({ kiosks, onSuccess }: AddKioskDialogProps) {
               </div>
 
               <div>
-                <Label htmlFor="products-services">Type de produits et services offerts</Label>
+                <Label htmlFor="products-services">Type de produits et services offerts (optionnel)</Label>
                 <Input
                   id="products-services"
                   name="productTypes"
                   value={formData.productTypes}
                   onChange={handleChange}
-                  placeholder="Produits et services (optionnel)"
+                  placeholder="Produits et services"
                   className="w-full mt-1"
                 />
               </div>
 
               <div>
-                <Label htmlFor="manager-name">Nom du gestionnaire</Label>
+                <Label htmlFor="manager-name">Nom du gestionnaire (optionnel)</Label>
                 <Input
                   id="manager-name"
                   name="managerName"
                   value={formData.managerName}
                   onChange={handleChange}
-                  placeholder="ALIOU Salif (optionnel)"
+                  placeholder="Nom du responsable"
                   className="w-full mt-1"
                 />
               </div>
 
               <div>
-                <Label htmlFor="manager-contact">Coordonnées du gestionnaire</Label>
+                <Label htmlFor="manager-contact">Coordonnées du gestionnaire (optionnel)</Label>
                 <Input
                   id="manager-contact"
                   name="managerContacts"
                   value={formData.managerContacts}
                   onChange={handleChange}
-                  placeholder="+237 123 456 789 (optionnel)"
+                  placeholder="+237 123 456 789"
                   className="w-full mt-1"
                 />
               </div>
