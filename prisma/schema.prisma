@@ -129,6 +129,7 @@ model KioskRequest {
   @@index([status])
   @@index([requestNumber])
   @@index([createdAt])
+  @@map("kiosk_requests")
 }
 
 model Kiosk {

@@ -218,6 +218,7 @@ export async function addKioskByStaff(formData: FormData) {
     return { error: "Une erreur est survenue lors de l'ajout du kiosque." }
   }
 }
+
 // Get kiosk counts with compartment support
 export async function getKioskCounts() {
   try {
@@ -662,7 +663,6 @@ export async function getUserKiosks({
     throw new Error("Une erreur est survenue lors de la récupération des kiosques de l'utilisateur.")
   }
 }
-
 
 // Update kiosk with compartment support (pour MONO et GRAND)
 export async function updateKiosk(kioskId: number, formData: any) {
